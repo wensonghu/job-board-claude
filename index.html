@@ -287,7 +287,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>📋 Wensong's Job Search Board</h1>
+        <h1>📋 Job Board</h1>
         <button class="add-card-btn" onclick="openModal()">+ Add a New Lead</button>
     </div>
 
@@ -340,6 +340,13 @@
                 <div class="form-group">
                     <label>Date</label>
                     <input type="date" id="date" required>
+                </div>
+                <div class="form-group">
+                    <label>Details</label>
+                    <textarea id="details" maxlength="200" placeholder="Add any notes or details about this lead..." style="resize: vertical; min-height: 80px;"></textarea>
+                    <div style="text-align: right; font-size: 0.85em; color: #7f8c8d; margin-top: 5px;">
+                        <span id="char-count">0</span>/200 characters
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Stage</label>
@@ -397,14 +404,15 @@
             const company = document.getElementById('company').value;
             const stage = document.getElementById('stage').value;
             const date = document.getElementById('date').value;
+            const details = document.getElementById('details').value;
 
             // Validate required fields
             if (!position || !company || !date || !stage) {
-                alert('Please fill in all fields');
+                alert('Please fill in all required fields');
                 return;
             }
 
-            console.log('Form values:', { position, company, stage, date });
+            console.log('Form values:', { position, company, stage, date, details });
 
             if (editingCardId) {
                 // Update existing card
@@ -413,6 +421,7 @@
                 card.company = company;
                 card.stage = stage;
                 card.date = date;
+                card.details = details;
                 editingCardId = null;
                 console.log('Updated card:', card);
             } else {
@@ -422,7 +431,8 @@
                     position,
                     company,
                     stage,
-                    date
+                    date,
+                    details
                 };
                 cards.push(card);
                 console.log('Added new card:', card);
@@ -480,10 +490,14 @@
                 year: 'numeric' 
             }) : 'No date';
             
+            // Add details if available
+            const detailsHtml = card.details ? `<div class="card-details" style="font-size: 0.85em; color: #7f8c8d; margin-top: 8px; line-height: 1.4;">${card.details}</div>` : '';
+            
             div.innerHTML = `
                 <div class="card-title">${card.position}</div>
                 <div class="card-company">${card.company}</div>
                 <div class="card-date">📅 ${formattedDate}</div>
+                ${detailsHtml}
                 <div class="card-actions">
                     <button class="edit-btn" title="Edit">✏️</button>
                     <button class="delete-btn" title="Delete">🗑️</button>
@@ -567,13 +581,16 @@
                 document.getElementById('position').value = card.position;
                 document.getElementById('company').value = card.company;
                 document.getElementById('date').value = card.date;
+                document.getElementById('details').value = card.details || '';
                 document.getElementById('stage').value = card.stage;
+                updateCharCount();
                 editingCardId = cardId;
             } else {
                 document.getElementById('modal-title').textContent = 'Add a New Lead';
                 form.reset();
                 // Set today's date as default
                 document.getElementById('date').value = new Date().toISOString().split('T')[0];
+                updateCharCount();
                 editingCardId = null;
             }
             
@@ -624,6 +641,16 @@
 
         // Initialize
         loadCards();
+
+        // Character counter for details field
+        function updateCharCount() {
+            const details = document.getElementById('details');
+            const charCount = document.getElementById('char-count');
+            charCount.textContent = details.value.length;
+        }
+
+        // Add event listener for character counting
+        document.getElementById('details').addEventListener('input', updateCharCount);
     </script>
 </body>
 </html>
