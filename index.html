@@ -79,7 +79,9 @@
             border-radius: 12px;
             padding: 15px;
             min-height: 500px;
-            min-width: 320px;
+            min-width: 280px;
+            max-width: 300px;
+            flex: 1;
             flex-shrink: 0;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
@@ -100,7 +102,8 @@
         .seeding { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .recruiter { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
         .hm { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-        .onsite { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .next-rounds { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .final { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
 
         .count {
             background: rgba(255,255,255,0.3);
@@ -317,11 +320,19 @@
         </div>
 
         <div class="column">
-            <div class="column-header onsite">
-                <span>🎯 Onsite</span>
-                <span class="count" id="count-onsite">0</span>
+            <div class="column-header next-rounds">
+                <span>🔄 Next Rounds</span>
+                <span class="count" id="count-next-rounds">0</span>
             </div>
-            <div class="cards-container" data-column="onsite"></div>
+            <div class="cards-container" data-column="next-rounds"></div>
+        </div>
+
+        <div class="column">
+            <div class="column-header final">
+                <span>🎯 Final</span>
+                <span class="count" id="count-final">0</span>
+            </div>
+            <div class="cards-container" data-column="final"></div>
         </div>
     </div>
 
@@ -354,7 +365,8 @@
                         <option value="seeding">🌱 Seeding</option>
                         <option value="recruiter">📞 Recruiter Round</option>
                         <option value="hm">👔 HM Interview</option>
-                        <option value="onsite">🎯 Onsite</option>
+                        <option value="next-rounds">🔄 Next Rounds</option>
+                        <option value="final">🎯 Final</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -471,21 +483,36 @@
                 seeding: [],
                 recruiter: [],
                 hm: [],
-                onsite: []
+                'next-rounds': [],
+                final: []
             };
 
             cards.forEach(card => {
-                grouped[card.stage].push(card);
+                // Handle legacy 'onsite' cards - migrate to 'final'
+                const stage = card.stage === 'onsite' ? 'final' : card.stage;
+                if (grouped[stage]) {
+                    grouped[stage].push(card);
+                }
             });
 
             console.log('Grouped cards:', grouped);
 
+            // Render each stage, with rejected cards at the bottom
             Object.keys(grouped).forEach(stage => {
                 const container = document.querySelector(`[data-column="${stage}"]`);
-                grouped[stage].forEach(card => {
+                
+                // Sort: in-progress first, rejected last
+                const sortedCards = grouped[stage].sort((a, b) => {
+                    const statusOrder = { 'in-progress': 0, 'rejected': 1 };
+                    const aStatus = a.status || 'in-progress';
+                    const bStatus = b.status || 'in-progress';
+                    return statusOrder[aStatus] - statusOrder[bStatus];
+                });
+                
+                sortedCards.forEach(card => {
                     container.appendChild(createCardElement(card));
                 });
-                updateCount(stage, grouped[stage].length);
+                updateCount(stage, sortedCards.length);
             });
         }
 
