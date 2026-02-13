@@ -291,7 +291,7 @@
 <body>
     <div class="header">
         <h1>📋 Job Board</h1>
-        <div id="todo-alert" style="color:#e74c3c; font-weight:800; margin-left:12px; display:none; font-size:0.95em;">THERE ARE TO DO ITEMS FOR YOU</div>
+        <div id="todo-alert" style="color:#e74c3c; font-weight:800; margin-left:12px; display:none; font-size:1.3em;">THERE ARE TO DO ITEMS FOR YOU</div>
         <button class="add-card-btn" onclick="openModal()">+ Add a New Lead</button>
     </div>
 
@@ -369,7 +369,7 @@
 
                 <div class="form-group">
                     <label>Details</label>
-                    <textarea id="details" maxlength="200" placeholder="Add any notes or details about this lead..." style="resize: vertical; min-height: 80px;"></textarea>
+                    <textarea id="details" maxlength="200" placeholder="Any follow-up notes, e.g. key contact, next steps)" style="resize: vertical; min-height: 80px;"></textarea>
                     <div style="text-align: right; font-size: 0.85em; color: #7f8c8d; margin-top: 5px;">
                         <span id="char-count">0</span>/200 characters
                     </div>
@@ -531,13 +531,23 @@
             Object.keys(grouped).forEach(stage => {
                 const container = document.querySelector(`[data-column="${stage}"]`);
                 
-                // Sort: in-progress first, rejected last
-                const sortedCards = grouped[stage].sort((a, b) => {
-                    const statusOrder = { 'in-progress': 0, 'interview-date-confirmed': 0, 'interview-schedule-pending': 0.5, 'rejected': 1 };
-                    const aStatus = a.status || 'in-progress';
-                    const bStatus = b.status || 'in-progress';
-                    return (statusOrder[aStatus] || 0) - (statusOrder[bStatus] || 0);
-                });
+                let sortedCards;
+                if (stage === 'seeding') {
+                    // Seeding: sort by last action date descending
+                    sortedCards = grouped[stage].sort((a, b) => {
+                        const dateA = a.date || '0000-01-01';
+                        const dateB = b.date || '0000-01-01';
+                        return dateB.localeCompare(dateA);
+                    });
+                } else {
+                    // Other stages: sort by status (in-progress first, rejected last)
+                    sortedCards = grouped[stage].sort((a, b) => {
+                        const statusOrder = { 'in-progress': 0, 'interview-date-confirmed': 0, 'interview-schedule-pending': 0.5, 'rejected': 1 };
+                        const aStatus = a.status || 'in-progress';
+                        const bStatus = b.status || 'in-progress';
+                        return (statusOrder[aStatus] || 0) - (statusOrder[bStatus] || 0);
+                    });
+                }
                 
                 sortedCards.forEach(card => {
                     container.appendChild(createCardElement(card));
@@ -568,12 +578,17 @@
             div.draggable = true;
             div.dataset.id = card.id;
             
-            // Format Last Action Date nicely
-            const formattedLastAction = card.date ? new Date(card.date).toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric' 
-            }) : 'No date';
+            // Format Last Action Date nicely (create as local date, not UTC)
+            let formattedLastAction = 'No date';
+            if (card.date) {
+                const [year, month, day] = card.date.split('-');
+                const localDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                formattedLastAction = localDate.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+            }
 
             // Interview date (can be 'TBD' or an ISO date)
             let interviewHtml = '';
@@ -581,7 +596,9 @@
                 if (card.interviewDate === 'TBD') {
                     interviewHtml = `<div class="card-interview" style="font-size:0.85em; color:#95a5a6; margin-top:6px;">🎤 Interview: TBD</div>`;
                 } else {
-                    const f = new Date(card.interviewDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    const [year, month, day] = card.interviewDate.split('-');
+                    const localDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                    const f = localDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                     interviewHtml = `<div class="card-interview" style="font-size:0.85em; color:#95a5a6; margin-top:6px;">🎤 Interview: ${f}</div>`;
                 }
             }
