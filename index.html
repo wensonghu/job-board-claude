@@ -357,6 +357,13 @@
                         <option value="onsite">🎯 Onsite</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="status" required>
+                        <option value="in-progress">🔄 In Progress</option>
+                        <option value="rejected">❌ Rejected</option>
+                    </select>
+                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="saveCard()">Save</button>
@@ -387,13 +394,15 @@
             const saved = localStorage.getItem('kanbanCards');
             if (saved) {
                 cards = JSON.parse(saved);
-                renderAllCards();
+                console.log('📦 Loaded from localStorage:', cards.length, 'cards');
             }
+            renderAllCards();
         }
 
-        // Save cards to localStorage
+        // Save to localStorage
         function saveCards() {
             localStorage.setItem('kanbanCards', JSON.stringify(cards));
+            console.log('💾 Saved to localStorage');
         }
 
         // Add or update card
@@ -404,15 +413,16 @@
             const company = document.getElementById('company').value;
             const stage = document.getElementById('stage').value;
             const date = document.getElementById('date').value;
+            const status = document.getElementById('status').value;
             const details = document.getElementById('details').value;
 
             // Validate required fields
-            if (!position || !company || !date || !stage) {
+            if (!position || !company || !date || !stage || !status) {
                 alert('Please fill in all required fields');
                 return;
             }
 
-            console.log('Form values:', { position, company, stage, date, details });
+            console.log('Form values:', { position, company, stage, date, status, details });
 
             if (editingCardId) {
                 // Update existing card
@@ -421,7 +431,9 @@
                 card.company = company;
                 card.stage = stage;
                 card.date = date;
+                card.status = status;
                 card.details = details;
+                
                 editingCardId = null;
                 console.log('Updated card:', card);
             } else {
@@ -432,6 +444,7 @@
                     company,
                     stage,
                     date,
+                    status,
                     details
                 };
                 cards.push(card);
@@ -490,6 +503,14 @@
                 year: 'numeric' 
             }) : 'No date';
             
+            // Status badge
+            const statusConfig = {
+                'in-progress': { emoji: '🔄', label: 'In Progress', color: '#3498db' },
+                'rejected': { emoji: '❌', label: 'Rejected', color: '#e74c3c' }
+            };
+            const statusInfo = statusConfig[card.status] || statusConfig['in-progress'];
+            const statusHtml = card.status ? `<div class="card-status" style="display: inline-block; background: ${statusInfo.color}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; margin-top: 8px;">${statusInfo.emoji} ${statusInfo.label}</div>` : '';
+            
             // Add details if available
             const detailsHtml = card.details ? `<div class="card-details" style="font-size: 0.85em; color: #7f8c8d; margin-top: 8px; line-height: 1.4;">${card.details}</div>` : '';
             
@@ -497,6 +518,7 @@
                 <div class="card-title">${card.position}</div>
                 <div class="card-company">${card.company}</div>
                 <div class="card-date">📅 ${formattedDate}</div>
+                ${statusHtml}
                 ${detailsHtml}
                 <div class="card-actions">
                     <button class="edit-btn" title="Edit">✏️</button>
@@ -583,6 +605,7 @@
                 document.getElementById('date').value = card.date;
                 document.getElementById('details').value = card.details || '';
                 document.getElementById('stage').value = card.stage;
+                document.getElementById('status').value = card.status || 'in-progress';
                 updateCharCount();
                 editingCardId = cardId;
             } else {
@@ -590,6 +613,8 @@
                 form.reset();
                 // Set today's date as default
                 document.getElementById('date').value = new Date().toISOString().split('T')[0];
+                // Set default status
+                document.getElementById('status').value = 'in-progress';
                 updateCharCount();
                 editingCardId = null;
             }
@@ -619,6 +644,7 @@
 
         function confirmDelete() {
             if (deletingCardId) {
+                // Remove from array
                 cards = cards.filter(c => c.id !== deletingCardId);
                 saveCards();
                 renderAllCards();
