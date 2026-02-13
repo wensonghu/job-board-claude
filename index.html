@@ -342,12 +342,12 @@
             <h2 id="modal-title">Add a New Lead</h2>
             <form id="card-form">
                 <div class="form-group">
-                    <label>Position Title</label>
-                    <input type="text" id="position" required placeholder="e.g., Senior Software Engineer">
-                </div>
-                <div class="form-group">
                     <label>Company</label>
                     <input type="text" id="company" required placeholder="e.g., Google">
+                </div>
+                <div class="form-group">
+                    <label>Position Title</label>
+                    <input type="text" id="position" required placeholder="e.g., Senior Software Engineer">
                 </div>
                 <div class="form-group">
                     <label>Last Action Date</label>
@@ -558,16 +558,15 @@
             updateTodoAlert();
         }
 
+        // Check if a card requires attention (yellow status)
+        function isCardYellow(card) {
+            return (card.status === 'interview-date-confirmed') || 
+                   (card.status === 'in-progress' && card.interviewDate && card.interviewDate !== 'TBD');
+        }
+
         // Show or hide the top-level todo alert when any card has reminders
         function updateTodoAlert() {
-            const hasTodos = cards.some(card => {
-                // A reminder exists if interview is TBD, status explicitly pending, or interview confirmed (needs attention)
-                if (card.interviewDate === 'TBD') return true;
-                if (card.status === 'interview-schedule-pending') return true;
-                if (card.status === 'interview-date-confirmed') return true;
-                if (card.status === 'in-progress' && card.interviewDate && card.interviewDate !== '') return true;
-                return false;
-            });
+            const hasTodos = cards.some(card => isCardYellow(card));
             document.getElementById('todo-alert').style.display = hasTodos ? 'block' : 'none';
         }
 
@@ -629,7 +628,7 @@
                 div.style.borderLeft = '4px solid #b0bec5';
             }
             // Interview date confirmed (explicit status) or in-progress with an interview date -> bright highlight + reminder icon
-            const hasConfirmedInterview = (card.status === 'interview-date-confirmed') || (card.status === 'in-progress' && card.interviewDate && card.interviewDate !== 'TBD');
+            const hasConfirmedInterview = isCardYellow(card);
             if (hasConfirmedInterview) {
                 div.style.background = '#fff7e6';
                 div.style.borderLeft = '4px solid #f6c84c';
@@ -642,8 +641,8 @@
             div.innerHTML = `
                 <div style="display:flex; align-items:center; gap:8px; justify-content:space-between;">
                     <div>
-                        <div class="card-title">${card.position} ${reminderHtml}</div>
-                        <div class="card-company">${card.company}</div>
+                        <div class="card-title">${card.company} ${reminderHtml}</div>
+                        <div class="card-company">${card.position}</div>
                     </div>
                     <div style="text-align:right;">
                         ${statusHtml}
