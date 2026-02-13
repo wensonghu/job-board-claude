@@ -599,7 +599,8 @@
                     const [year, month, day] = card.interviewDate.split('-');
                     const localDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
                     const f = localDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                    interviewHtml = `<div class="card-interview" style="font-size:0.85em; color:#95a5a6; margin-top:6px;">🎤 Interview: ${f}</div>`;
+                    // Display confirmed interview date larger and bold on the card
+                    interviewHtml = `<div class="card-interview" style="font-size:0.95em; color:#34495e; margin-top:6px; font-weight:700;">🎤 Interview: ${f}</div>`;
                 }
             }
 
@@ -836,6 +837,7 @@
                 document.getElementById('interviewDateTBD').checked = false;
                 statusEl.value = 'interview-date-confirmed';
             }
+            updateInterviewInputStyle();
         });
 
         // If user focuses/clicks the date input (calendar), uncheck TBD and set status to confirmed
@@ -845,7 +847,23 @@
                 document.getElementById('interviewDateTBD').checked = false;
             }
             statusEl.value = 'interview-date-confirmed';
+            updateInterviewInputStyle();
         });
+
+        // Update interview date input style in modal: enlarge and bold when a confirmed date exists
+        function updateInterviewInputStyle() {
+            const el = document.getElementById('interviewDate');
+            const tbd = document.getElementById('interviewDateTBD').checked;
+            if (el.value && !tbd) {
+                el.style.fontSize = '1.05em';
+                el.style.fontWeight = '700';
+                el.style.borderColor = '#f6c84c';
+            } else {
+                el.style.fontSize = '';
+                el.style.fontWeight = '';
+                el.style.borderColor = '';
+            }
+        }
     </script>
 </body>
 </html>
