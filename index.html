@@ -291,6 +291,7 @@
 <body>
     <div class="header">
         <h1>📋 Job Board</h1>
+        <div id="todo-alert" style="color:#e74c3c; font-weight:800; margin-left:12px; display:none; font-size:0.95em;">THERE ARE TO DO ITEMS FOR YOU</div>
         <button class="add-card-btn" onclick="openModal()">+ Add a New Lead</button>
     </div>
 
@@ -349,9 +350,23 @@
                     <input type="text" id="company" required placeholder="e.g., Google">
                 </div>
                 <div class="form-group">
-                    <label>Date</label>
-                    <input type="date" id="date" required>
+                    <label>Last Action Date</label>
+                    <input type="date" id="date">
                 </div>
+
+                <div class="form-group">
+                    <label>Interview Date</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="date" id="interviewDate" placeholder="Optional">
+                        <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:#2c3e50;"><input type="checkbox" id="interviewDateTBD"> TBD</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Referred By</label>
+                    <input type="text" id="referredBy" placeholder="Optional, who referred this candidate">
+                </div>
+
                 <div class="form-group">
                     <label>Details</label>
                     <textarea id="details" maxlength="200" placeholder="Add any notes or details about this lead..." style="resize: vertical; min-height: 80px;"></textarea>
@@ -373,6 +388,8 @@
                     <label>Status</label>
                     <select id="status" required>
                         <option value="in-progress">🔄 In Progress</option>
+                        <option value="interview-schedule-pending">⏳ Interview Schedule Pending</option>
+                        <option value="interview-date-confirmed">✅ Interview Date Confirmed</option>
                         <option value="rejected">❌ Rejected</option>
                     </select>
                 </div>
@@ -424,12 +441,21 @@
             const position = document.getElementById('position').value;
             const company = document.getElementById('company').value;
             const stage = document.getElementById('stage').value;
-            const date = document.getElementById('date').value;
-            const status = document.getElementById('status').value;
+            const date = document.getElementById('date').value; // Last Action Date (optional)
+            const interviewDateEl = document.getElementById('interviewDate');
+            const interviewDateTBD = document.getElementById('interviewDateTBD').checked;
+            const interviewDate = interviewDateTBD ? 'TBD' : (interviewDateEl.value || '');
+            const referredBy = document.getElementById('referredBy').value;
+            let status = document.getElementById('status').value;
+
+            // If an interview date (not TBD) is set, automatically flip status to confirmed
+            if (interviewDate && interviewDate !== 'TBD') {
+                status = 'interview-date-confirmed';
+            }
             const details = document.getElementById('details').value;
 
             // Validate required fields
-            if (!position || !company || !date || !stage || !status) {
+            if (!position || !company || !stage || !status) {
                 alert('Please fill in all required fields');
                 return;
             }
@@ -443,6 +469,8 @@
                 card.company = company;
                 card.stage = stage;
                 card.date = date;
+                card.interviewDate = interviewDate;
+                card.referredBy = referredBy;
                 card.status = status;
                 card.details = details;
                 
@@ -456,6 +484,8 @@
                     company,
                     stage,
                     date,
+                    interviewDate,
+                    referredBy,
                     status,
                     details
                 };
@@ -503,10 +533,10 @@
                 
                 // Sort: in-progress first, rejected last
                 const sortedCards = grouped[stage].sort((a, b) => {
-                    const statusOrder = { 'in-progress': 0, 'rejected': 1 };
+                    const statusOrder = { 'in-progress': 0, 'interview-date-confirmed': 0, 'interview-schedule-pending': 0.5, 'rejected': 1 };
                     const aStatus = a.status || 'in-progress';
                     const bStatus = b.status || 'in-progress';
-                    return statusOrder[aStatus] - statusOrder[bStatus];
+                    return (statusOrder[aStatus] || 0) - (statusOrder[bStatus] || 0);
                 });
                 
                 sortedCards.forEach(card => {
@@ -514,6 +544,21 @@
                 });
                 updateCount(stage, sortedCards.length);
             });
+            // Update the global todo alert if any card needs attention
+            updateTodoAlert();
+        }
+
+        // Show or hide the top-level todo alert when any card has reminders
+        function updateTodoAlert() {
+            const hasTodos = cards.some(card => {
+                // A reminder exists if interview is TBD, status explicitly pending, or interview confirmed (needs attention)
+                if (card.interviewDate === 'TBD') return true;
+                if (card.status === 'interview-schedule-pending') return true;
+                if (card.status === 'interview-date-confirmed') return true;
+                if (card.status === 'in-progress' && card.interviewDate && card.interviewDate !== '') return true;
+                return false;
+            });
+            document.getElementById('todo-alert').style.display = hasTodos ? 'block' : 'none';
         }
 
         // Create card element
@@ -523,29 +568,72 @@
             div.draggable = true;
             div.dataset.id = card.id;
             
-            // Format date nicely
-            const formattedDate = card.date ? new Date(card.date).toLocaleDateString('en-US', { 
+            // Format Last Action Date nicely
+            const formattedLastAction = card.date ? new Date(card.date).toLocaleDateString('en-US', { 
                 month: 'short', 
                 day: 'numeric', 
                 year: 'numeric' 
             }) : 'No date';
+
+            // Interview date (can be 'TBD' or an ISO date)
+            let interviewHtml = '';
+            if (card.interviewDate) {
+                if (card.interviewDate === 'TBD') {
+                    interviewHtml = `<div class="card-interview" style="font-size:0.85em; color:#95a5a6; margin-top:6px;">🎤 Interview: TBD</div>`;
+                } else {
+                    const f = new Date(card.interviewDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    interviewHtml = `<div class="card-interview" style="font-size:0.85em; color:#95a5a6; margin-top:6px;">🎤 Interview: ${f}</div>`;
+                }
+            }
+
+            const referredByHtml = card.referredBy ? `<div class="card-referred" style="font-size:0.85em; color:#7f8c8d; margin-top:6px;">👥 Referred by: ${card.referredBy}</div>` : '';
             
-            // Status badge
+            // Status badge and styling
             const statusConfig = {
                 'in-progress': { emoji: '🔄', label: 'In Progress', color: '#3498db' },
-                'rejected': { emoji: '❌', label: 'Rejected', color: '#e74c3c' }
+                'rejected': { emoji: '❌', label: 'Rejected', color: '#95a5a6' },
+                'interview-schedule-pending': { emoji: '⏳', label: 'Interview Pending', color: '#7f8c8d' },
+                'interview-date-confirmed': { emoji: '✅', label: 'Interview Confirmed', color: '#27ae60' }
             };
             const statusInfo = statusConfig[card.status] || statusConfig['in-progress'];
             const statusHtml = card.status ? `<div class="card-status" style="display: inline-block; background: ${statusInfo.color}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; margin-top: 8px;">${statusInfo.emoji} ${statusInfo.label}</div>` : '';
+
+            // Conditional card background and reminder icon
+            let reminderHtml = '';
+            // Rejected -> grey background
+            if (card.status === 'rejected') {
+                div.style.background = '#f0f0f0';
+                div.style.borderLeft = '4px solid #95a5a6';
+            }
+            // Interview schedule pending -> keep white (no special styling)
+            if (card.status === 'interview-schedule-pending') {
+                div.style.background = '#ffffff';
+                div.style.borderLeft = '4px solid #b0bec5';
+            }
+            // Interview date confirmed (explicit status) or in-progress with an interview date -> bright highlight + reminder icon
+            const hasConfirmedInterview = (card.status === 'interview-date-confirmed') || (card.status === 'in-progress' && card.interviewDate && card.interviewDate !== 'TBD');
+            if (hasConfirmedInterview) {
+                div.style.background = '#fff7e6';
+                div.style.borderLeft = '4px solid #f6c84c';
+                reminderHtml = `<div class="card-reminder" style="display:inline-block; margin-left:8px; font-size:0.95em;">🔔</div>`;
+            }
             
             // Add details if available
             const detailsHtml = card.details ? `<div class="card-details" style="font-size: 0.85em; color: #7f8c8d; margin-top: 8px; line-height: 1.4;">${card.details}</div>` : '';
             
             div.innerHTML = `
-                <div class="card-title">${card.position}</div>
-                <div class="card-company">${card.company}</div>
-                <div class="card-date">📅 ${formattedDate}</div>
-                ${statusHtml}
+                <div style="display:flex; align-items:center; gap:8px; justify-content:space-between;">
+                    <div>
+                        <div class="card-title">${card.position} ${reminderHtml}</div>
+                        <div class="card-company">${card.company}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        ${statusHtml}
+                    </div>
+                </div>
+                <div class="card-date">📅 ${formattedLastAction}</div>
+                ${interviewHtml}
+                ${referredByHtml}
                 ${detailsHtml}
                 <div class="card-actions">
                     <button class="edit-btn" title="Edit">✏️</button>
@@ -565,6 +653,12 @@
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 deleteCard(card.id);
+            });
+
+            // Clicking anywhere on the card opens it for editing (unless clicking the edit/delete buttons)
+            div.addEventListener('click', (e) => {
+                if (e.target.closest('.edit-btn') || e.target.closest('.delete-btn')) return;
+                editCard(card.id);
             });
 
             // Drag events
@@ -630,6 +724,10 @@
                 document.getElementById('position').value = card.position;
                 document.getElementById('company').value = card.company;
                 document.getElementById('date').value = card.date;
+                // interviewDate can be 'TBD' or an ISO date
+                document.getElementById('interviewDate').value = (card.interviewDate && card.interviewDate !== 'TBD') ? card.interviewDate : '';
+                document.getElementById('interviewDateTBD').checked = (card.interviewDate === 'TBD');
+                document.getElementById('referredBy').value = card.referredBy || '';
                 document.getElementById('details').value = card.details || '';
                 document.getElementById('stage').value = card.stage;
                 document.getElementById('status').value = card.status || 'in-progress';
@@ -642,6 +740,10 @@
                 document.getElementById('date').value = new Date().toISOString().split('T')[0];
                 // Set default status
                 document.getElementById('status').value = 'in-progress';
+                // clear new optional fields
+                document.getElementById('interviewDate').value = '';
+                document.getElementById('interviewDateTBD').checked = false;
+                document.getElementById('referredBy').value = '';
                 updateCharCount();
                 editingCardId = null;
             }
@@ -704,6 +806,29 @@
 
         // Add event listener for character counting
         document.getElementById('details').addEventListener('input', updateCharCount);
+        // Toggle interview date when TBD checked (clear value but keep input enabled)
+        document.getElementById('interviewDateTBD').addEventListener('change', function() {
+            const el = document.getElementById('interviewDate');
+            if (this.checked) el.value = '';
+        });
+
+        // When an interview date is picked, clear TBD and auto-flip status to confirmed
+        document.getElementById('interviewDate').addEventListener('change', function() {
+            const statusEl = document.getElementById('status');
+            if (this.value) {
+                document.getElementById('interviewDateTBD').checked = false;
+                statusEl.value = 'interview-date-confirmed';
+            }
+        });
+
+        // If user focuses/clicks the date input (calendar), uncheck TBD and set status to confirmed
+        document.getElementById('interviewDate').addEventListener('focus', function() {
+            const statusEl = document.getElementById('status');
+            if (document.getElementById('interviewDateTBD').checked) {
+                document.getElementById('interviewDateTBD').checked = false;
+            }
+            statusEl.value = 'interview-date-confirmed';
+        });
     </script>
 </body>
 </html>
