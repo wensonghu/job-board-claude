@@ -307,7 +307,7 @@
         <h1>📋 Job Board</h1>
         <div id="todo-alert" style="background:#e74c3c; color:white; padding:10px 20px; border-radius:25px; font-weight:700; margin-left:12px; display:none; font-size:1em; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);">There are immediate to-dos for you!</div>
         <div style="flex:1; display:flex; justify-content:flex-end; gap:10px; margin-right:20px;">
-            <!-- <button id="authorize_button" class="btn btn-secondary" onclick="handleAuthClick()" style="display:none;">Sign In with Google</button> -->
+            <button id="authorize_button" class="btn btn-secondary" onclick="handleAuthClick()" style="display:none;">Sign In with Google</button>
             <button id="signout_button" class="btn btn-secondary" onclick="handleSignoutClick()" style="display:none;">Sign Out</button>
             <!-- <button id="sync_button" class="btn btn-primary" onclick="syncLocalStorageToSheet()" style="display:none;">↗️ Init from LocalStorage</button> -->
         </div>
@@ -487,6 +487,7 @@
 
         function maybeEnableButtons() {
             if (gapiInited && gisInited) {
+                updateAuthUI();
                 if (!isGoogleConnected) {
                     openSignInModal();
                 }
@@ -526,11 +527,11 @@
 
         function updateAuthUI() {
             if (isGoogleConnected) {
-                // document.getElementById('authorize_button').style.display = 'none';
+                document.getElementById('authorize_button').style.display = 'none';
                 document.getElementById('signout_button').style.display = 'block';
                 // document.getElementById('sync_button').style.display = 'block';
             } else {
-                // document.getElementById('authorize_button').style.display = 'block';
+                document.getElementById('authorize_button').style.display = 'block';
                 document.getElementById('signout_button').style.display = 'none';
                 // document.getElementById('sync_button').style.display = 'none';
             }
