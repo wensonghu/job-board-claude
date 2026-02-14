@@ -1050,20 +1050,33 @@
             const localCards = JSON.parse(saved);
             if (!confirm(`Sync ${localCards.length} cards to Google Sheet? This will append them to the sheet.`)) return;
 
-            // 1. Add Header Row
+            // Prepare Header and Data Rows
             const header = ['ID', 'Timestamp', 'Company', 'Position', 'Stage', 'Date', 'InterviewDate', 'ReferredBy', 'Status', 'Details', 'IsDeleted'];
+            
+            const dataRows = localCards.map(card => [
+                card.id,
+                new Date().toISOString(),
+                card.company,
+                card.position,
+                card.stage,
+                card.date,
+                card.interviewDate || '',
+                card.referredBy || '',
+                card.status || 'in-progress',
+                card.details || '',
+                'FALSE'
+            ]);
+
+            const values = [header, ...dataRows];
+
             try {
                 await gapi.client.sheets.spreadsheets.values.append({
                     spreadsheetId: SPREADSHEET_ID,
                     range: 'Sheet1!A:K',
                     valueInputOption: 'USER_ENTERED',
-                    resource: { values: [header] }
+                    resource: { values: values }
                 });
                 
-                // 2. Append all cards
-                for (const card of localCards) {
-                    await saveCards(card);
-                }
                 alert('Sync complete! Reloading from sheet...');
                 await loadCards();
             } catch (err) {
