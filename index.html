@@ -374,10 +374,26 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Interview Date</label>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="date" id="interviewDate" placeholder="Optional">
-                        <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:#2c3e50;"><input type="checkbox" id="interviewDateTBD"> TBD</label>
+                    <label>Interview Schedule</label>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="date" id="interviewDate" placeholder="Optional" style="flex: 1;">
+                            <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:#2c3e50; white-space: nowrap;">
+                                <input type="checkbox" id="interviewDateTBD"> TBD
+                            </label>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="time" id="interviewTime" style="flex: 1;" aria-label="Interview Time">
+                            <select id="interviewTimezone" style="flex: 1;" aria-label="Timezone">
+                                <option value="">Timezone</option>
+                                <option value="PT">PT</option>
+                                <option value="MT">MT</option>
+                                <option value="CT">CT</option>
+                                <option value="ET">ET</option>
+                                <option value="GMT">GMT</option>
+                                <option value="UTC">UTC</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -650,8 +666,20 @@
             const stage = document.getElementById('stage').value;
             const date = document.getElementById('date').value; // Last Action Date (optional)
             const interviewDateEl = document.getElementById('interviewDate');
+            const interviewTimeEl = document.getElementById('interviewTime');
+            const interviewTimezoneEl = document.getElementById('interviewTimezone');
             const interviewDateTBD = document.getElementById('interviewDateTBD').checked;
-            const interviewDate = interviewDateTBD ? 'TBD' : (interviewDateEl.value || '');
+            
+            let interviewDate = interviewDateTBD ? 'TBD' : (interviewDateEl.value || '');
+            if (interviewDate && interviewDate !== 'TBD') {
+                if (interviewTimeEl.value) {
+                    interviewDate += '|' + interviewTimeEl.value;
+                    if (interviewTimezoneEl.value) {
+                        interviewDate += '|' + interviewTimezoneEl.value;
+                    }
+                }
+            }
+
             const referredBy = document.getElementById('referredBy').value;
             let status = document.getElementById('status').value;
 
@@ -805,9 +833,26 @@
                 if (card.interviewDate === 'TBD') {
                     interviewHtml = `<div class="card-interview" style="font-size:0.85em; color:#95a5a6; margin-top:6px;">🎤 Interview: TBD</div>`;
                 } else {
-                    const [year, month, day] = card.interviewDate.split('-');
+                    const parts = card.interviewDate.split('|');
+                    const dateStr = parts[0];
+                    const timeStr = parts[1];
+                    const zoneStr = parts[2];
+
+                    const [year, month, day] = dateStr.split('-');
                     const localDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                    const f = localDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    let f = localDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    
+                    if (timeStr) {
+                        const [h, m] = timeStr.split(':');
+                        const hNum = parseInt(h);
+                        const ampm = hNum >= 12 ? 'PM' : 'AM';
+                        const h12 = hNum % 12 || 12;
+                        f += ` at ${h12}:${m} ${ampm}`;
+                    }
+                    if (zoneStr) {
+                        f += ` ${zoneStr}`;
+                    }
+                    
                     // Display confirmed interview date larger and bold on the card
                     interviewHtml = `<div class="card-interview" style="font-size:0.95em; color:#34495e; margin-top:6px; font-weight:700;">🎤 Interview: ${f}</div>`;
                 }
@@ -952,8 +997,16 @@
                 document.getElementById('company').value = card.company;
                 document.getElementById('date').value = card.date;
                 // interviewDate can be 'TBD' or an ISO date
-                document.getElementById('interviewDate').value = (card.interviewDate && card.interviewDate !== 'TBD') ? card.interviewDate : '';
-                document.getElementById('interviewDateTBD').checked = (card.interviewDate === 'TBD');
+                
+                const parts = (card.interviewDate || '').split('|');
+                const datePart = parts[0];
+                const isTBD = (datePart === 'TBD');
+                
+                document.getElementById('interviewDate').value = (datePart && !isTBD) ? datePart : '';
+                document.getElementById('interviewTime').value = parts[1] || '';
+                document.getElementById('interviewTimezone').value = parts[2] || '';
+                document.getElementById('interviewDateTBD').checked = isTBD;
+                
                 document.getElementById('referredBy').value = card.referredBy || '';
                 document.getElementById('details').value = card.details || '';
                 document.getElementById('stage').value = card.stage;
@@ -969,6 +1022,8 @@
                 document.getElementById('status').value = 'in-progress';
                 // clear new optional fields
                 document.getElementById('interviewDate').value = '';
+                document.getElementById('interviewTime').value = '';
+                document.getElementById('interviewTimezone').value = '';
                 document.getElementById('interviewDateTBD').checked = false;
                 document.getElementById('referredBy').value = '';
                 updateCharCount();
@@ -1036,8 +1091,11 @@
         document.getElementById('details').addEventListener('input', updateCharCount);
         // Toggle interview date when TBD checked (clear value but keep input enabled)
         document.getElementById('interviewDateTBD').addEventListener('change', function() {
-            const el = document.getElementById('interviewDate');
-            if (this.checked) el.value = '';
+            if (this.checked) {
+                document.getElementById('interviewDate').value = '';
+                document.getElementById('interviewTime').value = '';
+                document.getElementById('interviewTimezone').value = '';
+            }
         });
 
         // When an interview date is picked, clear TBD and auto-flip status to confirmed
