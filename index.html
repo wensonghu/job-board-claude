@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Job Board</title>
     <style>
         * {
@@ -16,6 +19,10 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            padding-top: max(20px, env(safe-area-inset-top));
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+            padding-left: max(20px, env(safe-area-inset-left));
+            padding-right: max(20px, env(safe-area-inset-right));
         }
 
         .header {
@@ -58,6 +65,8 @@
             margin-bottom: 20px;
             overflow-x: auto;
             padding-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
         }
 
         .board::-webkit-scrollbar {
@@ -80,10 +89,12 @@
             padding: 15px;
             min-height: 500px;
             min-width: 392px;
+            min-width: min(392px, 85vw);
             max-width: 420px;
             flex: 1;
             flex-shrink: 0;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            scroll-snap-align: center;
         }
 
         .column-header {
@@ -233,15 +244,18 @@
         }
 
         .form-group input, .form-group select {
+        .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid #e9ecef;
             border-radius: 8px;
             font-size: 1em;
+            font-size: 16px;
             transition: border 0.3s;
         }
 
         .form-group input:focus, .form-group select:focus {
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -291,11 +305,11 @@
 <body>
     <div class="header">
         <h1>📋 Job Board</h1>
-        <div id="todo-alert" style="color:#e74c3c; font-weight:800; margin-left:12px; display:none; font-size:1.3em;">THERE ARE TO DO ITEMS FOR YOU</div>
+        <div id="todo-alert" style="background:#e74c3c; color:white; padding:10px 20px; border-radius:25px; font-weight:700; margin-left:12px; display:none; font-size:1em; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);">There are immediate to-dos for you!</div>
         <div style="flex:1; display:flex; justify-content:flex-end; gap:10px; margin-right:20px;">
-            <button id="authorize_button" class="btn btn-secondary" onclick="handleAuthClick()" style="display:none;">Sign In with Google</button>
+            <!-- <button id="authorize_button" class="btn btn-secondary" onclick="handleAuthClick()" style="display:none;">Sign In with Google</button> -->
             <button id="signout_button" class="btn btn-secondary" onclick="handleSignoutClick()" style="display:none;">Sign Out</button>
-            <button id="sync_button" class="btn btn-primary" onclick="syncLocalStorageToSheet()" style="display:none;">↗️ Init from LocalStorage</button>
+            <!-- <button id="sync_button" class="btn btn-primary" onclick="syncLocalStorageToSheet()" style="display:none;">↗️ Init from LocalStorage</button> -->
         </div>
         <button class="add-card-btn" onclick="openModal()">+ Add a New Lead</button>
     </div>
@@ -406,6 +420,15 @@
         </div>
     </div>
 
+    <div class="modal" id="signin-modal">
+        <div class="modal-content" style="text-align: center; position: relative;">
+            <span onclick="closeSignInModal()" style="position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #95a5a6;">&times;</span>
+            <h2 style="margin-top: 10px;">Welcome!</h2>
+            <p style="margin-bottom: 25px; color: #7f8c8d; font-size: 1.1em;">Sign in with Google to save your progress.</p>
+            <button class="btn btn-primary" onclick="handleAuthClick()" style="font-size: 1.1em; padding: 12px 30px;">Sign In with Google</button>
+        </div>
+    </div>
+
     <div class="modal" id="confirm-modal">
         <div class="modal-content">
             <h2>Confirm Deletion</h2>
@@ -464,7 +487,9 @@
 
         function maybeEnableButtons() {
             if (gapiInited && gisInited) {
-                document.getElementById('authorize_button').style.display = 'block';
+                if (!isGoogleConnected) {
+                    openSignInModal();
+                }
             }
         }
 
@@ -475,6 +500,7 @@
                 }
                 gapi.client.setToken(resp);
                 isGoogleConnected = true;
+                closeSignInModal();
                 updateAuthUI();
                 await loadCards(); // Load from sheet after login
             };
@@ -500,14 +526,22 @@
 
         function updateAuthUI() {
             if (isGoogleConnected) {
-                document.getElementById('authorize_button').style.display = 'none';
+                // document.getElementById('authorize_button').style.display = 'none';
                 document.getElementById('signout_button').style.display = 'block';
-                document.getElementById('sync_button').style.display = 'block';
+                // document.getElementById('sync_button').style.display = 'block';
             } else {
-                document.getElementById('authorize_button').style.display = 'block';
+                // document.getElementById('authorize_button').style.display = 'block';
                 document.getElementById('signout_button').style.display = 'none';
-                document.getElementById('sync_button').style.display = 'none';
+                // document.getElementById('sync_button').style.display = 'none';
             }
+        }
+
+        function openSignInModal() {
+            document.getElementById('signin-modal').classList.add('active');
+        }
+
+        function closeSignInModal() {
+            document.getElementById('signin-modal').classList.remove('active');
         }
 
         // Load cards from localStorage
@@ -1041,6 +1075,7 @@
         }
 
         // Initialize Sheet from LocalStorage
+        /*
         async function syncLocalStorageToSheet() {
             const saved = localStorage.getItem('kanbanCards');
             if (!saved) {
@@ -1084,6 +1119,7 @@
                 alert('Sync failed. Check console.');
             }
         }
+        */
     </script>
 </body>
 </html>
