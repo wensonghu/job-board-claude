@@ -55,6 +55,8 @@
             cursor: pointer;
             font-weight: 600;
             transition: all 0.3s;
+            margin-left: auto;
+            margin-right: 15px;
         }
 
         .add-card-btn:hover {
@@ -303,11 +305,9 @@
         }
 
         .auth-controls {
-            flex: 1;
             display: flex;
             justify-content: flex-end;
             gap: 10px;
-            margin-right: 20px;
         }
 
         /* Mobile Responsive Adjustments */
@@ -333,6 +333,8 @@
 
             .add-card-btn {
                 width: 100%;
+                margin-left: 0;
+                margin-right: 0;
             }
 
             #todo-alert {
@@ -341,20 +343,54 @@
                 text-align: center;
             }
         }
+
+        .todo-modal {
+            display: none;
+            position: relative;
+            z-index: 998; /* Below other modals but above board */
+            padding: 0 20px;
+            margin-bottom: 20px;
+        }
+
+        .todo-modal-content {
+            background: #e74c3c;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.1em;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-todo-modal {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            padding-left: 20px;
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>📋 Job Board</h1>
         <h1> <i class="fa fa-clipboard fa-sm"></i> MyJobBoard</h1>
-        <div id="todo-alert" style="background:#e74c3c; color:white; padding:10px 20px; border-radius:25px; font-weight:700; margin-left:12px; display:none; font-size:1em; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);">There are immediate to-dos for you!</div>
+        <button class="add-card-btn" onclick="openModal()">+</button>
         <div class="auth-controls">
             <button id="authorize_button" class="btn btn-secondary" onclick="handleAuthClick()" style="display:none;">Sign In with Google</button>
             <button id="signout_button" class="btn btn-secondary" onclick="handleSignoutClick()" style="display:none;">Sign Out</button>
             <!-- <button id="sync_button" class="btn btn-primary" onclick="syncLocalStorageToSheet()" style="display:none;">↗️ Init from LocalStorage</button> -->
         </div>
-        <button class="add-card-btn" onclick="openModal()">+ Add a New Lead</button>
-        <button class="add-card-btn" onclick="openModal()">+</button>
+    </div>
+
+    <div id="todo-modal-alert" class="todo-modal">
+        <div class="todo-modal-content">
+            <span>You have things to do!</span>
+            <span class="close-todo-modal" onclick="closeTodoAlertModal()">&times;</span>
+        </div>
     </div>
 
     <div class="board">
@@ -524,6 +560,7 @@
         let draggedCard = null;
         let editingCardId = null;
         let deletingCardId = null;
+        let todoAlertDismissed = false;
 
         // --- Google Auth & API Setup ---
         function gapiLoaded() {
@@ -605,6 +642,11 @@
 
         function closeSignInModal() {
             document.getElementById('signin-modal').classList.remove('active');
+        }
+
+        function closeTodoAlertModal() {
+            document.getElementById('todo-modal-alert').style.display = 'none';
+            todoAlertDismissed = true;
         }
 
         // Load cards from localStorage
@@ -851,7 +893,17 @@
         // Show or hide the top-level todo alert when any card has reminders
         function updateTodoAlert() {
             const hasTodos = cards.some(card => isCardYellow(card));
-            document.getElementById('todo-alert').style.display = hasTodos ? 'block' : 'none';
+            const todoModal = document.getElementById('todo-modal-alert');
+
+            if (!hasTodos) {
+                todoAlertDismissed = false; // Reset dismissal state if there are no todos
+            }
+
+            if (hasTodos && !todoAlertDismissed) {
+                todoModal.style.display = 'block';
+            } else {
+                todoModal.style.display = 'none';
+            }
         }
 
         // Create card element
