@@ -49,9 +49,10 @@
             background: #667eea;
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 0 20px;
             border-radius: 8px;
-            font-size: 1em;
+            font-size: 2.5em;
+            line-height: 1.2;
             cursor: pointer;
             font-weight: 600;
             transition: all 0.3s;
@@ -347,7 +348,7 @@
         .todo-modal {
             display: none;
             position: relative;
-            z-index: 998; /* Below other modals but above board */
+            z-index: 2000; /* Always on top */
             padding: 0 20px;
             margin-bottom: 20px;
         }
@@ -363,6 +364,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 10px;
+            width: fit-content;
+        }
+
+        .todo-modal-content:last-child {
+            margin-bottom: 0;
         }
 
         .close-todo-modal {
@@ -386,17 +393,12 @@
         </div>
     </div>
 
-    <div id="todo-modal-alert" class="todo-modal">
-        <div class="todo-modal-content">
-            <span>You have things to do!</span>
-            <span class="close-todo-modal" onclick="closeTodoAlertModal()">&times;</span>
-        </div>
-    </div>
+    <div id="todo-modal-container" class="todo-modal"></div>
 
     <div class="board">
         <div class="column">
             <div class="column-header seeding">
-                <span>🌱 Seeding</span>
+                <span>🌱 Early Stage</span>
                 <span class="count" id="count-seeding">0</span>
             </div>
             <div class="cards-container" data-column="seeding"></div>
@@ -404,7 +406,7 @@
 
         <div class="column">
             <div class="column-header recruiter">
-                <span>📞 Recruiter Round</span>
+                <span>📞 Recruiter Screening</span>
                 <span class="count" id="count-recruiter">0</span>
             </div>
             <div class="cards-container" data-column="recruiter"></div>
@@ -412,7 +414,7 @@
 
         <div class="column">
             <div class="column-header hm">
-                <span>👔 HM Interview</span>
+                <span>👔 Hiring Manager Screening</span>
                 <span class="count" id="count-hm">0</span>
             </div>
             <div class="cards-container" data-column="hm"></div>
@@ -420,7 +422,7 @@
 
         <div class="column">
             <div class="column-header next-rounds">
-                <span>🔄 Next Rounds</span>
+                <span>🔄 Other Interviewers</span>
                 <span class="count" id="count-next-rounds">0</span>
             </div>
             <div class="cards-container" data-column="next-rounds"></div>
@@ -428,7 +430,7 @@
 
         <div class="column">
             <div class="column-header final">
-                <span>🎯 Final</span>
+                <span>🎯 Final/Onsite/Decision</span>
                 <span class="count" id="count-final">0</span>
             </div>
             <div class="cards-container" data-column="final"></div>
@@ -492,11 +494,11 @@
                 <div class="form-group">
                     <label>Stage</label>
                     <select id="stage" required>
-                        <option value="seeding">🌱 Seeding</option>
-                        <option value="recruiter">📞 Recruiter Round</option>
-                        <option value="hm">👔 HM Interview</option>
-                        <option value="next-rounds">🔄 Next Rounds</option>
-                        <option value="final">🎯 Final</option>
+                        <option value="seeding">🌱 Early Stage</option>
+                        <option value="recruiter">📞 Recruiter Screening</option>
+                        <option value="hm">👔 Hiring Manager Screening</option>
+                        <option value="next-rounds">🔄 Other Interviewers</option>
+                        <option value="final">🎯 Final/Onsite/Decision</option>
                     </select>
                 </div>
 
@@ -560,7 +562,7 @@
         let draggedCard = null;
         let editingCardId = null;
         let deletingCardId = null;
-        let todoAlertDismissed = false;
+        let dismissedAlerts = new Set();
 
         // --- Google Auth & API Setup ---
         function gapiLoaded() {
@@ -602,6 +604,7 @@
                 isGoogleConnected = true;
                 closeSignInModal();
                 updateAuthUI();
+                dismissedAlerts.clear();
                 await loadCards(); // Load from sheet after login
             };
 
@@ -644,9 +647,9 @@
             document.getElementById('signin-modal').classList.remove('active');
         }
 
-        function closeTodoAlertModal() {
-            document.getElementById('todo-modal-alert').style.display = 'none';
-            todoAlertDismissed = true;
+        function closeTodoAlert(alertId) {
+            dismissedAlerts.add(alertId);
+            updateTodoAlert();
         }
 
         // Load cards from localStorage
@@ -821,6 +824,7 @@
             }
 
             await saveCards(cardToSave);
+            dismissedAlerts.clear();
             renderAllCards();
             closeModal();
         }
@@ -892,18 +896,100 @@
 
         // Show or hide the top-level todo alert when any card has reminders
         function updateTodoAlert() {
-            const hasTodos = cards.some(card => isCardYellow(card));
-            const todoModal = document.getElementById('todo-modal-alert');
+            const yellowCards = cards.filter(card => isCardYellow(card));
+            const container = document.getElementById('todo-modal-container');
+            container.innerHTML = '';
 
-            if (!hasTodos) {
-                todoAlertDismissed = false; // Reset dismissal state if there are no todos
+            if (yellowCards.length === 0) {
+                container.style.display = 'none';
+                dismissedAlerts.clear(); // Reset dismissals when board is clear
+                return;
             }
 
-            if (hasTodos && !todoAlertDismissed) {
-                todoModal.style.display = 'block';
-            } else {
-                todoModal.style.display = 'none';
+            const now = new Date();
+            const twoDaysFromNow = new Date(now.getTime() + (48 * 60 * 60 * 1000));
+            
+            const urgentCards = [];
+            const otherYellowCards = [];
+
+            yellowCards.forEach(card => {
+                let isUrgent = false;
+                if (card.interviewDate && card.interviewDate !== 'TBD') {
+                    const parts = card.interviewDate.split('|');
+                    const dateStr = parts[0];
+                    const timeStr = parts[1];
+                    
+                    if (dateStr) {
+                        const [year, month, day] = dateStr.split('-').map(Number);
+                        let interviewDateObj;
+                        if (timeStr) {
+                            const [hours, minutes] = timeStr.split(':').map(Number);
+                            interviewDateObj = new Date(year, month - 1, day, hours, minutes);
+                        } else {
+                            interviewDateObj = new Date(year, month - 1, day, 23, 59);
+                        }
+                        
+                        if (interviewDateObj >= now && interviewDateObj <= twoDaysFromNow) {
+                            isUrgent = true;
+                        }
+                    }
+                }
+                
+                if (isUrgent) {
+                    urgentCards.push(card);
+                } else {
+                    otherYellowCards.push(card);
+                }
+            });
+
+            let hasVisibleAlerts = false;
+
+            // Generate Generic Alert if there are other items
+            if (otherYellowCards.length > 0) {
+                const alertId = 'generic-todo';
+                if (!dismissedAlerts.has(alertId)) {
+                    container.appendChild(createAlertElement('You have things to do!', alertId));
+                    hasVisibleAlerts = true;
+                }
             }
+
+            // Generate Urgent Alerts
+            urgentCards.forEach(card => {
+                const alertId = 'interview-' + card.id;
+                if (!dismissedAlerts.has(alertId)) {
+                    const parts = card.interviewDate.split('|');
+                    const dateStr = parts[0];
+                    const timeStr = parts[1];
+                    
+                    const [year, month, day] = dateStr.split('-');
+                    const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                    let dateDisplay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    
+                    if (timeStr) {
+                        const [h, m] = timeStr.split(':');
+                        const hNum = parseInt(h);
+                        const ampm = hNum >= 12 ? 'PM' : 'AM';
+                        const h12 = hNum % 12 || 12;
+                        dateDisplay += ` ${h12}:${m} ${ampm}`;
+                    }
+                    
+                    const msg = `Interview scheduled with ${card.company} at ${dateDisplay}. Prepare for interview!`;
+                    container.appendChild(createAlertElement(msg, alertId));
+                    hasVisibleAlerts = true;
+                }
+            });
+
+            container.style.display = hasVisibleAlerts ? 'block' : 'none';
+        }
+
+        function createAlertElement(message, id) {
+            const div = document.createElement('div');
+            div.className = 'todo-modal-content';
+            div.innerHTML = `
+                <span>${message}</span>
+                <span class="close-todo-modal" onclick="closeTodoAlert('${id}')">&times;</span>
+            `;
+            return div;
         }
 
         // Create card element
