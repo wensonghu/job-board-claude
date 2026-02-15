@@ -231,6 +231,9 @@
             border-radius: 16px;
             width: 90%;
             max-width: 500px;
+            max-height: 85vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
 
@@ -598,6 +601,7 @@
         function handleAuthClick() {
             tokenClient.callback = async (resp) => {
                 if (resp.error !== undefined) {
+                    console.error('Auth Error:', resp);
                     throw (resp);
                 }
                 gapi.client.setToken(resp);
@@ -611,7 +615,7 @@
             if (gapi.client.getToken() === null) {
                 tokenClient.requestAccessToken({prompt: 'consent'});
             } else {
-                tokenClient.requestAccessToken({});
+                tokenClient.requestAccessToken({prompt: 'select_account'});
             }
         }
 
