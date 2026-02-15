@@ -346,6 +346,10 @@
                 width: 100%;
                 text-align: center;
             }
+
+            .modal-content {
+                padding: 20px;
+            }
         }
 
         .todo-modal {
@@ -442,7 +446,7 @@
 
     <div class="modal" id="modal">
         <div class="modal-content">
-            <h2 id="modal-title">Add a New Lead</h2>
+            <h2 id="modal-title">Enter a new opportunity</h2>
 
             <form id="card-form">
                 <div class="form-group">
@@ -1202,7 +1206,7 @@
                 updateCharCount();
                 editingCardId = cardId;
             } else {
-                document.getElementById('modal-title').textContent = 'Add a New Lead';
+                document.getElementById('modal-title').textContent = 'Enter a new opportunity';
                 form.reset();
                 // Set today's date as default
                 document.getElementById('date').value = new Date().toISOString().split('T')[0];
