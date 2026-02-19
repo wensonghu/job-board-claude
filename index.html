@@ -392,12 +392,10 @@
 <body>
     <div class="header">
         <h1> <i class="fa fa-clipboard fa-sm"></i> MyJobBoard</h1>
-        <button class="add-card-btn" onclick="openModal()">+</button>
         <div class="auth-controls">
-            <button id="authorize_button" class="btn btn-secondary" onclick="handleAuthClick()" style="display:none;">Sign In with Google</button>
-            <button id="signout_button" class="btn btn-secondary" onclick="handleSignoutClick()" style="display:none;">Sign Out</button>
-            <!-- <button id="sync_button" class="btn btn-primary" onclick="syncLocalStorageToSheet()" style="display:none;">↗️ Init from LocalStorage</button> -->
+            <!-- Auth buttons will be dynamically added here -->
         </div>
+        <button class="add-card-btn" onclick="openModal()">+</button>
     </div>
 
     <div id="todo-modal-container" class="todo-modal"></div>
@@ -548,21 +546,10 @@
     </div>
 
     <!-- Google API Scripts -->
-    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+    <!-- Google API scripts are no longer needed; logic is handled by the Java backend -->
 
     <script>
-        // --- Google Sheets Configuration ---
-        const CLIENT_ID = '693538266743-vo0rm9rfl64pedpuukctpuvervhugeu4.apps.googleusercontent.com'; 
-        const API_KEY = 'AIzaSyBTxAJTDenHKkUnSlO9DcZpRKgOI1qH_pE'; 
-        const SPREADSHEET_ID = '18jN6GmlsEZ0ZvRkU_Y8u650iRTGDR3SOxIB0YvnBZ7s';
-        
-        const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
-        const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
-
-        let gapiInited = false;
-        let gisInited = false;
-        let tokenClient;
+        // --- Global State ---
         let isGoogleConnected = false;
 
         let cards = [];
@@ -571,79 +558,51 @@
         let deletingCardId = null;
         let dismissedAlerts = new Set();
 
-        // --- Google Auth & API Setup ---
-        function gapiLoaded() {
-            gapi.load('client', async () => {
-                await gapi.client.init({
-                    apiKey: API_KEY,
-                    discoveryDocs: [DISCOVERY_DOC],
-                });
-                gapiInited = true;
-                maybeEnableButtons();
-            });
-        }
+        // --- Backend API Configuration ---
+        const API_BASE_URL = 'http://localhost:8080';
 
-        function gisLoaded() {
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: SCOPES,
-                callback: (resp) => {}, // defined later
-            });
-            gisInited = true;
-            maybeEnableButtons();
-        }
-
-        function maybeEnableButtons() {
-            if (gapiInited && gisInited) {
-                updateAuthUI();
-                if (!isGoogleConnected) {
-                    openSignInModal();
-                }
+        // --- Authentication ---
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/status`);
+                const data = await response.json();
+                isGoogleConnected = data.isSignedIn;
+                updateAuthUI(data);
+            } catch (error) {
+                console.error('Error checking auth status:', error);
+                updateAuthUI({ isSignedIn: false });
+            } finally {
+                await loadCards(); // Load cards after checking auth status
             }
         }
 
         function handleAuthClick() {
-            tokenClient.callback = async (resp) => {
-                if (resp.error !== undefined) {
-                    console.error('Auth Error:', resp);
-                    throw (resp);
-                }
-                gapi.client.setToken(resp);
-                isGoogleConnected = true;
-                closeSignInModal();
-                updateAuthUI();
-                dismissedAlerts.clear();
-                await loadCards(); // Load from sheet after login
-            };
-
-            if (gapi.client.getToken() === null) {
-                tokenClient.requestAccessToken({prompt: 'consent'});
-            } else {
-                tokenClient.requestAccessToken({prompt: 'select_account'});
-            }
+            // Redirect to the backend's Google login endpoint
+            window.location.href = `${API_BASE_URL}/oauth2/authorization/google`;
         }
 
         function handleSignoutClick() {
-            const token = gapi.client.getToken();
-            if (token !== null) {
-                google.accounts.oauth2.revoke(token.access_token);
-                gapi.client.setToken('');
-                isGoogleConnected = false;
-                updateAuthUI();
-                cards = []; // Clear board
-                renderAllCards();
-            }
+            // Call the backend's logout endpoint
+            fetch(`${API_BASE_URL}/api/auth/logout`, { method: 'POST' })
+                .then(() => window.location.reload());
         }
 
-        function updateAuthUI() {
-            if (isGoogleConnected) {
-                document.getElementById('authorize_button').style.display = 'none';
-                document.getElementById('signout_button').style.display = 'block';
-                // document.getElementById('sync_button').style.display = 'block';
+        function updateAuthUI(authData) {
+            const authControls = document.querySelector('.auth-controls');
+            if (authData.isSignedIn) {
+                authControls.innerHTML = `
+                    <span style="color: white; align-self: center; margin-right: 15px;">Welcome, ${authData.name.split(' ')[0]}!</span>
+                    <button class="btn btn-secondary" onclick="handleSignoutClick()">Sign Out</button>
+                `;
+                closeSignInModal();
             } else {
-                document.getElementById('authorize_button').style.display = 'block';
-                document.getElementById('signout_button').style.display = 'none';
-                // document.getElementById('sync_button').style.display = 'none';
+                authControls.innerHTML = `
+                    <button class="btn btn-primary" onclick="handleAuthClick()">Sign In with Google</button>
+                `;
+                if (!sessionStorage.getItem('signInModalShown')) {
+                    openSignInModal();
+                    sessionStorage.setItem('signInModalShown', 'true');
+                }
             }
         }
 
@@ -660,100 +619,22 @@
             updateTodoAlert();
         }
 
-        // Load cards from localStorage
+        // Load cards from the Java backend
         async function loadCards() {
-            if (isGoogleConnected) {
-                try {
-                    const response = await gapi.client.sheets.spreadsheets.values.get({
-                        spreadsheetId: SPREADSHEET_ID,
-                        range: 'Sheet1!A:K',
-                    });
-                    const rows = response.result.values;
-                    if (!rows || rows.length === 0) {
-                        cards = [];
-                    } else {
-                        cards = processSheetRows(rows);
-                    }
-                    console.log('☁️ Loaded from Google Sheet:', cards.length, 'cards');
-                } catch (err) {
-                    console.error('Error loading from sheet:', err);
-                    alert('Failed to load from Google Sheet. Check console.');
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/cards`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                cards = await response.json();
+                console.log('📦 Loaded from Java backend:', cards.length, 'cards');
+            } catch (error) {
+                console.error('Error loading from backend:', error);
+                // Don't alert if not signed in, as this is expected.
+                if (isGoogleConnected) {
+                    alert('Failed to load data from the backend. Is the Java application running?');
                 }
-            } else {
-                const saved = localStorage.getItem('kanbanCards');
-                if (saved) {
-                    cards = JSON.parse(saved);
-                    console.log('📦 Loaded from localStorage:', cards.length, 'cards');
-                }
+                cards = []; // Clear the board on error
             }
             renderAllCards();
-        }
-
-        // Process rows from Sheet (Event Sourcing: Latest record wins)
-        function processSheetRows(rows) {
-            const cardMap = new Map();
-            rows.forEach((row, index) => {
-                if (index === 0 && row[0] === 'ID') return; // Skip header
-                
-                // Columns: ID, Timestamp, Company, Position, Stage, Date, InterviewDate, ReferredBy, Status, Details, IsDeleted
-                const [idStr, timestamp, company, position, stage, date, interviewDate, referredBy, status, details, isDeleted] = row;
-                const id = parseInt(idStr);
-                
-                if (!id) return;
-
-                if (isDeleted === 'TRUE') {
-                    cardMap.delete(id);
-                } else {
-                    cardMap.set(id, {
-                        id,
-                        company,
-                        position,
-                        stage,
-                        date,
-                        interviewDate: (interviewDate === 'undefined' || !interviewDate) ? '' : interviewDate,
-                        referredBy: (referredBy === 'undefined' || !referredBy) ? '' : referredBy,
-                        status,
-                        details: (details === 'undefined' || !details) ? '' : details
-                    });
-                }
-            });
-            return Array.from(cardMap.values());
-        }
-
-        // Save (Append to Sheet or Save to LocalStorage)
-        async function saveCards(specificCard = null, isDeletion = false) {
-            if (isGoogleConnected && specificCard) {
-                // Append a new row for this change
-                const row = [
-                    specificCard.id,
-                    new Date().toISOString(),
-                    specificCard.company,
-                    specificCard.position,
-                    specificCard.stage,
-                    specificCard.date,
-                    specificCard.interviewDate || '',
-                    specificCard.referredBy || '',
-                    specificCard.status,
-                    specificCard.details || '',
-                    isDeletion ? 'TRUE' : 'FALSE'
-                ];
-
-                try {
-                    await gapi.client.sheets.spreadsheets.values.append({
-                        spreadsheetId: SPREADSHEET_ID,
-                        range: 'Sheet1!A:K',
-                        valueInputOption: 'USER_ENTERED',
-                        resource: { values: [row] }
-                    });
-                    console.log('☁️ Appended to Sheet');
-                } catch (err) {
-                    console.error('Error appending to sheet:', err);
-                    alert('Failed to save to Google Sheet');
-                }
-            } else {
-                localStorage.setItem('kanbanCards', JSON.stringify(cards));
-                console.log('💾 Saved to localStorage');
-            }
         }
 
         // Add or update card
@@ -796,8 +677,9 @@
 
             console.log('Form values:', { position, company, stage, date, status, details });
 
+            const action = editingCardId ? 'update' : 'create';
             let cardToSave;
-            if (editingCardId) {
+            if (action === 'update') {
                 // Update existing card
                 const card = cards.find(c => c.id === editingCardId);
                 card.position = position;
@@ -815,7 +697,6 @@
             } else {
                 // Add new card
                 const card = {
-                    id: Date.now(),
                     position,
                     company,
                     stage,
@@ -831,10 +712,9 @@
                 console.log('Total cards:', cards.length);
             }
 
-            await saveCards(cardToSave);
             dismissedAlerts.clear();
-            renderAllCards();
             closeModal();
+            await persistAndReload(cardToSave, action);
         }
 
         // Render all cards
@@ -898,8 +778,8 @@
 
         // Check if a card requires attention (yellow status)
         function isCardYellow(card) {
-            return (card.status === 'interview-date-confirmed') || 
-                   (card.status === 'in-progress' && card.interviewDate && card.interviewDate !== 'TBD');
+            // This logic is now centralized in the backend's `getColor()` method.
+            return card.color === 'yellow';
         }
 
         // Show or hide the top-level todo alert when any card has reminders
@@ -1064,22 +944,21 @@
 
             // Conditional card background and reminder icon
             let reminderHtml = '';
-            // Rejected -> grey background
-            if (card.status === 'rejected') {
+            const color = card.color || 'white';
+
+            if (color === 'grey') {
                 div.style.background = '#f0f0f0';
                 div.style.borderLeft = '4px solid #95a5a6';
-            }
-            // Interview schedule pending -> keep white (no special styling)
-            if (card.status === 'interview-schedule-pending') {
-                div.style.background = '#ffffff';
-                div.style.borderLeft = '4px solid #b0bec5';
-            }
-            // Interview date confirmed (explicit status) or in-progress with an interview date -> bright highlight + reminder icon
-            const hasConfirmedInterview = isCardYellow(card);
-            if (hasConfirmedInterview) {
+            } else if (color === 'yellow') {
                 div.style.background = '#fff7e6';
                 div.style.borderLeft = '4px solid #f6c84c';
                 reminderHtml = `<div class="card-reminder" style="display:inline-block; margin-left:8px; font-size:0.95em;">🔔</div>`;
+            } else { // white
+                div.style.background = '#ffffff';
+                // Special border for pending interviews, even if background is white
+                if (card.status === 'interview-schedule-pending') {
+                    div.style.borderLeft = '4px solid #b0bec5';
+                }
             }
             
             // Add details if available
@@ -1169,13 +1048,39 @@
                     const card = cards.find(c => c.id === cardId);
                     
                     if (card) {
-                        card.stage = newStage;
-                        saveCards(card); // Pass card to trigger append
-                        renderAllCards();
+                        const updatedCard = { ...card, stage: newStage };
+                        persistAndReload(updatedCard, 'update');
                     }
                 }
             });
         });
+
+        // Central function to persist changes to the backend and reload the board
+        async function persistAndReload(card, action) {
+            let url = `${API_BASE_URL}/api/cards`;
+            let options = {
+                headers: { 'Content-Type': 'application/json' }
+            };
+
+            if (action === 'create') {
+                options.method = 'POST';
+                options.body = JSON.stringify(card);
+            } else if (action === 'update') {
+                url += `/${card.id}`;
+                options.method = 'PUT';
+                options.body = JSON.stringify(card);
+            } else if (action === 'delete') {
+                url += `/${card.id}`;
+                options.method = 'DELETE';
+            }
+
+            try {
+                await fetch(url, options);
+            } catch (error) {
+                console.error(`Failed to ${action} card:`, error);
+            }
+            await loadCards(); // Always reload from the source of truth
+        }
 
         // Modal functions
         function openModal(cardId = null) {
@@ -1184,7 +1089,7 @@
             
             if (cardId) {
                 const card = cards.find(c => c.id === cardId);
-                document.getElementById('modal-title').textContent = 'Edit Lead';
+                document.getElementById('modal-title').textContent = 'Edit Opportunity';
                 document.getElementById('position').value = card.position;
                 document.getElementById('company').value = card.company;
                 document.getElementById('date').value = card.date;
@@ -1247,11 +1152,8 @@
 
         async function confirmDelete() {
             if (deletingCardId) {
-                const cardToDelete = cards.find(c => c.id === deletingCardId);
-                // Remove from array
-                cards = cards.filter(c => c.id !== deletingCardId);
-                await saveCards(cardToDelete, true); // True for deletion
-                renderAllCards();
+                // We only need the ID to delete
+                await persistAndReload({ id: deletingCardId }, 'delete');
                 closeConfirmModal();
             }
         }
@@ -1270,7 +1172,7 @@
         });
 
         // Initialize
-        loadCards();
+        document.addEventListener('DOMContentLoaded', checkAuthStatus);
 
         // Character counter for details field
         function updateCharCount() {
@@ -1324,53 +1226,6 @@
                 el.style.borderColor = '';
             }
         }
-
-        // Initialize Sheet from LocalStorage
-        /*
-        async function syncLocalStorageToSheet() {
-            const saved = localStorage.getItem('kanbanCards');
-            if (!saved) {
-                alert('No local data to sync.');
-                return;
-            }
-            const localCards = JSON.parse(saved);
-            if (!confirm(`Sync ${localCards.length} cards to Google Sheet? This will append them to the sheet.`)) return;
-
-            // Prepare Header and Data Rows
-            const header = ['ID', 'Timestamp', 'Company', 'Position', 'Stage', 'Date', 'InterviewDate', 'ReferredBy', 'Status', 'Details', 'IsDeleted'];
-            
-            const dataRows = localCards.map(card => [
-                card.id,
-                new Date().toISOString(),
-                card.company,
-                card.position,
-                card.stage,
-                card.date,
-                card.interviewDate || '',
-                card.referredBy || '',
-                card.status || 'in-progress',
-                card.details || '',
-                'FALSE'
-            ]);
-
-            const values = [header, ...dataRows];
-
-            try {
-                await gapi.client.sheets.spreadsheets.values.append({
-                    spreadsheetId: SPREADSHEET_ID,
-                    range: 'Sheet1!A:K',
-                    valueInputOption: 'USER_ENTERED',
-                    resource: { values: values }
-                });
-                
-                alert('Sync complete! Reloading from sheet...');
-                await loadCards();
-            } catch (err) {
-                console.error('Sync failed', err);
-                alert('Sync failed. Check console.');
-            }
-        }
-        */
     </script>
 </body>
 
