@@ -1,0 +1,30 @@
+# Build output
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# Environment & secrets — never commit these
+.env
+*.env
+application-local.properties
+
+# Those oddly-named files accidentally created in root
+SMTP_HOST*
+SMTP_PASSWORD*
+SMTP_USERNAME*
+
+# macOS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Maven wrapper (optional — remove if you add mvnw)
+.mvn/
