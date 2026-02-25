@@ -1,0 +1,2131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>PitStop</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Roboto', sans-serif; /* Apply a more modern font */
+            padding: 20px;
+
+            padding-top: max(20px, env(safe-area-inset-top));
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+            padding-left: max(20px, env(safe-area-inset-left));
+            padding-right: max(20px, env(safe-area-inset-right));
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            position: relative;
+            z-index: 1001; /* Stay above modal overlay (z-index: 1000) */
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-family: 'Arial Black', sans-serif; /* Example: Use a bold, stand-out font */
+            font-size: 1.8em;
+        }
+
+        .add-card-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 8px;
+            font-size: 2.5em;
+            line-height: 1.2;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .add-card-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .board {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
+        }
+
+        .board::-webkit-scrollbar {
+            height: 10px;
+        }
+
+        .board::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+        }
+
+        .board::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 5px;
+        }
+
+        .column {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            min-height: 500px;
+            min-width: 392px;
+            min-width: min(392px, 85vw);
+            max-width: 420px;
+            flex: 1;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            scroll-snap-align: center;
+        }
+
+        .column-header {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1em;
+            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .seeding { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .recruiter { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .hm { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .next-rounds { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .final { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+
+        .count {
+            background: rgba(255,255,255,0.3);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.9em;
+        }
+
+        .cards-container {
+            min-height: 400px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            cursor: grab;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            border-left: 4px solid #667eea;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+
+        .card.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .card-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 1.05em;
+        }
+
+        .card-company {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .card-date {
+            font-size: 0.85em;
+            color: #95a5a6;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .card-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ecf0f1;
+        }
+
+        .card-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+            transition: all 0.2s;
+        }
+
+        .card-actions button:hover {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .cards-container.drag-over {
+            background: rgba(102, 126, 234, 0.1);
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 85vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-content h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #2c3e50;
+        }
+
+        .btn-secondary:hover {
+            background: #dee2e6;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #95a5a6;
+        }
+
+        .auth-controls {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Mobile Responsive Adjustments */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 20px;
+            }
+            
+            .header h1 {
+                width: 100%;
+                text-align: center;
+                margin-bottom: 5px;
+            }
+
+            .header-actions {
+                width: 100%;
+                flex-wrap: wrap;
+                justify-content: center;
+                margin-left: 0;
+            }
+
+            .auth-controls {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .add-card-btn {
+                width: 100%;
+            }
+
+            #todo-alert {
+                margin-left: 0 !important;
+                width: 100%;
+                text-align: center;
+            }
+
+            .modal-content {
+                padding: 20px;
+            }
+        }
+
+        .todo-modal {
+            display: none;
+            position: relative;
+            z-index: 2000; /* Always on top */
+            padding: 0 20px;
+            margin-bottom: 20px;
+        }
+
+        .todo-modal-content {
+            background: #e74c3c;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.1em;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            width: fit-content;
+        }
+
+        .todo-modal-content:last-child {
+            margin-bottom: 0;
+        }
+
+        .close-todo-modal {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            padding-left: 20px;
+            opacity: 0.8;
+        }
+
+        /* ── Calendar view ─────────────────────────────────────── */
+        .view-toggle {
+            display: flex;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-right: 12px;
+        }
+        .view-toggle-btn {
+            padding: 8px 16px;
+            background: white;
+            color: #667eea;
+            border: none;
+            font-size: 0.88em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        .view-toggle-btn:first-child {
+            border-right: 2px solid #667eea;
+        }
+        .view-toggle-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        .view-toggle-btn:hover:not(.active) {
+            background: rgba(102,126,234,0.1);
+        }
+        #calendar-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .calendar-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .tz-label {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 0.95em;
+        }
+        #tz-selector {
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.9em;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: border 0.2s;
+        }
+        #tz-selector:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        #calendar-container {
+            height: 700px;
+        }
+        .feedback-fab {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            border: none;
+            font-size: 1.4em;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(102,126,234,0.5);
+            z-index: 999;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .feedback-fab:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(102,126,234,0.6);
+        }
+        .calendar-legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 0.82em;
+            color: #555;
+        }
+        .legend-dot {
+            width: 13px;
+            height: 13px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+        @media (max-width: 768px) {
+            .view-toggle {
+                width: 100%;
+                margin-right: 0;
+            }
+            .view-toggle-btn {
+                flex: 1;
+                justify-content: center;
+            }
+            #calendar-container {
+                height: 500px;
+            }
+        }
+        .broadcast-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 4px 8px;
+            border-radius: 6px;
+            position: relative;
+            color: #bdc3c7;
+            transition: color 0.3s, transform 0.2s;
+            line-height: 1;
+        }
+        .broadcast-btn:hover { transform: scale(1.1); }
+        .broadcast-btn.bell-active {
+            color: #f39c12;
+        }
+        @keyframes bell-ring {
+            0%, 100% { transform: rotate(0deg); }
+            20%       { transform: rotate(-20deg); }
+            40%       { transform: rotate(20deg); }
+            60%       { transform: rotate(-10deg); }
+            80%       { transform: rotate(10deg); }
+        }
+        .broadcast-btn.bell-active i {
+            display: inline-block;
+            animation: bell-ring 0.6s ease-in-out;
+        }
+        .broadcast-dot {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 9px;
+            height: 9px;
+            background: #e74c3c;
+            border-radius: 50%;
+            border: 2px solid white;
+            animation: pulse-dot 1.5s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50%       { transform: scale(1.3); opacity: 0.7; }
+        }
+        .admin-link {
+            color: #95a5a6;
+            font-size: 0.85em;
+            text-decoration: none;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: color 0.2s;
+        }
+        .admin-link:hover { color: #667eea; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div style="display:flex; flex-direction:column; gap:2px;">
+            <h1>
+                <i class="fa fa-circle-check fa-sm"></i> PitStop
+                <button id="broadcast-btn" class="broadcast-btn" onclick="toggleBroadcastInline()"
+                        style="display:none" title="Announcement">
+                    <i class="fas fa-bell"></i><span class="broadcast-dot" id="broadcast-dot" style="display:none"></span>
+                </button>
+            </h1>
+            <span style="font-size:0.72rem; color:#95a5a6; font-weight:400; letter-spacing:0.01em;">your personal assistant for getting the next job offer.</span>
+        </div>
+        <div id="broadcast-inline" style="display:none; flex:1; align-items:center; gap:8px; padding:0 16px; min-width:0;">
+            <span id="broadcast-inline-content" style="color:#667eea; font-size:1em; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
+            <button onclick="ackBroadcast()" style="background:none; border:none; cursor:pointer; font-size:1.3em; color:#95a5a6; line-height:1; padding:0 4px; flex-shrink:0; transition:color 0.2s;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#95a5a6'">&times;</button>
+        </div>
+        <div class="header-actions">
+            <div class="auth-controls">
+                <!-- Auth buttons will be dynamically added here -->
+            </div>
+            <a id="admin-link" class="admin-link" style="display:none" onclick="openAdminModal()">Admin</a>
+            <div class="view-toggle" id="view-toggle">
+                <button class="view-toggle-btn active" id="btn-board" onclick="switchView('board')">📋 Board</button>
+                <button class="view-toggle-btn" id="btn-calendar" onclick="switchView('calendar')">📅 Calendar</button>
+            </div>
+            <button class="add-card-btn" onclick="openModal()">+</button>
+        </div>
+    </div>
+
+    <div id="todo-modal-container" class="todo-modal"></div>
+
+    <div class="board">
+        <div class="column">
+            <div class="column-header seeding">
+                <span>🌱 Early Stage</span>
+                <span class="count" id="count-seeding">0</span>
+            </div>
+            <div class="cards-container" data-column="seeding"></div>
+        </div>
+
+        <div class="column">
+            <div class="column-header recruiter">
+                <span>📞 Recruiter Screening</span>
+                <span class="count" id="count-recruiter">0</span>
+            </div>
+            <div class="cards-container" data-column="recruiter"></div>
+        </div>
+
+        <div class="column">
+            <div class="column-header hm">
+                <span>👔 Hiring Manager Screening</span>
+                <span class="count" id="count-hm">0</span>
+            </div>
+            <div class="cards-container" data-column="hm"></div>
+        </div>
+
+        <div class="column">
+            <div class="column-header next-rounds">
+                <span>🔄 Other Interviewers</span>
+                <span class="count" id="count-next-rounds">0</span>
+            </div>
+            <div class="cards-container" data-column="next-rounds"></div>
+        </div>
+
+        <div class="column">
+            <div class="column-header final">
+                <span>🎯 Final/Onsite/Decision</span>
+                <span class="count" id="count-final">0</span>
+            </div>
+            <div class="cards-container" data-column="final"></div>
+        </div>
+    </div>
+
+    <div id="calendar-section" style="display:none;">
+        <div class="calendar-toolbar">
+            <span class="tz-label">🌍 Timezone:</span>
+            <select id="tz-selector" onchange="onTimezoneChange(this.value)"></select>
+        </div>
+        <div id="calendar-container"></div>
+        <div class="calendar-legend">
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#27ae60;"></div>
+                Upcoming Interview
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#95a5a6;"></div>
+                Past Interview (Completed / Rejected)
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:rgba(255,185,90,0.75);border:1px solid #f0a840;"></div>
+                Schedule Pending
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2 id="modal-title">Enter a new opportunity</h2>
+
+            <form id="card-form">
+                <div class="form-group">
+                    <label>Company</label>
+                    <input type="text" id="company" required placeholder="e.g., Google">
+                </div>
+                <div class="form-group">
+                    <label>Position Title</label>
+                    <input type="text" id="position" required placeholder="e.g., Senior Software Engineer">
+                </div>
+                <div class="form-group">
+                    <label>Last Action Date</label>
+                    <input type="date" id="date">
+                </div>
+
+                <div class="form-group">
+                    <label>Interview Schedule</label>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="date" id="interviewDate" placeholder="Optional" style="flex: 1;">
+                            <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:#2c3e50; white-space: nowrap;">
+                                <input type="checkbox" id="interviewDateTBD"> TBD
+                            </label>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="time" id="interviewTime" style="flex: 1;" aria-label="Interview Time">
+                            <select id="interviewTimezone" style="flex: 1;" aria-label="Timezone">
+                                <option value="">Timezone</option>
+                                <option value="PT">PT</option>
+                                <option value="MT">MT</option>
+                                <option value="CT">CT</option>
+                                <option value="ET">ET</option>
+                                <option value="GMT">GMT</option>
+                                <option value="UTC">UTC</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Referral</label>
+                    <input type="text" id="referredBy" placeholder="any internal contact willing to refer you">
+                </div>
+
+                <div class="form-group">
+                    <label>Notes for yourself</label>
+                    <textarea id="details" maxlength="200" placeholder="to-dos, names to contact, things to research, etc. Keep short and focused" style="resize: vertical; min-height: 80px;"></textarea>
+                    <div style="text-align: right; font-size: 0.85em; color: #7f8c8d; margin-top: 5px;">
+                        <span id="char-count">0</span>/200 characters
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Stage</label>
+                    <select id="stage" required>
+                        <option value="seeding">🌱 Early Stage</option>
+                        <option value="recruiter">📞 Recruiter Screening</option>
+                        <option value="hm">👔 Hiring Manager Screening</option>
+                        <option value="next-rounds">🔄 Other Interviewers</option>
+                        <option value="final">🎯 Final/Onsite/Decision</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="status" required>
+                        <option value="in-progress">🔄 In Progress</option>
+                        <option value="interview-schedule-pending">⏳ Interview Schedule Pending</option>
+                        <option value="interview-date-confirmed">✅ Interview Date Confirmed</option>
+                        <option value="interview-completed">🎉 Interview Completed</option>
+                        <option value="rejected">❌ Rejected</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveCard()">Save</button>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="signin-modal">
+        <div class="modal-content" style="position: relative; max-width: 420px; margin: auto;">
+            <span onclick="closeSignInModal()" style="position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #95a5a6;">&times;</span>
+
+            <!-- Contextual prompt — shown when triggered by an action -->
+            <div id="signin-prompt" style="display:none; background:#eef0fd; border:1px solid #c5caef; border-radius:8px; padding:10px 14px; margin-bottom:16px; margin-top:8px; font-size:0.9em; color:#3d4db7; text-align:center;"></div>
+
+            <!-- Tab bar -->
+            <div style="display: flex; border-bottom: 2px solid #ecf0f1; margin-bottom: 24px; margin-top: 10px;">
+                <button id="tab-signin" onclick="showAuthTab('signin')"
+                    style="flex:1; padding: 12px; border: none; background: none; font-size: 1em; font-weight: 600; cursor: pointer; color: #667eea; border-bottom: 3px solid #667eea; margin-bottom: -2px;">
+                    Sign In
+                </button>
+                <button id="tab-register" onclick="showAuthTab('register')"
+                    style="flex:1; padding: 12px; border: none; background: none; font-size: 1em; font-weight: 600; cursor: pointer; color: #95a5a6; border-bottom: 3px solid transparent; margin-bottom: -2px;">
+                    Create Account
+                </button>
+            </div>
+
+            <!-- Sign In tab -->
+            <div id="auth-tab-signin">
+                <button onclick="handleAuthClick()" style="width:100%; padding: 12px; background: #fff; border: 2px solid #ddd; border-radius: 8px; font-size: 1em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; font-weight: 500;">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:20px; height:20px;" alt="Google">
+                    Continue with Google
+                </button>
+                <div style="text-align: center; color: #95a5a6; margin-bottom: 20px; font-size: 0.9em;">— or sign in with email —</div>
+                <div id="signin-error" style="display:none; color:#e74c3c; font-size:0.9em; margin-bottom:12px; text-align:center;"></div>
+                <input id="signin-email" type="email" placeholder="Email address" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box;">
+                <input id="signin-password" type="password" placeholder="Password" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:12px; box-sizing:border-box;">
+                <label style="display:flex; align-items:center; gap:8px; font-size:0.9em; color:#555; margin-bottom:16px; cursor:pointer;">
+                    <input type="checkbox" id="remember-me-check"> Remember me for 90 days
+                </label>
+                <button onclick="handleEmailSignIn()" class="btn btn-primary" style="width:100%; padding:12px; font-size:1em;">Sign In</button>
+            </div>
+
+            <p style="text-align:center; margin-top:16px; margin-bottom:0; font-size:0.85em;">
+                <a href="#" onclick="closeSignInModal(); return false;" style="color:#95a5a6; text-decoration:none;">Continue browsing without signing in →</a>
+            </p>
+
+            <!-- Create Account tab -->
+            <div id="auth-tab-register" style="display:none;">
+                <div id="register-message" style="display:none; padding:12px; border-radius:6px; margin-bottom:16px; font-size:0.9em; text-align:center;"></div>
+                <input id="reg-name" type="text" placeholder="Display name" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box;">
+                <input id="reg-email" type="email" placeholder="Email address" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box;">
+                <input id="reg-password" type="password" placeholder="Password (min 8 characters)" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box;">
+                <input id="reg-confirm" type="password" placeholder="Confirm password" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:16px; box-sizing:border-box;">
+                <button onclick="handleRegister()" class="btn btn-primary" style="width:100%; padding:12px; font-size:1em;">Create Account</button>
+                <p style="font-size:0.8em; color:#95a5a6; text-align:center; margin-top:12px;">A verification link will be sent to your email.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="confirm-modal">
+        <div class="modal-content">
+            <h2>Confirm Deletion</h2>
+            <p style="margin: 20px 0; color: #2c3e50;">Are you sure you want to delete this lead?</p>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" style="background: #e74c3c;" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google API Scripts -->
+    <!-- Google API scripts are no longer needed; logic is handled by the Java backend -->
+
+    <script>
+        // --- Global State ---
+        let isGoogleConnected = false;
+
+        let cards = [];
+        let draggedCard = null;
+        let editingCardId = null;
+        let deletingCardId = null;
+        let dismissedAlerts = new Set();
+
+        // --- Auth State ---
+        let currentUser = null;
+
+        // --- Broadcast State ---
+        let activeBroadcast = null;
+
+        // --- Calendar State ---
+        let calendarView = false;
+        let calendarTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        let calendarInstance = null;
+
+        const TZ_ABBR = {
+            'PT':'America/Los_Angeles','PST':'America/Los_Angeles','PDT':'America/Los_Angeles',
+            'MT':'America/Denver','MST':'America/Denver','MDT':'America/Denver',
+            'CT':'America/Chicago','CST':'America/Chicago','CDT':'America/Chicago',
+            'ET':'America/New_York','EST':'America/New_York','EDT':'America/New_York',
+        };
+
+        const COMMON_TIMEZONES = [
+            'America/Los_Angeles','America/Denver','America/Chicago','America/New_York',
+            'America/Anchorage','Pacific/Honolulu','America/Sao_Paulo',
+            'Europe/London','Europe/Paris','Europe/Berlin','Europe/Moscow',
+            'Asia/Dubai','Asia/Kolkata','Asia/Shanghai','Asia/Tokyo',
+            'Australia/Sydney','Pacific/Auckland'
+        ];
+
+        // --- Backend API Configuration ---
+        const API_BASE_URL = 'http://localhost:8080';
+
+        // --- Authentication ---
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/status`, { credentials: 'include' });
+                const data = await response.json();
+                isGoogleConnected = data.isSignedIn;
+                updateAuthUI(data);
+                await checkBroadcast();
+                // Show verified/error banners from URL params
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('verified') === 'true') showBanner('Email verified! You can now sign in.', 'success');
+                if (params.get('verify_error') === 'true') showBanner('Verification link is invalid or expired. Please register again.', 'error');
+                if (params.get('auth_error') === 'true') showBanner('Sign-in failed. Please try again.', 'error');
+                if (params.toString()) history.replaceState({}, '', '/');
+            } catch (error) {
+                console.error('Error checking auth status:', error);
+                updateAuthUI({ isSignedIn: false });
+            } finally {
+                await loadCards();
+            }
+        }
+
+        function showBanner(message, type) {
+            const banner = document.createElement('div');
+            banner.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);
+                padding:12px 24px;border-radius:8px;font-weight:600;z-index:9999;
+                background:${type === 'success' ? '#27ae60' : '#e74c3c'};color:white;
+                box-shadow:0 4px 12px rgba(0,0,0,0.2);`;
+            banner.textContent = message;
+            document.body.appendChild(banner);
+            setTimeout(() => banner.remove(), 5000);
+        }
+
+        function handleAuthClick() {
+            window.location.href = `${API_BASE_URL}/oauth2/authorization/google`;
+        }
+
+        async function handleEmailSignIn() {
+            const email = document.getElementById('signin-email').value.trim();
+            const password = document.getElementById('signin-password').value;
+            const rememberMe = document.getElementById('remember-me-check').checked;
+            const errorEl = document.getElementById('signin-error');
+            errorEl.style.display = 'none';
+
+            if (!email || !password) { errorEl.textContent = 'Please enter email and password.'; errorEl.style.display = 'block'; return; }
+
+            const formData = new URLSearchParams();
+            formData.append('username', email);
+            formData.append('password', password);
+            if (rememberMe) formData.append('remember-me', 'on');
+
+            const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                method: 'POST', credentials: 'include',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            });
+
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                errorEl.textContent = 'Invalid email or password. Have you verified your email?';
+                errorEl.style.display = 'block';
+            }
+        }
+
+        async function handleRegister() {
+            const displayName = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-confirm').value;
+            const msgEl = document.getElementById('register-message');
+
+            msgEl.style.display = 'none';
+            if (!displayName || !email || !password) { showRegMsg('Please fill in all fields.', 'error'); return; }
+            if (password.length < 8) { showRegMsg('Password must be at least 8 characters.', 'error'); return; }
+            if (password !== confirm) { showRegMsg('Passwords do not match.', 'error'); return; }
+
+            const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
+                method: 'POST', credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, displayName })
+            });
+            const data = await res.json();
+
+            if (res.status === 201) {
+                showRegMsg('Account created! Check your email for a verification link.', 'success');
+                document.getElementById('reg-name').value = '';
+                document.getElementById('reg-email').value = '';
+                document.getElementById('reg-password').value = '';
+                document.getElementById('reg-confirm').value = '';
+            } else {
+                showRegMsg(data.error || 'Registration failed. Please try again.', 'error');
+            }
+        }
+
+        function showRegMsg(msg, type) {
+            const el = document.getElementById('register-message');
+            el.textContent = msg;
+            el.style.background = type === 'success' ? '#d5f5e3' : '#fde8e8';
+            el.style.color = type === 'success' ? '#1e8449' : '#c0392b';
+            el.style.display = 'block';
+        }
+
+        function showAuthTab(tab) {
+            const isSignin = tab === 'signin';
+            document.getElementById('auth-tab-signin').style.display = isSignin ? 'block' : 'none';
+            document.getElementById('auth-tab-register').style.display = isSignin ? 'none' : 'block';
+            document.getElementById('tab-signin').style.color = isSignin ? '#667eea' : '#95a5a6';
+            document.getElementById('tab-signin').style.borderBottom = isSignin ? '3px solid #667eea' : '3px solid transparent';
+            document.getElementById('tab-register').style.color = isSignin ? '#95a5a6' : '#667eea';
+            document.getElementById('tab-register').style.borderBottom = isSignin ? '3px solid transparent' : '3px solid #667eea';
+        }
+
+        function handleSignoutClick() {
+            fetch(`${API_BASE_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' })
+                .then(() => window.location.reload());
+        }
+
+        function updateAuthUI(authData) {
+            currentUser = authData.isSignedIn ? authData : null;
+            const authControls = document.querySelector('.auth-controls');
+            if (authData.isSignedIn) {
+                const firstName = (authData.name || authData.email || '').split(' ')[0];
+                authControls.innerHTML = `
+                    <span style="color: white; align-self: center; margin-right: 15px;">Welcome, ${firstName}!</span>
+                    <button class="btn btn-secondary" onclick="handleSignoutClick()">Sign Out</button>
+                `;
+                document.getElementById('admin-link').style.display =
+                    (authData.role === 'ADMIN') ? 'inline-block' : 'none';
+                document.getElementById('broadcast-btn').style.display = 'inline-block';
+                closeSignInModal();
+            } else {
+                authControls.innerHTML = `
+                    <button class="btn btn-primary" onclick="openSignInModal()">Sign In</button>
+                `;
+                document.getElementById('admin-link').style.display = 'none';
+                document.getElementById('broadcast-btn').style.display = 'none';
+                document.getElementById('broadcast-btn').classList.remove('bell-active');
+                // Always surface sign-in on page load when not in a 90-day session.
+                // User can dismiss with × to browse, but must sign in to make changes.
+                openSignInModal('Sign in to track and save your job applications.');
+            }
+        }
+
+        // ── Feedback / Support ───────────────────────────────────────────────────
+
+        function openFeedbackModal() {
+            const emailInput = document.getElementById('feedback-email');
+            if (currentUser && currentUser.email) emailInput.value = currentUser.email;
+            document.getElementById('feedback-message').value = '';
+            document.getElementById('feedback-status').style.display = 'none';
+            document.getElementById('feedback-modal').classList.add('active');
+        }
+
+        function closeFeedbackModal() {
+            document.getElementById('feedback-modal').classList.remove('active');
+        }
+
+        async function submitFeedback() {
+            const email    = document.getElementById('feedback-email').value.trim();
+            const category = document.getElementById('feedback-category').value;
+            const message  = document.getElementById('feedback-message').value.trim();
+            const status   = document.getElementById('feedback-status');
+
+            if (!email || !message) {
+                status.style.cssText = 'display:block; color:#e74c3c;';
+                status.textContent = 'Email and message are required.';
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/support/feedback`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fromEmail: email, category, message })
+                });
+                if (!res.ok) throw new Error();
+                status.style.cssText = 'display:block; color:#27ae60;';
+                status.textContent = "✓ Sent! We'll get back to you soon.";
+                document.getElementById('feedback-message').value = '';
+                setTimeout(closeFeedbackModal, 2000);
+            } catch {
+                status.style.cssText = 'display:block; color:#e74c3c;';
+                status.textContent = 'Failed to send. Please try again.';
+            }
+        }
+
+        // Note: feedback-modal outside-click listener is registered in DOMContentLoaded below.
+
+        // ─────────────────────────────────────────────────────────────────────────
+
+        // ── Broadcast ────────────────────────────────────────────────────────────
+
+        async function checkBroadcast() {
+            if (!currentUser) return;
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/broadcast/current`, { credentials: 'include' });
+                if (res.status === 204) { hideBroadcastIndicator(); return; }
+                activeBroadcast = await res.json();
+                const lastSeen = currentUser.lastSeenBroadcastId;
+                if (!lastSeen || activeBroadcast.id > lastSeen) {
+                    document.getElementById('broadcast-btn').classList.add('bell-active');
+                    document.getElementById('broadcast-dot').style.display = 'block';
+                }
+                showBroadcastInline();
+            } catch (e) { /* silent */ }
+        }
+
+        function hideBroadcastIndicator() {
+            document.getElementById('broadcast-btn').classList.remove('bell-active');
+            document.getElementById('broadcast-dot').style.display = 'none';
+            document.getElementById('broadcast-inline').style.display = 'none';
+            activeBroadcast = null;
+        }
+
+        function showBroadcastInline() {
+            if (!activeBroadcast) return;
+            document.getElementById('broadcast-inline-content').textContent = activeBroadcast.content;
+            document.getElementById('broadcast-inline').style.display = 'flex';
+        }
+
+        function hideBroadcastInline() {
+            document.getElementById('broadcast-inline').style.display = 'none';
+        }
+
+        function toggleBroadcastInline() {
+            const inline = document.getElementById('broadcast-inline');
+            if (inline.style.display === 'none') showBroadcastInline();
+            else hideBroadcastInline();
+        }
+
+        async function ackBroadcast() {
+            hideBroadcastInline();
+            document.getElementById('broadcast-btn').classList.remove('bell-active');
+            document.getElementById('broadcast-dot').style.display = 'none';
+            try {
+                await fetch(`${API_BASE_URL}/api/broadcast/ack`, { method: 'POST', credentials: 'include' });
+                if (currentUser) currentUser.lastSeenBroadcastId = activeBroadcast ? activeBroadcast.id : null;
+            } catch (e) { /* silent */ }
+        }
+
+        function openAdminModal() {
+            document.getElementById('admin-broadcast-text').value = '';
+            document.getElementById('broadcast-counter').textContent = '0';
+            document.getElementById('admin-broadcast-status').style.display = 'none';
+            const cur = document.getElementById('admin-current-msg');
+            const clearBtn = document.getElementById('admin-clear-btn');
+            if (activeBroadcast) {
+                cur.style.display = 'block';
+                cur.textContent = 'Current: "' + activeBroadcast.content + '"';
+                clearBtn.style.display = 'inline-block';
+            } else {
+                cur.style.display = 'none';
+                clearBtn.style.display = 'none';
+            }
+            document.getElementById('admin-modal').classList.add('active');
+        }
+
+        function closeAdminModal() {
+            document.getElementById('admin-modal').classList.remove('active');
+        }
+
+        function updateBroadcastCounter() {
+            const len = document.getElementById('admin-broadcast-text').value.length;
+            document.getElementById('broadcast-counter').textContent = len;
+        }
+
+        async function sendBroadcast() {
+            const content = document.getElementById('admin-broadcast-text').value.trim();
+            if (!content) { showAdminStatus('Please enter a message.', false); return; }
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/broadcast`, {
+                    method: 'POST', credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content })
+                });
+                if (!res.ok) throw new Error();
+                activeBroadcast = await res.json();
+                showAdminStatus('✓ Message sent to all users!', true);
+                document.getElementById('broadcast-btn').classList.add('bell-active');
+                setTimeout(closeAdminModal, 1500);
+            } catch (e) { showAdminStatus('Failed to send. Please try again.', false); }
+        }
+
+        async function clearBroadcast() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/broadcast`, {
+                    method: 'DELETE', credentials: 'include'
+                });
+                if (!res.ok) throw new Error();
+                activeBroadcast = null;
+                hideBroadcastIndicator();
+                showAdminStatus('✓ Message cleared.', true);
+                document.getElementById('admin-current-msg').style.display = 'none';
+                document.getElementById('admin-clear-btn').style.display = 'none';
+                setTimeout(closeAdminModal, 1500);
+            } catch (e) { showAdminStatus('Failed to clear. Please try again.', false); }
+        }
+
+        function showAdminStatus(msg, ok) {
+            const el = document.getElementById('admin-broadcast-status');
+            el.style.cssText = `display:block; color:${ok ? '#27ae60' : '#e74c3c'};`;
+            el.textContent = msg;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────────
+
+        function openSignInModal(prompt) {
+            const promptEl = document.getElementById('signin-prompt');
+            if (prompt) {
+                promptEl.textContent = prompt;
+                promptEl.style.display = 'block';
+            } else {
+                promptEl.style.display = 'none';
+            }
+            document.getElementById('signin-modal').classList.add('active');
+            document.getElementById('todo-modal-container').style.display = 'none';
+            showAuthTab('signin');
+        }
+
+        function closeSignInModal() {
+            document.getElementById('signin-modal').classList.remove('active');
+            updateTodoAlert();
+        }
+
+        function closeTodoAlert(alertId) {
+            dismissedAlerts.add(alertId);
+            updateTodoAlert();
+        }
+
+        // Load cards from the Java backend
+        async function loadCards() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/cards`, { credentials: 'include' });
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                cards = await response.json();
+                console.log('📦 Loaded from Java backend:', cards.length, 'cards');
+            } catch (error) {
+                console.error('Error loading from backend:', error);
+                // Don't alert if not signed in, as this is expected.
+                if (isGoogleConnected) {
+                    alert('Failed to load data from the backend. Is the Java application running?');
+                }
+                cards = []; // Clear the board on error
+            }
+            renderAllCards();
+            populateTzSelector();
+        }
+
+        // Add or update card
+        async function saveCard() {
+            console.log('Save card called');
+            
+            const position = document.getElementById('position').value;
+            const company = document.getElementById('company').value;
+            const stage = document.getElementById('stage').value;
+            const date = document.getElementById('date').value; // Last Action Date (optional)
+            const interviewDateEl = document.getElementById('interviewDate');
+            const interviewTimeEl = document.getElementById('interviewTime');
+            const interviewTimezoneEl = document.getElementById('interviewTimezone');
+            const interviewDateTBD = document.getElementById('interviewDateTBD').checked;
+            
+            let interviewDate = interviewDateTBD ? 'TBD' : (interviewDateEl.value || '');
+            if (interviewDate && interviewDate !== 'TBD') {
+                if (interviewTimeEl.value) {
+                    interviewDate += '|' + interviewTimeEl.value;
+                    if (interviewTimezoneEl.value) {
+                        interviewDate += '|' + interviewTimezoneEl.value;
+                    }
+                }
+            }
+
+            const referredBy = document.getElementById('referredBy').value;
+            let status = document.getElementById('status').value;
+
+            // Only auto-flip to confirmed when status is still in a pre-interview state
+            const preInterviewStatuses = ['in-progress', 'interview-schedule-pending'];
+            if (interviewDate && interviewDate !== 'TBD' && preInterviewStatuses.includes(status)) {
+                status = 'interview-date-confirmed';
+            }
+            const details = document.getElementById('details').value;
+
+            // Validate required fields
+            if (!position || !company || !stage || !status) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            console.log('Form values:', { position, company, stage, date, status, details });
+
+            const action = editingCardId ? 'update' : 'create';
+            let cardToSave;
+            if (action === 'update') {
+                // Update existing card
+                const card = cards.find(c => c.id === editingCardId);
+                card.position = position;
+                card.company = company;
+                card.stage = stage;
+                card.date = date;
+                card.interviewDate = interviewDate;
+                card.referredBy = referredBy;
+                card.status = status;
+                card.details = details;
+                
+                cardToSave = card;
+                editingCardId = null;
+                console.log('Updated card:', card);
+            } else {
+                // Add new card
+                const card = {
+                    position,
+                    company,
+                    stage,
+                    date,
+                    interviewDate,
+                    referredBy,
+                    status,
+                    details
+                };
+                cards.push(card);
+                cardToSave = card;
+                console.log('Added new card:', card);
+                console.log('Total cards:', cards.length);
+            }
+
+            dismissedAlerts.clear();
+            closeModal();
+            await persistAndReload(cardToSave, action);
+        }
+
+        // Render all cards
+        function renderAllCards() {
+            console.log('Rendering all cards, total:', cards.length);
+            
+            // Clear all columns
+            document.querySelectorAll('.cards-container').forEach(container => {
+                container.innerHTML = '';
+            });
+
+            // Group and render cards
+            const grouped = {
+                seeding: [],
+                recruiter: [],
+                hm: [],
+                'next-rounds': [],
+                final: []
+            };
+
+            cards.forEach(card => {
+                // Handle legacy 'onsite' cards - migrate to 'final'
+                const stage = card.stage === 'onsite' ? 'final' : card.stage;
+                if (grouped[stage]) {
+                    grouped[stage].push(card);
+                }
+            });
+
+            console.log('Grouped cards:', grouped);
+
+            // Render each stage, with rejected cards at the bottom
+            Object.keys(grouped).forEach(stage => {
+                const container = document.querySelector(`[data-column="${stage}"]`);
+                
+                let sortedCards;
+                if (stage === 'seeding') {
+                    // Seeding: sort by last action date descending
+                    sortedCards = grouped[stage].sort((a, b) => {
+                        const dateA = a.date || '0000-01-01';
+                        const dateB = b.date || '0000-01-01';
+                        return dateB.localeCompare(dateA);
+                    });
+                } else {
+                    // Other stages: sort by status (in-progress first, rejected last)
+                    sortedCards = grouped[stage].sort((a, b) => {
+                        const statusOrder = { 'in-progress': 0, 'interview-date-confirmed': 0, 'interview-completed': 0, 'interview-schedule-pending': 0.5, 'rejected': 1 };
+                        const aStatus = a.status || 'in-progress';
+                        const bStatus = b.status || 'in-progress';
+                        return (statusOrder[aStatus] || 0) - (statusOrder[bStatus] || 0);
+                    });
+                }
+                
+                sortedCards.forEach(card => {
+                    container.appendChild(createCardElement(card));
+                });
+                updateCount(stage, sortedCards.length);
+            });
+            // Update the global todo alert if any card needs attention
+            updateTodoAlert();
+        }
+
+        // Check if a card requires attention (yellow status)
+        function isCardYellow(card) {
+            // This logic is now centralized in the backend's `getColor()` method.
+            return card.color === 'yellow';
+        }
+
+        // Show or hide the top-level todo alert when any card has reminders
+        function updateTodoAlert() {
+            const container = document.getElementById('todo-modal-container');
+            container.innerHTML = '';
+
+            // Get-started: board is completely empty
+            if (cards.length === 0) {
+                if (!dismissedAlerts.has('get-started')) {
+                    container.appendChild(createGetStartedElement());
+                    container.style.display = 'block';
+                } else {
+                    container.style.display = 'none';
+                }
+                return;
+            }
+
+            // Interview reminders: yellow cards with an interview within 48 hours
+            const yellowCards = cards.filter(card => isCardYellow(card));
+
+            if (yellowCards.length === 0) {
+                container.style.display = 'none';
+                dismissedAlerts.clear();
+                return;
+            }
+
+            const now = new Date();
+            const twoDaysFromNow = new Date(now.getTime() + (48 * 60 * 60 * 1000));
+            let hasVisibleAlerts = false;
+
+            yellowCards.forEach(card => {
+                if (!card.interviewDate || card.interviewDate === 'TBD') return;
+                const parts = card.interviewDate.split('|');
+                const dateStr = parts[0];
+                const timeStr = parts[1];
+                if (!dateStr) return;
+
+                const [year, month, day] = dateStr.split('-').map(Number);
+                const interviewDateObj = timeStr
+                    ? new Date(year, month - 1, day, ...timeStr.split(':').map(Number))
+                    : new Date(year, month - 1, day, 23, 59);
+
+                if (interviewDateObj >= now && interviewDateObj <= twoDaysFromNow) {
+                    const alertId = 'interview-' + card.id;
+                    if (!dismissedAlerts.has(alertId)) {
+                        let dateDisplay = new Date(year, month - 1, day)
+                            .toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        if (timeStr) {
+                            const [h, m] = timeStr.split(':');
+                            const hNum = parseInt(h);
+                            dateDisplay += ` ${hNum % 12 || 12}:${m} ${hNum >= 12 ? 'PM' : 'AM'}`;
+                        }
+                        const msg = `Interview scheduled with ${card.company} at ${dateDisplay}. Prepare for interview!`;
+                        container.appendChild(createAlertElement(msg, alertId));
+                        hasVisibleAlerts = true;
+                    }
+                }
+            });
+
+            container.style.display = hasVisibleAlerts ? 'block' : 'none';
+        }
+
+        function createGetStartedElement() {
+            const div = document.createElement('div');
+            div.className = 'todo-modal-content';
+            div.style.background = '#667eea';
+            div.innerHTML = `
+                <span>🚀 Add cards for your new leads, companies you are applying to, interviews being scheduled</span>
+                <span class="close-todo-modal" onclick="closeTodoAlert('get-started')">&times;</span>
+            `;
+            return div;
+        }
+
+        function createAlertElement(message, id) {
+            const div = document.createElement('div');
+            div.className = 'todo-modal-content';
+            div.innerHTML = `
+                <span>${message}</span>
+                <span class="close-todo-modal" onclick="closeTodoAlert('${id}')">&times;</span>
+            `;
+            return div;
+        }
+
+        // Create card element
+        function createCardElement(card) {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.draggable = true;
+            div.dataset.id = card.id;
+            
+            // Format Last Action Date nicely (create as local date, not UTC)
+            let formattedLastAction = 'No date';
+            if (card.date) {
+                const [year, month, day] = card.date.split('-');
+                const localDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                formattedLastAction = localDate.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+            }
+
+            // Interview date (can be 'TBD' or an ISO date)
+            let interviewHtml = '';
+            if (card.interviewDate) {
+                if (card.interviewDate === 'TBD') {
+                    interviewHtml = `<div class="card-interview" style="font-size:0.85em; color:#95a5a6; margin-top:6px;">🎤 Interview: TBD</div>`;
+                } else {
+                    const parts = card.interviewDate.split('|');
+                    const hasTime = parts.length > 1 && parts[1];
+
+                    let f;
+                    if (hasTime) {
+                        // Convert to calendarTimezone for display
+                        const utc = parseInterviewToUTC(card.interviewDate);
+                        f = utc ? (formatInCalendarTZ(utc.start) || card.interviewDate) : card.interviewDate;
+                    } else {
+                        // Date only — display as local date, no timezone conversion needed
+                        const [year, month, day] = parts[0].split('-');
+                        const localDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                        f = localDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    }
+
+                    interviewHtml = `<div class="card-interview" style="font-size:0.95em; color:#34495e; margin-top:6px; font-weight:700;">🎤 Interview: ${f}</div>`;
+                }
+            }
+
+            const referredByHtml = card.referredBy ? `<div class="card-referred" style="font-size:0.85em; color:#7f8c8d; margin-top:6px;">👥 Referral: ${card.referredBy}</div>` : '';
+            
+            // Status badge and styling
+            const statusConfig = {
+                'in-progress': { emoji: '🔄', label: 'In Progress', color: '#3498db' },
+                'rejected': { emoji: '❌', label: 'Rejected', color: '#95a5a6' },
+                'interview-schedule-pending': { emoji: '⏳', label: 'Interview Pending', color: '#7f8c8d' },
+                'interview-date-confirmed': { emoji: '✅', label: 'Interview Confirmed', color: '#27ae60' },
+                'interview-completed': { emoji: '🎉', label: 'Interview Completed', color: '#8e44ad' }
+            };
+            const statusInfo = statusConfig[card.status] || statusConfig['in-progress'];
+            const statusHtml = card.status ? `<div class="card-status" style="display: inline-block; background: ${statusInfo.color}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; margin-top: 8px;">${statusInfo.emoji} ${statusInfo.label}</div>` : '';
+
+            // Conditional card background and reminder icon
+            let reminderHtml = '';
+            const color = card.color || 'white';
+
+            if (color === 'grey') {
+                div.style.background = '#f0f0f0';
+                div.style.borderLeft = '4px solid #95a5a6';
+            } else if (color === 'yellow') {
+                div.style.background = '#fff7e6';
+                div.style.borderLeft = '4px solid #f6c84c';
+                reminderHtml = `<div class="card-reminder" style="display:inline-block; margin-left:8px; font-size:0.95em;">🔔</div>`;
+            } else { // white
+                div.style.background = '#ffffff';
+                // Special border for pending interviews, even if background is white
+                if (card.status === 'interview-schedule-pending') {
+                    div.style.borderLeft = '4px solid #b0bec5';
+                }
+            }
+            
+            // Add details if available
+            const detailsHtml = card.details ? `<div class="card-details" style="font-size: 0.85em; color: #7f8c8d; margin-top: 8px; line-height: 1.4;">${card.details}</div>` : '';
+            
+            div.innerHTML = `
+                <div style="display:flex; align-items:center; gap:8px; justify-content:space-between;">
+                    <div>
+                        <div class="card-title">${card.company} ${reminderHtml}</div>
+                        <div class="card-company">${card.position}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        ${statusHtml}
+                    </div>
+                </div>
+                <div class="card-date">📅 ${formattedLastAction}</div>
+                ${interviewHtml}
+                ${referredByHtml}
+                ${detailsHtml}
+                <div class="card-actions">
+                    <button class="edit-btn" title="Edit">✏️</button>
+                    <button class="duplicate-btn" title="Duplicate">📋</button>
+                    <button class="delete-btn" title="Delete">🗑️</button>
+                </div>
+            `;
+
+            // Add event listeners to buttons
+            const editBtn = div.querySelector('.edit-btn');
+            const duplicateBtn = div.querySelector('.duplicate-btn');
+            const deleteBtn = div.querySelector('.delete-btn');
+
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                editCard(card.id);
+            });
+
+            duplicateBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                duplicateCard(card.id);
+            });
+
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteCard(card.id);
+            });
+
+            // Clicking anywhere on the card opens it for editing (unless clicking the action buttons)
+            div.addEventListener('click', (e) => {
+                if (e.target.closest('.edit-btn') || e.target.closest('.duplicate-btn') || e.target.closest('.delete-btn')) return;
+                editCard(card.id);
+            });
+
+            // Drag events
+            div.addEventListener('dragstart', handleDragStart);
+            div.addEventListener('dragend', handleDragEnd);
+
+            return div;
+        }
+
+        // Update count badge
+        function updateCount(stage, count) {
+            document.getElementById(`count-${stage}`).textContent = count;
+        }
+
+        // Drag handlers
+        function handleDragStart(e) {
+            draggedCard = e.target;
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        // Setup drop zones
+        document.querySelectorAll('.cards-container').forEach(container => {
+            container.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                container.classList.add('drag-over');
+            });
+
+            container.addEventListener('dragleave', () => {
+                container.classList.remove('drag-over');
+            });
+
+            container.addEventListener('drop', (e) => {
+                e.preventDefault();
+                container.classList.remove('drag-over');
+                
+                if (draggedCard) {
+                    const newStage = container.dataset.column;
+                    const cardId = parseInt(draggedCard.dataset.id);
+                    const card = cards.find(c => c.id === cardId);
+                    
+                    if (card) {
+                        const updatedCard = { ...card, stage: newStage };
+                        persistAndReload(updatedCard, 'update');
+                    }
+                }
+            });
+        });
+
+        // Central function to persist changes to the backend and reload the board
+        async function persistAndReload(card, action) {
+            let url = `${API_BASE_URL}/api/cards`;
+            let options = {
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' }
+            };
+
+            if (action === 'create') {
+                options.method = 'POST';
+                options.body = JSON.stringify(card);
+            } else if (action === 'update') {
+                url += `/${card.id}`;
+                options.method = 'PUT';
+                options.body = JSON.stringify(card);
+            } else if (action === 'delete') {
+                url += `/${card.id}`;
+                options.method = 'DELETE';
+            }
+
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        openSignInModal('Sign in required — your changes were not saved.');
+                        return;
+                    }
+                    const body = await response.text();
+                    console.error(`Server error ${response.status} on ${action}:`, body);
+                }
+            } catch (error) {
+                console.error(`Failed to ${action} card:`, error);
+            }
+            await loadCards(); // Always reload from the source of truth
+        }
+
+        // Modal functions
+        function openModal(cardId = null) {
+            if (!currentUser) {
+                openSignInModal('Sign in to add and track your opportunities.');
+                return;
+            }
+            const modal = document.getElementById('modal');
+            const form = document.getElementById('card-form');
+            
+            if (cardId) {
+                const card = cards.find(c => c.id === cardId);
+                document.getElementById('modal-title').textContent = 'Edit Opportunity';
+                document.getElementById('position').value = card.position;
+                document.getElementById('company').value = card.company;
+                document.getElementById('date').value = card.date;
+                // interviewDate can be 'TBD' or an ISO date
+                
+                const parts = (card.interviewDate || '').split('|');
+                const datePart = parts[0];
+                const isTBD = (datePart === 'TBD');
+                
+                document.getElementById('interviewDate').value = (datePart && !isTBD) ? datePart : '';
+                document.getElementById('interviewTime').value = parts[1] || '';
+                document.getElementById('interviewTimezone').value = parts[2] || '';
+                document.getElementById('interviewDateTBD').checked = isTBD;
+                
+                document.getElementById('referredBy').value = card.referredBy || '';
+                document.getElementById('details').value = card.details || '';
+                document.getElementById('stage').value = card.stage;
+                document.getElementById('status').value = card.status || 'in-progress';
+                updateCharCount();
+                editingCardId = cardId;
+            } else {
+                document.getElementById('modal-title').textContent = 'Enter a new opportunity';
+                form.reset();
+                // Set today's date as default
+                document.getElementById('date').value = new Date().toISOString().split('T')[0];
+                // Set default status
+                document.getElementById('status').value = 'in-progress';
+                // clear new optional fields
+                document.getElementById('interviewDate').value = '';
+                document.getElementById('interviewTime').value = '';
+                document.getElementById('interviewTimezone').value = '';
+                document.getElementById('interviewDateTBD').checked = false;
+                document.getElementById('referredBy').value = '';
+                updateCharCount();
+                editingCardId = null;
+            }
+            
+            modal.classList.add('active');
+            document.getElementById('todo-modal-container').style.display = 'none';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            document.getElementById('card-form').reset();
+            editingCardId = null;
+            updateTodoAlert();
+        }
+
+        function editCard(id) {
+            openModal(id);
+        }
+
+        function duplicateCard(id) {
+            const card = cards.find(c => c.id === id);
+            if (!card) return;
+            const modal = document.getElementById('modal');
+            document.getElementById('modal-title').textContent = 'New Opportunity (Duplicated)';
+            document.getElementById('card-form').reset();
+            document.getElementById('company').value = card.company;
+            document.getElementById('position').value = card.position;
+            document.getElementById('stage').value = card.stage;
+            document.getElementById('referredBy').value = card.referredBy || '';
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('status').value = 'in-progress';
+            document.getElementById('interviewDate').value = '';
+            document.getElementById('interviewTime').value = '';
+            document.getElementById('interviewTimezone').value = '';
+            document.getElementById('interviewDateTBD').checked = false;
+            updateCharCount();
+            editingCardId = null;
+            modal.classList.add('active');
+        }
+
+        function deleteCard(id) {
+            deletingCardId = id;
+            document.getElementById('confirm-modal').classList.add('active');
+            document.getElementById('todo-modal-container').style.display = 'none';
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.remove('active');
+            deletingCardId = null;
+            updateTodoAlert();
+        }
+
+        async function confirmDelete() {
+            if (deletingCardId) {
+                // We only need the ID to delete
+                await persistAndReload({ id: deletingCardId }, 'delete');
+                closeConfirmModal();
+            }
+        }
+
+        // Close modal on outside click
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') {
+                closeModal();
+            }
+        });
+
+        document.getElementById('confirm-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'confirm-modal') {
+                closeConfirmModal();
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthStatus();
+            const feedbackModal = document.getElementById('feedback-modal');
+            if (feedbackModal) {
+                feedbackModal.addEventListener('click', e => {
+                    if (e.target.id === 'feedback-modal') closeFeedbackModal();
+                });
+            }
+            const adminModal = document.getElementById('admin-modal');
+            if (adminModal) adminModal.addEventListener('click', e => {
+                if (e.target.id === 'admin-modal') closeAdminModal();
+            });
+        });
+
+        // Character counter for details field
+        function updateCharCount() {
+            const details = document.getElementById('details');
+            const charCount = document.getElementById('char-count');
+            charCount.textContent = details.value.length;
+        }
+
+        // Add event listener for character counting
+        document.getElementById('details').addEventListener('input', updateCharCount);
+        // Toggle interview date when TBD checked (clear value but keep input enabled)
+        document.getElementById('interviewDateTBD').addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('interviewDate').value = '';
+                document.getElementById('interviewTime').value = '';
+                document.getElementById('interviewTimezone').value = '';
+            }
+        });
+
+        // When an interview date is picked, clear TBD and auto-flip status if still in pre-interview state
+        document.getElementById('interviewDate').addEventListener('change', function() {
+            const statusEl = document.getElementById('status');
+            if (this.value) {
+                document.getElementById('interviewDateTBD').checked = false;
+                if (['in-progress', 'interview-schedule-pending'].includes(statusEl.value)) {
+                    statusEl.value = 'interview-date-confirmed';
+                }
+            }
+            updateInterviewInputStyle();
+        });
+
+        // If user focuses/clicks the date input (calendar), uncheck TBD; only auto-flip pre-interview statuses
+        document.getElementById('interviewDate').addEventListener('focus', function() {
+            const statusEl = document.getElementById('status');
+            if (document.getElementById('interviewDateTBD').checked) {
+                document.getElementById('interviewDateTBD').checked = false;
+            }
+            if (['in-progress', 'interview-schedule-pending'].includes(statusEl.value)) {
+                statusEl.value = 'interview-date-confirmed';
+            }
+            updateInterviewInputStyle();
+        });
+
+        // ── Calendar helpers ────────────────────────────────────────────────────
+
+        /** Returns next n weekday dates as 'YYYY-MM-DD' strings, starting from tomorrow. */
+        function getNextBusinessDays(n) {
+            const days = [];
+            const current = new Date();
+            current.setHours(0, 0, 0, 0);
+            while (days.length < n) {
+                current.setDate(current.getDate() + 1);
+                const dow = current.getDay();
+                if (dow !== 0 && dow !== 6) {
+                    const y = current.getFullYear();
+                    const m = String(current.getMonth() + 1).padStart(2, '0');
+                    const d = String(current.getDate()).padStart(2, '0');
+                    days.push(`${y}-${m}-${d}`);
+                }
+            }
+            return days;
+        }
+
+        /**
+         * Get UTC offset minutes for an IANA timezone at a given Date.
+         * Returns e.g. -480 for America/Los_Angeles in winter.
+         */
+        function getUTCOffsetMinutes(ianaTimezone, date) {
+            try {
+                const formatter = new Intl.DateTimeFormat('en-US', {
+                    timeZone: ianaTimezone,
+                    timeZoneName: 'shortOffset'
+                });
+                const parts = formatter.formatToParts(date);
+                const tzPart = parts.find(p => p.type === 'timeZoneName');
+                if (!tzPart) return 0;
+                const match = tzPart.value.match(/GMT([+-])(\d+)(?::(\d+))?/);
+                if (!match) return 0;
+                const sign = match[1] === '+' ? 1 : -1;
+                const hours = parseInt(match[2]);
+                const mins = parseInt(match[3] || '0');
+                return sign * (hours * 60 + mins);
+            } catch (e) { return 0; }
+        }
+
+        /**
+         * Convert "YYYY-MM-DD|HH:mm|TZ" to { start: utcISO, end: utcISO (+1h) }.
+         * Returns null if the string is TBD or unparseable.
+         */
+        function parseInterviewToUTC(interviewDateStr) {
+            if (!interviewDateStr || interviewDateStr === 'TBD') return null;
+            try {
+                const parts = interviewDateStr.split('|');
+                const datePart = parts[0];
+                const timePart = (parts[1] && parts[1].trim()) ? parts[1].trim() : '09:00';
+                const tzAbbr  = (parts[2] && parts[2].trim()) ? parts[2].trim() : null;
+                const sourceIANA = tzAbbr ? (TZ_ABBR[tzAbbr] || calendarTimezone) : calendarTimezone;
+
+                // Treat the stored date/time as a naive UTC timestamp first
+                const naiveUTC = new Date(`${datePart}T${timePart}:00Z`);
+                // Get how many minutes ahead/behind that IANA zone is
+                const offsetMin = getUTCOffsetMinutes(sourceIANA, naiveUTC);
+                // Real UTC = naive − offset
+                const utcMs = naiveUTC.getTime() - offsetMin * 60000;
+                const start = new Date(utcMs).toISOString();
+                const end   = new Date(utcMs + 3600000).toISOString(); // +1 hour
+                return { start, end };
+            } catch (e) { return null; }
+        }
+
+        /**
+         * Format a UTC ISO string for display in calendarTimezone on board cards.
+         * Returns a human-readable string like "Feb 18 at 9:30 AM PST".
+         */
+        function formatInCalendarTZ(utcIso) {
+            try {
+                const date = new Date(utcIso);
+                const dateStr = date.toLocaleDateString('en-US', {
+                    timeZone: calendarTimezone,
+                    month: 'short', day: 'numeric', year: 'numeric'
+                });
+                const timeStr = date.toLocaleTimeString('en-US', {
+                    timeZone: calendarTimezone,
+                    hour: 'numeric', minute: '2-digit', hour12: true
+                });
+                const tzShort = new Intl.DateTimeFormat('en-US', {
+                    timeZone: calendarTimezone, timeZoneName: 'short'
+                }).formatToParts(date).find(p => p.type === 'timeZoneName')?.value || '';
+                return `${dateStr} at ${timeStr} ${tzShort}`;
+            } catch (e) { return null; }
+        }
+
+        /**
+         * Convert a UTC ISO string to a naive "YYYY-MM-DDTHH:mm:ss" string
+         * representing that instant in ianaTimezone.
+         * We pass these naive strings to FullCalendar with timeZone:'UTC' so
+         * FullCalendar shows them exactly as given (no further conversion).
+         */
+        function utcToNaiveInTZ(utcIso, ianaTimezone) {
+            try {
+                const date = new Date(utcIso);
+                const parts = new Intl.DateTimeFormat('en-US', {
+                    timeZone: ianaTimezone,
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit',
+                    hour12: false
+                }).formatToParts(date);
+                const get = t => parts.find(p => p.type === t)?.value || '00';
+                const h = get('hour') === '24' ? '00' : get('hour');
+                return `${get('year')}-${get('month')}-${get('day')}T${h}:${get('minute')}:${get('second')}`;
+            } catch (e) { return utcIso; }
+        }
+
+        /** Build FullCalendar event objects from current cards array.
+         *  All times are pre-converted to calendarTimezone as naive strings.
+         *  FullCalendar is set to timeZone:'UTC' so it shows them as-is. */
+        function buildCalendarEvents() {
+            const events = [];
+            const businessDays = getNextBusinessDays(3);
+
+            const PAST_STATUSES = new Set(['interview-completed', 'rejected']);
+            const now = new Date();
+
+            cards.forEach(card => {
+                const hasInterviewDate = card.interviewDate && card.interviewDate !== 'TBD';
+                const isInterviewStatus = card.status === 'interview-date-confirmed' || PAST_STATUSES.has(card.status);
+
+                if (isInterviewStatus && hasInterviewDate) {
+                    const utc = parseInterviewToUTC(card.interviewDate);
+                    if (utc) {
+                        const isPast = PAST_STATUSES.has(card.status) || new Date(utc.start) < now;
+                        const bg     = isPast ? '#95a5a6' : '#27ae60';
+                        const border = isPast ? '#7f8c8d' : '#1e8449';
+                        const title  = card.status === 'rejected'
+                            ? `${card.company} — ${card.position} — Rejected`
+                            : `${card.company} — ${card.position}`;
+                        events.push({
+                            id: `card-${card.id}`,
+                            title,
+                            start: utcToNaiveInTZ(utc.start, calendarTimezone),
+                            end:   utcToNaiveInTZ(utc.end,   calendarTimezone),
+                            backgroundColor: bg,
+                            borderColor: border,
+                            textColor: '#fff',
+                            extendedProps: { cardId: card.id }
+                        });
+                    }
+                }
+
+                if (card.status === 'interview-schedule-pending') {
+                    businessDays.forEach(dateStr => {
+                        events.push({
+                            title: `${card.company} — Interview Schedule Pending`,
+                            start: `${dateStr}T08:00:00`,
+                            end:   `${dateStr}T17:00:00`,
+                            backgroundColor: 'rgba(255,185,90,0.45)',
+                            borderColor: '#f0a840',
+                            textColor: '#7a4a00',
+                            extendedProps: { cardId: card.id }
+                        });
+                    });
+                }
+            });
+
+            return events;
+        }
+
+        /** Create or re-create the FullCalendar instance. */
+        function initCalendar() {
+            const el = document.getElementById('calendar-container');
+            if (calendarInstance) {
+                calendarInstance.destroy();
+                calendarInstance = null;
+            }
+            // timeZone:'UTC' tells FullCalendar NOT to convert times —
+            // we already pre-convert to calendarTimezone in buildCalendarEvents().
+            calendarInstance = new FullCalendar.Calendar(el, {
+                timeZone: 'UTC',
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                slotMinTime: '07:00:00',
+                slotMaxTime: '21:00:00',
+                allDaySlot: false,
+                height: 700,
+                events: buildCalendarEvents(),
+                eventClick: function(info) {
+                    const cardId = info.event.extendedProps.cardId;
+                    if (cardId) {
+                        switchView('board');
+                        openModal(cardId);
+                    }
+                }
+            });
+            calendarInstance.render();
+        }
+
+        /** Switch to 'board' or 'calendar' view. */
+        function switchView(view) {
+            const goCalendar = (view === 'calendar');
+            if (calendarView === goCalendar) return;
+            calendarView = goCalendar;
+            document.querySelector('.board').style.display = calendarView ? 'none' : 'flex';
+            document.getElementById('calendar-section').style.display = calendarView ? 'block' : 'none';
+            document.getElementById('btn-board').classList.toggle('active', !calendarView);
+            document.getElementById('btn-calendar').classList.toggle('active', calendarView);
+            if (calendarView) initCalendar();
+        }
+
+        /** Legacy alias kept for any internal callers. */
+        function toggleView() { switchView(calendarView ? 'board' : 'calendar'); }
+
+        /** Called when user picks a new timezone from the selector. */
+        function onTimezoneChange(newTz) {
+            calendarTimezone = newTz;
+            if (calendarInstance) initCalendar();
+            renderAllCards(); // update interview time display on board cards
+        }
+
+        /** Populate the timezone dropdown with common IANA options. */
+        function populateTzSelector() {
+            const sel = document.getElementById('tz-selector');
+            sel.innerHTML = '';
+            const list = COMMON_TIMEZONES.includes(calendarTimezone)
+                ? COMMON_TIMEZONES
+                : [calendarTimezone, ...COMMON_TIMEZONES];
+            list.forEach(tz => {
+                const opt = document.createElement('option');
+                opt.value = tz;
+                opt.textContent = tz.replace('_', ' ');
+                if (tz === calendarTimezone) opt.selected = true;
+                sel.appendChild(opt);
+            });
+        }
+
+        // ── End calendar helpers ────────────────────────────────────────────────
+
+        // Update interview date input style in modal: enlarge and bold when a confirmed date exists
+        function updateInterviewInputStyle() {
+            const el = document.getElementById('interviewDate');
+            const tbd = document.getElementById('interviewDateTBD').checked;
+            if (el.value && !tbd) {
+                el.style.fontSize = '1.05em';
+                el.style.fontWeight = '700';
+                el.style.borderColor = '#f6c84c';
+            } else {
+                el.style.fontSize = '';
+                el.style.fontWeight = '';
+                el.style.borderColor = '';
+            }
+        }
+    </script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+
+    <button class="feedback-fab" onclick="openFeedbackModal()" title="Contact Support / Send Feedback">💬</button>
+
+    <div class="modal" id="admin-modal">
+        <div class="modal-content" style="max-width:480px; position:relative;">
+            <span onclick="closeAdminModal()" style="position:absolute;right:20px;top:15px;font-size:24px;cursor:pointer;color:#95a5a6;">&times;</span>
+            <h2>Admin Panel</h2>
+            <h3 style="color:#667eea; margin:20px 0 10px; font-size:1em;">Broadcast Message</h3>
+            <div id="admin-current-msg" style="display:none; background:#f8f9ff; border-radius:8px; padding:12px; margin-bottom:16px; font-size:0.9em; color:#555;"></div>
+            <textarea id="admin-broadcast-text" maxlength="250" rows="4"
+                placeholder="Write a message to all users (max 250 characters)…"
+                oninput="updateBroadcastCounter()"
+                style="width:100%; border:1px solid #ddd; border-radius:6px; padding:10px; font-size:0.95em; resize:none; box-sizing:border-box;"></textarea>
+            <div style="text-align:right; font-size:0.8em; color:#95a5a6; margin:4px 0 12px;">
+                <span id="broadcast-counter">0</span>/250
+            </div>
+            <p id="admin-broadcast-status" style="display:none; font-size:0.9em; margin-bottom:12px;"></p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeAdminModal()">Cancel</button>
+                <button id="admin-clear-btn" class="btn btn-secondary" style="display:none; color:#e74c3c;" onclick="clearBroadcast()">Clear Message</button>
+                <button class="btn btn-primary" onclick="sendBroadcast()">Send to All Users</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="feedback-modal">
+        <div class="modal-content" style="max-width: 460px;">
+            <h2>Contact Support</h2>
+            <div class="form-group">
+                <label>Your Email *</label>
+                <input type="email" id="feedback-email" placeholder="your@email.com" required />
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select id="feedback-category">
+                    <option>General Feedback</option>
+                    <option>Bug Report</option>
+                    <option>Feature Request</option>
+                    <option>Others</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Message *</label>
+                <textarea id="feedback-message" rows="5" placeholder="Describe your issue or feedback…" style="resize:vertical;"></textarea>
+            </div>
+            <p id="feedback-status" style="display:none; margin-top:8px; font-size:0.9em;"></p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeFeedbackModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitFeedback()">Send</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+</html>
