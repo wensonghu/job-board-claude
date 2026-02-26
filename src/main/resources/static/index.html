@@ -825,6 +825,7 @@
         let editingCardId = null;
         let deletingCardId = null;
         let dismissedAlerts = new Set();
+        let signInModalDismissed = false;
 
         // --- Auth State ---
         let currentUser = null;
@@ -1177,6 +1178,7 @@
 
         function closeSignInModal() {
             document.getElementById('signin-modal').classList.remove('active');
+            signInModalDismissed = true;
             updateTodoAlert();
         }
 
@@ -1355,8 +1357,8 @@
             const container = document.getElementById('todo-modal-container');
             container.innerHTML = '';
 
-            // Get-started: board is completely empty
-            if (cards.length === 0) {
+            // Get-started: board is completely empty — only show after login or modal dismissal
+            if (cards.length === 0 && (isGoogleConnected || signInModalDismissed)) {
                 if (!dismissedAlerts.has('get-started')) {
                     container.appendChild(createGetStartedElement());
                     container.style.display = 'block';
