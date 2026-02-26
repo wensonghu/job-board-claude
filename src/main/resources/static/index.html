@@ -569,6 +569,18 @@
             transition: color 0.2s;
         }
         .admin-link:hover { color: #667eea; }
+
+        .header, #todo-modal-container, .board, .feedback-fab {
+            transition: filter 0.2s;
+        }
+        body.signin-modal-open .header,
+        body.signin-modal-open #todo-modal-container,
+        body.signin-modal-open .board,
+        body.signin-modal-open .feedback-fab {
+            filter: blur(3px);
+            pointer-events: none;
+            user-select: none;
+        }
     </style>
 </head>
 <body>
@@ -1164,6 +1176,7 @@
         // ─────────────────────────────────────────────────────────────────────────
 
         function openSignInModal(prompt) {
+            document.body.classList.add('signin-modal-open');
             const promptEl = document.getElementById('signin-prompt');
             if (prompt) {
                 promptEl.textContent = prompt;
@@ -1178,6 +1191,7 @@
 
         function closeSignInModal() {
             document.getElementById('signin-modal').classList.remove('active');
+            document.body.classList.remove('signin-modal-open');
             signInModalDismissed = true;
             updateTodoAlert();
         }
