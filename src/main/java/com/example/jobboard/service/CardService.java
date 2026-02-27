@@ -46,6 +46,7 @@ public class CardService {
         existing.setCompany(cardDetails.getCompany());
         existing.setPosition(cardDetails.getPosition());
         existing.setDate(cardDetails.getDate());
+        existing.setAppliedDate(cardDetails.getAppliedDate());
         existing.setInterviewDate(cardDetails.getInterviewDate());
         existing.setReferredBy(cardDetails.getReferredBy());
         existing.setDetails(cardDetails.getDetails());
