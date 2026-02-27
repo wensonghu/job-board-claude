@@ -53,7 +53,7 @@
             padding: 20px 30px;
             border-radius: 12px;
             position: relative;
-            z-index: 1001; /* Stay above modal overlay (z-index: 1000) */
+            z-index: 1001;
             margin-bottom: 20px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             display: flex;
@@ -287,7 +287,7 @@
         .modal {
             display: none;
             position: fixed;
-            z-index: 1000;
+            z-index: 1010;
             left: 0;
             top: 0;
             width: 100%;
@@ -425,7 +425,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.12);
             min-width: 160px;
-            z-index: 1002;
+            z-index: 1020;
             overflow: hidden;
         }
         #menu-dropdown.open { display: block; }
@@ -626,19 +626,18 @@
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.25);
+            background: #764ba2;
             color: white;
             border: none;
             font-size: 1.3em;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 14px rgba(118,75,162,0.5);
             z-index: 999;
-            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
         .privacy-fab:hover {
             transform: translateY(-3px);
-            background: rgba(255,255,255,0.4);
-            box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+            box-shadow: 0 6px 18px rgba(118,75,162,0.65);
         }
         #privacy-modal .modal-content {
             max-width: 520px;
