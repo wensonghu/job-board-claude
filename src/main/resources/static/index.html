@@ -1159,11 +1159,20 @@
             const data = await res.json();
 
             if (res.status === 201) {
-                showRegMsg('Account created! Check your email for a verification link.', 'success');
-                document.getElementById('reg-name').value = '';
-                document.getElementById('reg-email').value = '';
-                document.getElementById('reg-password').value = '';
-                document.getElementById('reg-confirm').value = '';
+                // Auto sign-in after registration
+                const formData = new URLSearchParams();
+                formData.append('username', email);
+                formData.append('password', password);
+                const loginRes = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: 'POST', credentials: 'include',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+                if (loginRes.ok) {
+                    window.location.reload();
+                } else {
+                    showRegMsg('Account created! You can now sign in.', 'success');
+                }
             } else {
                 showRegMsg(data.error || 'Registration failed. Please try again.', 'error');
             }
