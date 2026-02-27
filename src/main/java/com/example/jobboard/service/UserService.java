@@ -46,12 +46,9 @@ public class UserService {
         user.setDisplayName(request.getDisplayName());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setAuthProvider(AuthProvider.LOCAL);
-        user.setEmailVerified(false);
-        user.setVerificationToken(UUID.randomUUID().toString());
-        user.setVerificationTokenExpiry(LocalDateTime.now().plusHours(24));
+        user.setEmailVerified(true);
 
         AppUser saved = appUserRepository.save(user);
-        emailService.sendVerificationEmail(email, saved.getVerificationToken());
         logger.info("Registered new LOCAL user: {}", email);
         return saved;
     }
