@@ -91,7 +91,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/", "/index.html", "/error",
                     "/oauth2/**", "/login/**", "/.well-known/**",
-                    "/api/auth/status", "/api/auth/register", "/api/auth/verify-email",
+                    "/api/auth/status", "/api/auth/register", "/api/auth/verify-email", "/api/auth/resend-verification",
                     "/api/support/**",
                     "/api/broadcast/current"
                 ).permitAll()
@@ -110,7 +110,13 @@ public class SecurityConfig {
                     req.getSession().setAttribute("appUserEmail", email);
                     res.setStatus(HttpStatus.OK.value());
                 })
-                .failureHandler((req, res, ex) -> res.setStatus(HttpStatus.UNAUTHORIZED.value()))
+                .failureHandler((req, res, ex) -> {
+                    res.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    res.setContentType("application/json");
+                    String code = (ex instanceof org.springframework.security.authentication.DisabledException)
+                            ? "not_verified" : "bad_credentials";
+                    res.getWriter().write("{\"error\":\"" + code + "\"}");
+                })
                 .permitAll()
             )
             .oauth2Login(oauth2 -> oauth2

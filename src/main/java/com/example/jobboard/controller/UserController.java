@@ -35,6 +35,22 @@ public class UserController {
         }
     }
 
+    @PostMapping("/resend-verification")
+    public ResponseEntity<Map<String, String>> resendVerification(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Email is required."));
+        }
+        try {
+            userService.resendVerification(email.trim());
+            return ResponseEntity.ok(Map.of("message", "Verification email sent. Please check your inbox."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to send email. Please try again."));
+        }
+    }
+
     @GetMapping("/verify-email")
     public void verifyEmail(@RequestParam String token,
                             HttpServletRequest request,
