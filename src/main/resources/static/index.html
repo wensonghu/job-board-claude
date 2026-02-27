@@ -863,16 +863,13 @@
                     <input type="text" id="position" required placeholder="e.g., Senior Software Engineer">
                 </div>
                 <div class="form-group">
-                    <label style="display:flex; align-items:center; gap:8px;">
-                        <input type="checkbox" id="appliedChecked" onchange="toggleAppliedDate()"> Applied
-                    </label>
-                    <input type="date" id="appliedDate" style="display:none; margin-top:8px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <label style="display:flex; align-items:center; gap:6px; white-space:nowrap; font-weight:600; color:#2c3e50; flex-shrink:0;">
+                            <input type="checkbox" id="appliedChecked" onchange="toggleAppliedDate()"> Applied
+                        </label>
+                        <input type="date" id="appliedDate" style="display:none; flex:1;">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Last Action Date</label>
-                    <input type="date" id="date">
-                </div>
-
                 <div class="form-group">
                     <label>Interview Schedule</label>
                     <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -929,6 +926,10 @@
                         <option value="interview-completed">🎉 Interview Completed</option>
                         <option value="rejected">❌ Rejected</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label>Last Action Date</label>
+                    <input type="date" id="date">
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
@@ -1658,21 +1659,19 @@
             div.draggable = true;
             div.dataset.id = card.id;
             
-            // Show applied date if available, otherwise skip
+            // Applied date — separate row, only when set
             let appliedDateHtml = '';
             if (card.appliedDate) {
                 const [year, month, day] = card.appliedDate.split('-');
                 const localDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
                 const formatted = localDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                appliedDateHtml = `<div class="card-date">✅ Applied: ${formatted}</div>`;
+                appliedDateHtml = `<div style="font-size:0.85em; color:#7f8c8d; margin-top:6px;">✅ Applied: ${formatted}</div>`;
             }
 
-            // Interview date (can be 'TBD' or an ISO date)
+            // Interview date — only show when a real date is set (skip TBD)
             let interviewHtml = '';
-            if (card.interviewDate) {
-                if (card.interviewDate === 'TBD') {
-                    interviewHtml = `<div class="card-interview" style="font-size:0.85em; color:#95a5a6; margin-top:6px;">🎤 Interview: TBD</div>`;
-                } else {
+            if (card.interviewDate && card.interviewDate !== 'TBD') {
+                {
                     const parts = card.interviewDate.split('|');
                     const hasTime = parts.length > 1 && parts[1];
 
@@ -1890,7 +1889,7 @@
                 const hasApplied = !!card.appliedDate;
                 document.getElementById('appliedChecked').checked = hasApplied;
                 document.getElementById('appliedDate').value = card.appliedDate || '';
-                document.getElementById('appliedDate').style.display = hasApplied ? 'block' : 'none';
+                document.getElementById('appliedDate').style.display = hasApplied ? 'inline-block' : 'none';
                 document.getElementById('referredBy').value = card.referredBy || '';
                 document.getElementById('details').value = card.details || '';
                 document.getElementById('stage').value = card.stage;
@@ -2009,7 +2008,7 @@
 
         function toggleAppliedDate() {
             const show = document.getElementById('appliedChecked').checked;
-            document.getElementById('appliedDate').style.display = show ? 'block' : 'none';
+            document.getElementById('appliedDate').style.display = show ? 'inline-block' : 'none';
             if (!show) document.getElementById('appliedDate').value = '';
         }
 
