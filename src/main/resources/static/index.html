@@ -1109,8 +1109,33 @@
             if (res.ok) {
                 window.location.reload();
             } else {
-                errorEl.textContent = 'Invalid email or password. Have you verified your email?';
+                const data = await res.json().catch(() => ({}));
+                if (data.error === 'not_verified') {
+                    errorEl.innerHTML = 'Please verify your email before signing in. '
+                        + '<a href="#" onclick="resendVerification(\'' + email.replace(/'/g, '') + '\');return false;" '
+                        + 'style="color:#667eea;text-decoration:underline;cursor:pointer;">Resend verification email</a>';
+                } else {
+                    errorEl.textContent = 'Invalid email or password.';
+                }
                 errorEl.style.display = 'block';
+            }
+        }
+
+        async function resendVerification(email) {
+            const errorEl = document.getElementById('signin-error');
+            errorEl.textContent = 'Sending...';
+            errorEl.style.display = 'block';
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/auth/resend-verification`, {
+                    method: 'POST', credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                errorEl.style.color = res.ok ? '#27ae60' : '#e74c3c';
+                errorEl.textContent = data.message || data.error || 'Please try again.';
+            } catch (e) {
+                errorEl.textContent = 'Failed to send. Please try again.';
             }
         }
 

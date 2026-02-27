@@ -76,6 +76,22 @@ public class UserService {
     }
 
     /**
+     * Resend verification email. Resets the token so the link is fresh.
+     */
+    public void resendVerification(String email) {
+        AppUser user = appUserRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("No account found for that email."));
+        if (user.isEmailVerified()) {
+            throw new IllegalArgumentException("This email is already verified — please sign in.");
+        }
+        user.setVerificationToken(UUID.randomUUID().toString());
+        user.setVerificationTokenExpiry(LocalDateTime.now().plusHours(24));
+        appUserRepository.save(user);
+        emailService.sendVerificationEmail(user.getEmail(), user.getVerificationToken());
+        logger.info("Resent verification email to {}", email);
+    }
+
+    /**
      * Find or create an AppUser for a Google OAuth2 login.
      * Looks up by googleSub first, then by email (account linking).
      */
