@@ -25,7 +25,7 @@ public class UserController {
         try {
             userService.register(request);
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(Map.of("message", "Account created. Please check your email to verify your account."));
+                    .body(Map.of("message", "Account created. You can now sign in."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("error", e.getMessage()));
