@@ -22,6 +22,9 @@ public class Card {
 
     private LocalDate date; // Corresponds to last action date
 
+    @Column(name = "applied_date")
+    private LocalDate appliedDate;
+
     private String interviewDate; // Format: "YYYY-MM-DD|HH:mm|TZ" or "TBD"
 
     private String referredBy;
@@ -50,6 +53,9 @@ public class Card {
 
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }
+
+    public LocalDate getAppliedDate() { return appliedDate; }
+    public void setAppliedDate(LocalDate appliedDate) { this.appliedDate = appliedDate; }
 
     public String getInterviewDate() { return interviewDate; }
     public void setInterviewDate(String interviewDate) { this.interviewDate = interviewDate; }
