@@ -45,6 +45,20 @@ public class EmailService {
         }
     }
 
+    public void sendNewUserNotification(String newUserEmail, String displayName) {
+        if (resendApiKey == null || resendApiKey.isBlank()) {
+            logger.info("[NEW USER] name={} email={}", displayName, newUserEmail);
+            return;
+        }
+        String subject = "[PitStop] New user registered: " + newUserEmail;
+        String body = "A new user just created an account.\n\nName: " + displayName + "\nEmail: " + newUserEmail;
+        try {
+            sendViaResend("onboarding@resend.dev", "wensonghu@gmail.com", subject, body);
+        } catch (Exception e) {
+            logger.error("Failed to send new user notification for {}: {}", newUserEmail, e.getMessage());
+        }
+    }
+
     public void sendFeedbackEmail(String fromEmail, String category, String message) {
         if (resendApiKey == null || resendApiKey.isBlank()) {
             logger.warn("[FEEDBACK] from={} category={} message={}", fromEmail, category, message);
