@@ -50,6 +50,7 @@ public class UserService {
 
         AppUser saved = appUserRepository.save(user);
         logger.info("Registered new LOCAL user: {}", email);
+        emailService.sendNewUserNotification(email, request.getDisplayName());
         return saved;
     }
 
