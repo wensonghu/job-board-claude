@@ -28,7 +28,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
-            background: #F2F2F7;
+            background: linear-gradient(160deg, #060a12 0%, #0d1828 60%, #060a12 100%) fixed;
             min-height: 100vh;
             padding: 20px;
             padding-top: max(20px, env(safe-area-inset-top));
@@ -110,12 +110,12 @@
         }
 
         .content-wrapper::-webkit-scrollbar-track {
-            background: #E5E5EA;
+            background: rgba(255,255,255,0.06);
             border-radius: 5px;
         }
 
         .content-wrapper::-webkit-scrollbar-thumb {
-            background: #C7C7CC;
+            background: rgba(255,255,255,0.2);
             border-radius: 5px;
         }
 
