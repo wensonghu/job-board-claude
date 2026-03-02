@@ -4,6 +4,7 @@ import com.example.jobboard.dto.AlertDto;
 import com.example.jobboard.model.AlertDismissal;
 import com.example.jobboard.model.AppUser;
 import com.example.jobboard.model.Card;
+import com.example.jobboard.model.CardStatus;
 import com.example.jobboard.repository.AlertDismissalRepository;
 import com.example.jobboard.repository.CardRepository;
 import com.example.jobboard.service.UserService;
@@ -54,6 +55,15 @@ public class AlertController {
         Map<String, AlertDto> alertMap = new LinkedHashMap<>();
 
         for (Card card : cards) {
+            // Offer-pending alert
+            if (CardStatus.OFFER_PENDING.equals(card.getStatus())) {
+                String key = "offer-" + card.getId();
+                activeKeys.add(key);
+                String msg = "🎉 Great job! Best of luck with the offer at " + card.getCompany() + "!";
+                alertMap.put(key, new AlertDto(key, msg));
+            }
+
+            // Interview reminder (within 48 hours)
             String interviewDate = card.getInterviewDate();
             if (interviewDate == null || interviewDate.isBlank() || "TBD".equalsIgnoreCase(interviewDate)) continue;
             try {

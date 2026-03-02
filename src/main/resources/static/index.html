@@ -1578,23 +1578,15 @@
             Object.keys(grouped).forEach(stage => {
                 const container = document.querySelector(`[data-column="${stage}"]`);
                 
-                let sortedCards;
-                if (stage === 'seeding') {
-                    // Seeding: sort by last action date descending
-                    sortedCards = grouped[stage].sort((a, b) => {
-                        const dateA = a.date || '0000-01-01';
-                        const dateB = b.date || '0000-01-01';
-                        return dateB.localeCompare(dateA);
-                    });
-                } else {
-                    // Other stages: sort by status (in-progress first, rejected last)
-                    sortedCards = grouped[stage].sort((a, b) => {
-                        const statusOrder = { 'in-progress': 0, 'interview-date-confirmed': 0, 'interview-completed': 0, 'interview-schedule-pending': 0.5, 'rejected': 1 };
-                        const aStatus = a.status || 'in-progress';
-                        const bStatus = b.status || 'in-progress';
-                        return (statusOrder[aStatus] || 0) - (statusOrder[bStatus] || 0);
-                    });
-                }
+                // All stages: offer-pending first, rejected last, otherwise sort by date DESC
+                const sortedCards = grouped[stage].sort((a, b) => {
+                    const order = s => s === 'offer-pending' ? 0 : s === 'rejected' ? 2 : 1;
+                    const orderDiff = order(a.status) - order(b.status);
+                    if (orderDiff !== 0) return orderDiff;
+                    const dateA = a.date || '0000-01-01';
+                    const dateB = b.date || '0000-01-01';
+                    return dateB.localeCompare(dateA);
+                });
                 
                 sortedCards.forEach(card => {
                     container.appendChild(createCardElement(card));
@@ -1732,7 +1724,8 @@
                 'rejected': { emoji: '❌', label: 'Rejected', color: '#95a5a6' },
                 'interview-schedule-pending': { emoji: '⏳', label: 'Interview Pending', color: '#7f8c8d' },
                 'interview-date-confirmed': { emoji: '✅', label: 'Interview Confirmed', color: '#27ae60' },
-                'interview-completed': { emoji: '🎉', label: 'Interview Completed', color: '#8e44ad' }
+                'interview-completed': { emoji: '🎉', label: 'Interview Completed', color: '#8e44ad' },
+                'offer-pending': { emoji: '🏆', label: 'Offer Pending', color: '#e67e22' }
             };
             const statusInfo = statusConfig[card.status] || statusConfig['in-progress'];
             const statusHtml = card.status ? `<div class="card-status" style="display: inline-block; background: ${statusInfo.color}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; margin-top: 8px;">${statusInfo.emoji} ${statusInfo.label}</div>` : '';
@@ -1741,7 +1734,11 @@
             let reminderHtml = '';
             const color = card.color || 'white';
 
-            if (color === 'grey') {
+            if (color === 'gold') {
+                div.style.background = 'linear-gradient(135deg, #fff8e7 0%, #fef0c7 100%)';
+                div.style.borderLeft = '4px solid #f39c12';
+                div.style.boxShadow = '0 2px 8px rgba(243,156,18,0.2)';
+            } else if (color === 'grey') {
                 div.style.background = '#f0f0f0';
                 div.style.borderLeft = '4px solid #95a5a6';
             } else if (color === 'yellow') {
@@ -1843,19 +1840,33 @@
             container.addEventListener('drop', (e) => {
                 e.preventDefault();
                 container.classList.remove('drag-over');
-                
+
                 if (draggedCard) {
                     const newStage = container.dataset.column;
                     const cardId = parseInt(draggedCard.dataset.id);
-                    const card = cards.find(c => c.id === cardId);
-                    
-                    if (card) {
-                        const updatedCard = { ...card, stage: newStage };
-                        persistAndReload(updatedCard, 'update');
-                    }
+                    updateCardStage(cardId, newStage);
                 }
             });
         });
+
+        // Stage-only update for drag-and-drop (does not trigger status rules)
+        async function updateCardStage(cardId, newStage) {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/cards/${cardId}/stage`, {
+                    method: 'PATCH',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ stage: newStage })
+                });
+                if (!res.ok && res.status === 401) {
+                    openSignInModal('Sign in required — your changes were not saved.');
+                    return;
+                }
+            } catch (e) {
+                console.error('Failed to update stage:', e);
+            }
+            await loadCards();
+        }
 
         // Central function to persist changes to the backend and reload the board
         async function persistAndReload(card, action) {

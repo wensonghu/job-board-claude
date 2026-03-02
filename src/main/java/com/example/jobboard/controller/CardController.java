@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/cards")
@@ -78,6 +79,17 @@ public class CardController {
                                            Authentication authentication, HttpServletRequest request) {
         Long userId = resolveUserId(authentication, request);
         Card updated = cardService.updateCard(id, cardDetails, userId);
+        return ResponseEntity.ok(updated);
+    }
+
+    /** Stage-only update for drag-and-drop — does not trigger status auto-promotion rules. */
+    @PatchMapping("/{id}/stage")
+    public ResponseEntity<Card> updateStage(@PathVariable Long id,
+                                            @RequestBody Map<String, String> body,
+                                            Authentication authentication, HttpServletRequest request) {
+        Long userId = resolveUserId(authentication, request);
+        String stage = body.get("stage");
+        Card updated = cardService.updateStage(id, stage, userId);
         return ResponseEntity.ok(updated);
     }
 
