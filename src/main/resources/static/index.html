@@ -27,8 +27,8 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: #F2F2F7;
             min-height: 100vh;
             padding: 20px;
             padding-top: max(20px, env(safe-area-inset-top));
@@ -70,8 +70,8 @@
         }
 
 .header h1 {
-            color: #667eea;
-            font-family: 'Arial Black', sans-serif;
+            color: #007AFF;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
             font-size: 1.8em;
             display: flex;
             align-items: center;
@@ -79,22 +79,21 @@
         }
 
         .add-card-btn {
-            background: #667eea;
+            background: #007AFF;
             color: white;
             border: none;
             padding: 0 20px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 2.5em;
             line-height: 1.2;
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
+            font-weight: 400;
+            transition: all 0.2s;
         }
 
         .add-card-btn:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            background: #0071E3;
+            box-shadow: 0 4px 12px rgba(0,122,255,0.35);
         }
 
         .content-wrapper {
@@ -111,12 +110,12 @@
         }
 
         .content-wrapper::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.1);
+            background: #E5E5EA;
             border-radius: 5px;
         }
 
         .content-wrapper::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.3);
+            background: #C7C7CC;
             border-radius: 5px;
         }
 
@@ -147,7 +146,7 @@
         }
 
         .column {
-            background: #f8f9fa;
+            background: #EFEFF4;
             border-radius: 12px;
             padding: 15px;
             min-height: 500px;
@@ -156,7 +155,7 @@
             max-width: 420px;
             flex: 1;
             flex-shrink: 0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
             scroll-snap-align: center;
         }
 
@@ -173,11 +172,11 @@
             align-items: center;
         }
 
-        .seeding { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .recruiter { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-        .hm { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-        .next-rounds { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
-        .final { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .seeding    { background: #007AFF; }
+        .recruiter  { background: #5856D6; }
+        .hm         { background: #32ADE6; }
+        .next-rounds{ background: #FF9500; }
+        .final      { background: #34C759; }
 
         .count {
             background: rgba(255,255,255,0.3);
@@ -213,18 +212,16 @@
 
         .card {
             background: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 12px;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
             cursor: grab;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-            border-left: 4px solid #667eea;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s;
         }
 
         .card:hover {
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
 
         .card.dragging {
@@ -259,7 +256,7 @@
             gap: 8px;
             margin-top: 10px;
             padding-top: 10px;
-            border-top: 1px solid #ecf0f1;
+            border-top: 1px solid #F2F2F7;
         }
 
         .card-actions button {
@@ -279,8 +276,8 @@
         }
 
         .cards-container.drag-over {
-            background: rgba(102, 126, 234, 0.1);
-            border: 2px dashed #667eea;
+            background: rgba(0, 122, 255, 0.08);
+            border: 2px dashed #007AFF;
             border-radius: 8px;
         }
 
@@ -315,7 +312,7 @@
         }
 
         .modal-content h2 {
-            color: #667eea;
+            color: #007AFF;
             margin-bottom: 20px;
         }
 
@@ -333,15 +330,16 @@
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
+            border: 1.5px solid #C7C7CC;
+            border-radius: 10px;
             font-size: 16px;
-            transition: border 0.3s;
+            transition: border-color 0.2s;
+            background: #FAFAFA;
         }
 
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #007AFF;
         }
 
         .modal-actions {
@@ -362,12 +360,12 @@
         }
 
         .btn-primary {
-            background: #667eea;
+            background: #007AFF;
             color: white;
         }
 
         .btn-primary:hover {
-            background: #5568d3;
+            background: #0071E3;
         }
 
         .btn-secondary {
@@ -397,10 +395,10 @@
 
         #menu-btn {
             background: none;
-            border: 2px solid #e9ecef;
+            border: 1.5px solid #C7C7CC;
             border-radius: 8px;
             cursor: pointer;
-            color: #667eea;
+            color: #007AFF;
             font-size: 1rem;
             line-height: 1;
             transition: border-color 0.2s, background 0.2s;
@@ -411,8 +409,8 @@
             height: 40px;
         }
         #menu-btn:hover {
-            border-color: #667eea;
-            background: rgba(102,126,234,0.05);
+            border-color: #007AFF;
+            background: rgba(0,122,255,0.05);
         }
 
         #menu-dropdown {
@@ -438,13 +436,13 @@
             transition: background 0.15s;
             white-space: nowrap;
         }
-        .menu-item:hover { background: #f8f9ff; color: #667eea; }
+        .menu-item:hover { background: #F2F2F7; color: #007AFF; }
 
         .menu-greeting {
             font-weight: 600;
-            color: #667eea;
+            color: #007AFF;
             cursor: default;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #E5E5EA;
         }
         .menu-greeting:hover { background: white; }
 
@@ -497,13 +495,13 @@
         }
 
         .todo-modal-content {
-            background: #e74c3c;
+            background: #FF3B30;
             color: white;
-            padding: 15px 25px;
+            padding: 14px 20px;
             border-radius: 12px;
-            font-weight: 700;
-            font-size: 1.1em;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-weight: 600;
+            font-size: 1em;
+            box-shadow: 0 2px 10px rgba(255,59,48,0.25);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -531,36 +529,39 @@
         }
 
         /* ── Calendar view ─────────────────────────────────────── */
+        /* iOS segmented control */
         .view-toggle {
             display: flex;
-            border: 2px solid #667eea;
-            border-radius: 8px;
+            background: #E5E5EA;
+            border-radius: 9px;
+            padding: 2px;
             overflow: hidden;
             flex-shrink: 0;
+            gap: 2px;
         }
         .view-toggle-btn {
-            padding: 8px 16px;
-            background: white;
-            color: #667eea;
+            padding: 7px 14px;
+            background: transparent;
+            color: #3C3C43;
             border: none;
+            border-radius: 7px;
             font-size: 0.88em;
-            font-weight: 600;
+            font-weight: 500;
             cursor: pointer;
-            transition: background 0.2s, color 0.2s;
+            transition: background 0.15s, box-shadow 0.15s;
             display: flex;
             align-items: center;
             gap: 5px;
             white-space: nowrap;
         }
-        .view-toggle-btn:first-child {
-            border-right: 2px solid #667eea;
-        }
         .view-toggle-btn.active {
-            background: #667eea;
-            color: white;
+            background: white;
+            color: #007AFF;
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
         }
         .view-toggle-btn:hover:not(.active) {
-            background: rgba(102,126,234,0.1);
+            background: rgba(255,255,255,0.5);
         }
         #calendar-section {
             background: white;
@@ -578,21 +579,21 @@
         }
         .tz-label {
             font-weight: 600;
-            color: #667eea;
+            color: #007AFF;
             font-size: 0.95em;
         }
         #tz-selector {
-            border: 2px solid #e9ecef;
-            border-radius: 6px;
+            border: 1.5px solid #C7C7CC;
+            border-radius: 8px;
             padding: 6px 10px;
             font-size: 0.9em;
-            color: #2c3e50;
+            color: #1C1C1E;
             cursor: pointer;
             transition: border 0.2s;
         }
         #tz-selector:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #007AFF;
         }
         #calendar-container {
             height: 700px;
@@ -604,18 +605,18 @@
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: #667eea;
+            background: #007AFF;
             color: white;
             border: none;
             font-size: 1.4em;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(102,126,234,0.5);
+            box-shadow: 0 4px 14px rgba(0,122,255,0.4);
             z-index: 999;
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .feedback-fab:hover {
             transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(102,126,234,0.6);
+            box-shadow: 0 6px 18px rgba(0,122,255,0.5);
         }
         .privacy-fab {
             position: fixed;
@@ -624,18 +625,18 @@
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: #764ba2;
+            background: #5856D6;
             color: white;
             border: none;
             font-size: 1.3em;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(118,75,162,0.5);
+            box-shadow: 0 4px 14px rgba(88,86,214,0.4);
             z-index: 999;
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .privacy-fab:hover {
             transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(118,75,162,0.65);
+            box-shadow: 0 6px 18px rgba(88,86,214,0.5);
         }
         #privacy-modal .modal-content {
             max-width: 520px;
@@ -924,6 +925,7 @@
                         <option value="interview-schedule-pending">⏳ Interview Schedule Pending</option>
                         <option value="interview-date-confirmed">✅ Interview Date Confirmed</option>
                         <option value="interview-completed">🎉 Interview Completed</option>
+                        <option value="offer-pending">🏆 Offer Pending</option>
                         <option value="rejected">❌ Rejected</option>
                     </select>
                 </div>
@@ -945,16 +947,16 @@
             <span onclick="closeSignInModal()" style="position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #95a5a6;">&times;</span>
 
             <!-- Contextual prompt — shown when triggered by an action -->
-            <div id="signin-prompt" style="display:none; background:#eef0fd; border:1px solid #c5caef; border-radius:8px; padding:10px 14px; margin-bottom:16px; margin-top:8px; font-size:0.9em; color:#3d4db7; text-align:center;"></div>
+            <div id="signin-prompt" style="display:none; background:#EBF5FF; border:1px solid #B3D7FF; border-radius:8px; padding:10px 14px; margin-bottom:16px; margin-top:8px; font-size:0.9em; color:#007AFF; text-align:center;"></div>
 
             <!-- Tab bar -->
-            <div style="display: flex; border-bottom: 2px solid #ecf0f1; margin-bottom: 24px; margin-top: 10px;">
+            <div style="display: flex; border-bottom: 1.5px solid #E5E5EA; margin-bottom: 24px; margin-top: 10px;">
                 <button id="tab-signin" onclick="showAuthTab('signin')"
-                    style="flex:1; padding: 12px; border: none; background: none; font-size: 1em; font-weight: 600; cursor: pointer; color: #667eea; border-bottom: 3px solid #667eea; margin-bottom: -2px;">
+                    style="flex:1; padding: 12px; border: none; background: none; font-size: 1em; font-weight: 600; cursor: pointer; color: #007AFF; border-bottom: 3px solid #007AFF; margin-bottom: -2px;">
                     Sign In
                 </button>
                 <button id="tab-register" onclick="showAuthTab('register')"
-                    style="flex:1; padding: 12px; border: none; background: none; font-size: 1em; font-weight: 600; cursor: pointer; color: #95a5a6; border-bottom: 3px solid transparent; margin-bottom: -2px;">
+                    style="flex:1; padding: 12px; border: none; background: none; font-size: 1em; font-weight: 600; cursor: pointer; color: #8E8E93; border-bottom: 3px solid transparent; margin-bottom: -2px;">
                     Create Account
                 </button>
             </div>
@@ -1112,7 +1114,7 @@
                 if (data.error === 'not_verified') {
                     errorEl.innerHTML = 'Please verify your email before signing in. '
                         + '<a href="#" onclick="resendVerification(\'' + email.replace(/'/g, '') + '\');return false;" '
-                        + 'style="color:#667eea;text-decoration:underline;cursor:pointer;">Resend verification email</a>';
+                        + 'style="color:#007AFF;text-decoration:underline;cursor:pointer;">Resend verification email</a>';
                 } else {
                     errorEl.textContent = 'Invalid email or password.';
                 }
@@ -1189,10 +1191,10 @@
             const isSignin = tab === 'signin';
             document.getElementById('auth-tab-signin').style.display = isSignin ? 'block' : 'none';
             document.getElementById('auth-tab-register').style.display = isSignin ? 'none' : 'block';
-            document.getElementById('tab-signin').style.color = isSignin ? '#667eea' : '#95a5a6';
-            document.getElementById('tab-signin').style.borderBottom = isSignin ? '3px solid #667eea' : '3px solid transparent';
-            document.getElementById('tab-register').style.color = isSignin ? '#95a5a6' : '#667eea';
-            document.getElementById('tab-register').style.borderBottom = isSignin ? '3px solid transparent' : '3px solid #667eea';
+            document.getElementById('tab-signin').style.color = isSignin ? '#007AFF' : '#8E8E93';
+            document.getElementById('tab-signin').style.borderBottom = isSignin ? '3px solid #007AFF' : '3px solid transparent';
+            document.getElementById('tab-register').style.color = isSignin ? '#8E8E93' : '#007AFF';
+            document.getElementById('tab-register').style.borderBottom = isSignin ? '3px solid transparent' : '3px solid #007AFF';
         }
 
         function handleSignoutClick() {
@@ -1659,7 +1661,7 @@
         function createGetStartedElement() {
             const div = document.createElement('div');
             div.className = 'todo-modal-content';
-            div.style.background = '#667eea';
+            div.style.background = '#007AFF';
             div.innerHTML = `
                 <span>🚀 Add cards for your new leads, companies you are applying to, interviews being scheduled</span>
                 <span class="close-todo-modal" onclick="closeTodoAlert('get-started')">&times;</span>
@@ -1720,12 +1722,12 @@
             
             // Status badge and styling
             const statusConfig = {
-                'in-progress': { emoji: '🔄', label: 'In Progress', color: '#3498db' },
-                'rejected': { emoji: '❌', label: 'Rejected', color: '#95a5a6' },
-                'interview-schedule-pending': { emoji: '⏳', label: 'Interview Pending', color: '#7f8c8d' },
-                'interview-date-confirmed': { emoji: '✅', label: 'Interview Confirmed', color: '#27ae60' },
-                'interview-completed': { emoji: '🎉', label: 'Interview Completed', color: '#8e44ad' },
-                'offer-pending': { emoji: '🏆', label: 'Offer Pending', color: '#e67e22' }
+                'in-progress':                { emoji: '🔄', label: 'In Progress',          color: '#007AFF' },
+                'rejected':                   { emoji: '❌', label: 'Rejected',              color: '#8E8E93' },
+                'interview-schedule-pending': { emoji: '⏳', label: 'Interview Pending',     color: '#FF9500' },
+                'interview-date-confirmed':   { emoji: '✅', label: 'Interview Confirmed',   color: '#34C759' },
+                'interview-completed':        { emoji: '🎉', label: 'Interview Completed',   color: '#5856D6' },
+                'offer-pending':              { emoji: '🏆', label: 'Offer Pending',         color: '#FF9500' }
             };
             const statusInfo = statusConfig[card.status] || statusConfig['in-progress'];
             const statusHtml = card.status ? `<div class="card-status" style="display: inline-block; background: ${statusInfo.color}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; margin-top: 8px;">${statusInfo.emoji} ${statusInfo.label}</div>` : '';
@@ -1735,21 +1737,20 @@
             const color = card.color || 'white';
 
             if (color === 'gold') {
-                div.style.background = 'linear-gradient(135deg, #fff8e7 0%, #fef0c7 100%)';
-                div.style.borderLeft = '4px solid #f39c12';
-                div.style.boxShadow = '0 2px 8px rgba(243,156,18,0.2)';
+                div.style.background = '#FFFBF0';
+                div.style.borderLeft = '3px solid #FF9500';
+                div.style.boxShadow = '0 1px 4px rgba(255,149,0,0.15)';
             } else if (color === 'grey') {
-                div.style.background = '#f0f0f0';
-                div.style.borderLeft = '4px solid #95a5a6';
+                div.style.background = '#F2F2F7';
+                div.style.borderLeft = '3px solid #C7C7CC';
             } else if (color === 'yellow') {
-                div.style.background = '#fff7e6';
-                div.style.borderLeft = '4px solid #f6c84c';
+                div.style.background = '#FFF9EC';
+                div.style.borderLeft = '3px solid #FF9500';
                 reminderHtml = `<div class="card-reminder" style="display:inline-block; margin-left:8px; font-size:0.95em;">🔔</div>`;
             } else { // white
                 div.style.background = '#ffffff';
-                // Special border for pending interviews, even if background is white
                 if (card.status === 'interview-schedule-pending') {
-                    div.style.borderLeft = '4px solid #b0bec5';
+                    div.style.borderLeft = '3px solid #C7C7CC';
                 }
             }
             
