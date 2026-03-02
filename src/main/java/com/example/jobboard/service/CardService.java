@@ -60,21 +60,22 @@ public class CardService {
 
         // Auto-create offer card when interview is completed at the Final stage
         if (saved.getStatus() == CardStatus.INTERVIEW_COMPLETED
-                && saved.getStage() == CardStage.FINAL
-                && !cardRepository.existsByUserIdAndCompanyAndPositionAndStatus(
-                        userId, saved.getCompany(), saved.getPosition(), CardStatus.OFFER_PENDING)) {
-            Card offerCard = new Card();
-            offerCard.setUserId(userId);
-            offerCard.setCompany(saved.getCompany());
-            offerCard.setPosition(saved.getPosition());
-            offerCard.setStage(CardStage.FINAL);
-            offerCard.setStatus(CardStatus.OFFER_PENDING);
-            offerCard.setDate(LocalDate.now());
-            offerCard.setAppliedDate(saved.getAppliedDate());
-            offerCard.setReferredBy(saved.getReferredBy());
-            Card savedOffer = cardRepository.save(offerCard);
-            cardHistoryRepository.save(CardHistory.fromCard(savedOffer));
-            logger.info("Auto-created offer card {} for userId={} company={}", savedOffer.getId(), userId, saved.getCompany());
+                && saved.getStage() == CardStage.FINAL) {
+            String markedCompany = (saved.getCompany() != null ? saved.getCompany() : "") + " [Offer]";
+            if (!cardRepository.existsByUserIdAndCompanyAndStatus(userId, markedCompany, CardStatus.OFFER_PENDING)) {
+                Card offerCard = new Card();
+                offerCard.setUserId(userId);
+                offerCard.setCompany(markedCompany);
+                offerCard.setPosition(saved.getPosition());
+                offerCard.setStage(CardStage.FINAL);
+                offerCard.setStatus(CardStatus.OFFER_PENDING);
+                offerCard.setDate(LocalDate.now());
+                offerCard.setAppliedDate(saved.getAppliedDate());
+                offerCard.setReferredBy(saved.getReferredBy());
+                Card savedOffer = cardRepository.save(offerCard);
+                cardHistoryRepository.save(CardHistory.fromCard(savedOffer));
+                logger.info("Auto-created offer card {} for userId={} company={}", savedOffer.getId(), userId, markedCompany);
+            }
         }
 
         return saved;

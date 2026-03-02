@@ -59,7 +59,9 @@ public class AlertController {
             if (CardStatus.OFFER_PENDING.equals(card.getStatus())) {
                 String key = "offer-" + card.getId();
                 activeKeys.add(key);
-                String msg = "🎉 Great job! Best of luck with the offer at " + card.getCompany() + "!";
+                String displayCompany = card.getCompany() != null
+                        ? card.getCompany().replace(" [Offer]", "").trim() : "";
+                String msg = "🎉 Great job! Best of luck with the offer at " + displayCompany + "!";
                 alertMap.put(key, new AlertDto(key, msg));
             }
 
