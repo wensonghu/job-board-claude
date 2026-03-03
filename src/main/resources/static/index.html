@@ -527,13 +527,16 @@
         }
 
         .todo-modal-content {
-            background: #FF3B30;
+            background: rgba(49,242,254,0.08);
+            border: 0.5px solid rgba(49,242,254,0.28);
             color: white;
             padding: 14px 20px;
             border-radius: 12px;
             font-weight: 600;
             font-size: 1em;
-            box-shadow: 0 2px 10px rgba(255,59,48,0.25);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.35), 0 0 0 0.5px rgba(49,242,254,0.1);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -557,7 +560,11 @@
             cursor: pointer;
             line-height: 1;
             padding-left: 20px;
-            opacity: 0.8;
+            opacity: 0.45;
+            transition: opacity 0.2s;
+        }
+        .close-todo-modal:hover {
+            opacity: 0.85;
         }
 
         /* ── Calendar view ─────────────────────────────────────── */
@@ -1699,7 +1706,9 @@
         function createGetStartedElement() {
             const div = document.createElement('div');
             div.className = 'todo-modal-content';
-            div.style.background = '#007AFF';
+            div.style.background = 'rgba(78,94,214,0.15)';
+            div.style.border = '0.5px solid rgba(78,94,214,0.4)';
+            div.style.boxShadow = '0 2px 20px rgba(0,0,0,0.35), 0 0 0 0.5px rgba(78,94,214,0.15)';
             div.innerHTML = `
                 <span>🚀 Add cards for your new leads, companies you are applying to, interviews being scheduled</span>
                 <span class="close-todo-modal" onclick="closeTodoAlert('get-started')">&times;</span>
