@@ -49,13 +49,16 @@
         }
 
         .header {
-            background: white;
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 0.5px solid rgba(255,255,255,0.1);
             padding: 20px 30px;
-            border-radius: 12px;
+            border-radius: 16px;
             position: relative;
             z-index: 1001;
             margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.35);
             display: flex;
             align-items: center;
             gap: 12px;
@@ -70,16 +73,18 @@
         }
 
 .header h1 {
-            color: #007AFF;
+            color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
             font-size: 1.8em;
+            font-weight: 800;
+            letter-spacing: -0.5px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
         .add-card-btn {
-            background: #007AFF;
+            background: #4e5ed6;
             color: white;
             border: none;
             padding: 0 20px;
@@ -92,8 +97,8 @@
         }
 
         .add-card-btn:hover {
-            background: #0071E3;
-            box-shadow: 0 4px 12px rgba(0,122,255,0.35);
+            background: #3d4dba;
+            box-shadow: 0 4px 14px rgba(78,94,214,0.45);
         }
 
         .content-wrapper {
@@ -146,8 +151,9 @@
         }
 
         .column {
-            background: #EFEFF4;
-            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 0.5px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
             padding: 15px;
             min-height: 500px;
             min-width: 392px;
@@ -155,34 +161,36 @@
             max-width: 420px;
             flex: 1;
             flex-shrink: 0;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 16px rgba(0,0,0,0.25);
             scroll-snap-align: center;
         }
 
         .column-header {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            color: white;
-            font-weight: 600;
-            font-size: 1.1em;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 14px;
+            font-weight: 700;
+            font-size: 0.92em;
+            letter-spacing: 0.2px;
             text-align: center;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .seeding    { background: #007AFF; }
-        .recruiter  { background: #5856D6; }
-        .hm         { background: #32ADE6; }
-        .next-rounds{ background: #FF9500; }
-        .final      { background: #34C759; }
+        .seeding     { background: rgba(49,242,254,0.12);  color: #31f2fe;  border: 0.5px solid rgba(49,242,254,0.25); }
+        .recruiter   { background: rgba(78,94,214,0.18);   color: #7b8ff5;  border: 0.5px solid rgba(78,94,214,0.35); }
+        .hm          { background: rgba(50,173,230,0.14);  color: #32ADE6;  border: 0.5px solid rgba(50,173,230,0.3); }
+        .next-rounds { background: rgba(255,149,0,0.12);   color: #FF9500;  border: 0.5px solid rgba(255,149,0,0.3); }
+        .final       { background: rgba(23,204,69,0.12);   color: #17cc45;  border: 0.5px solid rgba(23,204,69,0.28); }
 
         .count {
-            background: rgba(255,255,255,0.3);
-            padding: 4px 10px;
+            background: rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.7);
+            padding: 3px 9px;
             border-radius: 12px;
-            font-size: 0.9em;
+            font-size: 0.85em;
+            font-weight: 600;
         }
 
         .column-add-btn {
@@ -211,17 +219,18 @@
         }
 
         .card {
-            background: white;
-            border-radius: 12px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 16px;
             padding: 14px 16px;
             margin-bottom: 10px;
             cursor: grab;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-            transition: box-shadow 0.2s;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.35), 0 0 0 0.5px rgba(255,255,255,0.07);
+            transition: box-shadow 0.2s, transform 0.15s;
         }
 
         .card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.4), 0 0 0 0.5px rgba(255,255,255,0.12);
+            transform: translateY(-1px);
         }
 
         .card.dragging {
@@ -230,21 +239,22 @@
         }
 
         .card-title {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 8px;
-            font-size: 1.05em;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 4px;
+            font-size: 1.0em;
+            letter-spacing: -0.1px;
         }
 
         .card-company {
-            color: #7f8c8d;
-            font-size: 0.9em;
-            margin-bottom: 10px;
+            color: rgba(255,255,255,0.55);
+            font-size: 0.88em;
+            margin-bottom: 8px;
         }
 
         .card-date {
-            font-size: 0.85em;
-            color: #95a5a6;
+            font-size: 0.82em;
+            color: rgba(255,255,255,0.38);
             display: flex;
             align-items: center;
             gap: 5px;
@@ -256,7 +266,7 @@
             gap: 8px;
             margin-top: 10px;
             padding-top: 10px;
-            border-top: 1px solid #F2F2F7;
+            border-top: 0.5px solid rgba(255,255,255,0.08);
         }
 
         .card-actions button {
@@ -264,21 +274,21 @@
             border: none;
             cursor: pointer;
             padding: 4px 8px;
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 0.9em;
-            color: #7f8c8d;
-            transition: all 0.2s;
+            color: rgba(255,255,255,0.38);
+            transition: all 0.15s;
         }
 
         .card-actions button:hover {
-            background: #ecf0f1;
-            color: #2c3e50;
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.85);
         }
 
         .cards-container.drag-over {
-            background: rgba(0, 122, 255, 0.08);
-            border: 2px dashed #007AFF;
-            border-radius: 8px;
+            background: rgba(78,94,214,0.1);
+            border: 1.5px dashed rgba(78,94,214,0.5);
+            border-radius: 12px;
         }
 
         .modal {
@@ -289,8 +299,9 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
         }
 
         .modal.active {
@@ -300,19 +311,22 @@
         }
 
         .modal-content {
-            background: white;
+            background: #0d1828;
+            border: 0.5px solid rgba(255,255,255,0.1);
             padding: 30px;
-            border-radius: 16px;
+            border-radius: 20px;
             width: 90%;
             max-width: 500px;
             max-height: 85vh;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.07);
         }
 
         .modal-content h2 {
-            color: #007AFF;
+            color: #ffffff;
+            font-weight: 800;
+            letter-spacing: -0.3px;
             margin-bottom: 20px;
         }
 
@@ -323,23 +337,35 @@
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #2c3e50;
+            color: rgba(255,255,255,0.7);
             font-weight: 600;
+            font-size: 0.9em;
         }
 
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 12px;
-            border: 1.5px solid #C7C7CC;
+            border: 0.5px solid rgba(255,255,255,0.15);
             border-radius: 10px;
             font-size: 16px;
             transition: border-color 0.2s;
-            background: #FAFAFA;
+            background: rgba(255,255,255,0.07);
+            color: #ffffff;
+        }
+
+        .form-group input::placeholder, .form-group textarea::placeholder {
+            color: rgba(255,255,255,0.28);
+        }
+
+        .form-group select option {
+            background: #0d1828;
+            color: #ffffff;
         }
 
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
             outline: none;
-            border-color: #007AFF;
+            border-color: #31f2fe;
+            box-shadow: 0 0 0 2px rgba(49,242,254,0.12);
         }
 
         .modal-actions {
@@ -360,27 +386,30 @@
         }
 
         .btn-primary {
-            background: #007AFF;
+            background: #4e5ed6;
             color: white;
         }
 
         .btn-primary:hover {
-            background: #0071E3;
+            background: #3d4dba;
+            box-shadow: 0 4px 14px rgba(78,94,214,0.45);
         }
 
         .btn-secondary {
-            background: #e9ecef;
-            color: #2c3e50;
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.7);
+            border: 0.5px solid rgba(255,255,255,0.12);
         }
 
         .btn-secondary:hover {
-            background: #dee2e6;
+            background: rgba(255,255,255,0.13);
+            color: white;
         }
 
         .empty-state {
             text-align: center;
             padding: 40px 20px;
-            color: #95a5a6;
+            color: rgba(255,255,255,0.28);
         }
 
         .caption-row {
@@ -394,11 +423,11 @@
         }
 
         #menu-btn {
-            background: none;
-            border: 1.5px solid #C7C7CC;
-            border-radius: 8px;
+            background: rgba(255,255,255,0.08);
+            border: 0.5px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
             cursor: pointer;
-            color: #007AFF;
+            color: rgba(255,255,255,0.75);
             font-size: 1rem;
             line-height: 1;
             transition: border-color 0.2s, background 0.2s;
@@ -409,8 +438,9 @@
             height: 40px;
         }
         #menu-btn:hover {
-            border-color: #007AFF;
-            background: rgba(0,122,255,0.05);
+            border-color: rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.13);
+            color: white;
         }
 
         #menu-dropdown {
@@ -418,10 +448,12 @@
             position: absolute;
             left: 0;
             top: calc(100% + 8px);
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            background: rgba(13,24,40,0.95);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 0.5px solid rgba(255,255,255,0.12);
+            border-radius: 14px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             min-width: 160px;
             z-index: 1020;
             overflow: hidden;
@@ -432,19 +464,19 @@
             padding: 12px 18px;
             cursor: pointer;
             font-size: 0.9rem;
-            color: #2c3e50;
+            color: rgba(255,255,255,0.75);
             transition: background 0.15s;
             white-space: nowrap;
         }
-        .menu-item:hover { background: #F2F2F7; color: #007AFF; }
+        .menu-item:hover { background: rgba(255,255,255,0.08); color: white; }
 
         .menu-greeting {
-            font-weight: 600;
-            color: #007AFF;
+            font-weight: 700;
+            color: #31f2fe;
             cursor: default;
-            border-bottom: 1px solid #E5E5EA;
+            border-bottom: 0.5px solid rgba(255,255,255,0.08);
         }
-        .menu-greeting:hover { background: white; }
+        .menu-greeting:hover { background: transparent; }
 
         /* ── Mobile Responsive ──────────────────────────────────── */
         @media (max-width: 640px) {
@@ -529,12 +561,13 @@
         }
 
         /* ── Calendar view ─────────────────────────────────────── */
-        /* iOS segmented control */
+        /* Segmented control — dark */
         .view-toggle {
             display: flex;
-            background: #E5E5EA;
-            border-radius: 9px;
-            padding: 2px;
+            background: rgba(255,255,255,0.08);
+            border: 0.5px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 3px;
             overflow: hidden;
             flex-shrink: 0;
             gap: 2px;
@@ -542,33 +575,35 @@
         .view-toggle-btn {
             padding: 7px 14px;
             background: transparent;
-            color: #3C3C43;
+            color: rgba(255,255,255,0.5);
             border: none;
             border-radius: 7px;
             font-size: 0.88em;
             font-weight: 500;
             cursor: pointer;
-            transition: background 0.15s, box-shadow 0.15s;
+            transition: background 0.15s, color 0.15s;
             display: flex;
             align-items: center;
             gap: 5px;
             white-space: nowrap;
         }
         .view-toggle-btn.active {
-            background: white;
-            color: #007AFF;
-            font-weight: 600;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            background: rgba(78,94,214,0.35);
+            color: #ffffff;
+            font-weight: 700;
         }
         .view-toggle-btn:hover:not(.active) {
-            background: rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.75);
         }
         #calendar-section {
-            background: white;
-            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 0.5px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
             padding: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.3);
             margin-bottom: 20px;
+            color: white;
         }
         .calendar-toolbar {
             display: flex;
@@ -579,21 +614,22 @@
         }
         .tz-label {
             font-weight: 600;
-            color: #007AFF;
+            color: #31f2fe;
             font-size: 0.95em;
         }
         #tz-selector {
-            border: 1.5px solid #C7C7CC;
+            border: 0.5px solid rgba(255,255,255,0.15);
             border-radius: 8px;
             padding: 6px 10px;
             font-size: 0.9em;
-            color: #1C1C1E;
+            color: white;
+            background: rgba(255,255,255,0.07);
             cursor: pointer;
             transition: border 0.2s;
         }
         #tz-selector:focus {
             outline: none;
-            border-color: #007AFF;
+            border-color: #31f2fe;
         }
         #calendar-container {
             height: 700px;
@@ -605,18 +641,18 @@
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: #007AFF;
+            background: #4e5ed6;
             color: white;
-            border: none;
+            border: 0.5px solid rgba(255,255,255,0.15);
             font-size: 1.4em;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(0,122,255,0.4);
+            box-shadow: 0 4px 20px rgba(78,94,214,0.5);
             z-index: 999;
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .feedback-fab:hover {
             transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(0,122,255,0.5);
+            box-shadow: 0 6px 24px rgba(78,94,214,0.65);
         }
         .privacy-fab {
             position: fixed;
@@ -625,18 +661,18 @@
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: #5856D6;
+            background: rgba(175,82,222,0.8);
             color: white;
-            border: none;
+            border: 0.5px solid rgba(255,255,255,0.12);
             font-size: 1.3em;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(88,86,214,0.4);
+            box-shadow: 0 4px 20px rgba(175,82,222,0.45);
             z-index: 999;
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .privacy-fab:hover {
             transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(88,86,214,0.5);
+            box-shadow: 0 6px 24px rgba(175,82,222,0.6);
         }
         #privacy-modal .modal-content {
             max-width: 520px;
@@ -644,7 +680,7 @@
         }
         #privacy-modal .privacy-text {
             font-size: 0.95rem;
-            color: #4a5568;
+            color: rgba(255,255,255,0.65);
             line-height: 1.7;
             margin-top: 16px;
         }
@@ -659,7 +695,7 @@
             align-items: center;
             gap: 7px;
             font-size: 0.82em;
-            color: #555;
+            color: rgba(255,255,255,0.5);
         }
         .legend-dot {
             width: 13px;
@@ -680,7 +716,7 @@
             padding: 4px 8px;
             border-radius: 6px;
             position: relative;
-            color: #bdc3c7;
+            color: rgba(255,255,255,0.4);
             transition: color 0.3s, transform 0.2s;
             line-height: 1;
         }
@@ -750,8 +786,8 @@
                     <i class="fas fa-bell"></i><span class="broadcast-dot" id="broadcast-dot" style="display:none"></span>
                 </button>
                 <span id="broadcast-inline" style="display:none; align-items:center; gap:8px; flex:1; min-width:0;">
-                    <span id="broadcast-inline-content" style="color:#2c3e50; font-size:0.9rem; font-weight:500; word-break:break-word; line-height:1.5; flex:1; min-width:0;"></span>
-                    <button onclick="ackBroadcast()" style="background:none; border:none; cursor:pointer; font-size:1rem; color:#95a5a6; font-weight:600; line-height:1; padding:2px 6px; transition:color 0.2s; white-space:nowrap; flex-shrink:0;" onmouseover="this.style.color='#e74c3c'" onmouseout="this.style.color='#95a5a6'">&times; clear</button>
+                    <span id="broadcast-inline-content" style="color:rgba(255,255,255,0.85); font-size:0.9rem; font-weight:500; word-break:break-word; line-height:1.5; flex:1; min-width:0;"></span>
+                    <button onclick="ackBroadcast()" style="background:none; border:none; cursor:pointer; font-size:1rem; color:rgba(255,255,255,0.35); font-weight:600; line-height:1; padding:2px 6px; transition:color 0.2s; white-space:nowrap; flex-shrink:0;" onmouseover="this.style.color='#FF3B30'" onmouseout="this.style.color='rgba(255,255,255,0.35)'">&times; clear</button>
                 </span>
             </h1>
             <div class="caption-row">
@@ -865,7 +901,7 @@
                 </div>
                 <div class="form-group">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <label style="display:flex; align-items:center; gap:6px; white-space:nowrap; font-weight:600; color:#2c3e50; flex-shrink:0;">
+                        <label style="display:flex; align-items:center; gap:6px; white-space:nowrap; font-weight:600; color:rgba(255,255,255,0.7); flex-shrink:0;">
                             <input type="checkbox" id="appliedChecked" onchange="toggleAppliedDate()"> Applied
                         </label>
                         <input type="date" id="appliedDate" style="display:none; flex:1;">
@@ -876,7 +912,7 @@
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <div style="display: flex; gap: 10px; align-items: center;">
                             <input type="date" id="interviewDate" placeholder="Optional" style="flex: 1;">
-                            <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:#2c3e50; white-space: nowrap;">
+                            <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:rgba(255,255,255,0.7); white-space: nowrap;">
                                 <input type="checkbox" id="interviewDateTBD"> TBD
                             </label>
                         </div>
@@ -903,7 +939,7 @@
                 <div class="form-group">
                     <label>Notes</label>
                     <textarea id="details" maxlength="200" placeholder="to-dos, names to contact, things to research, etc. Keep short and focused" style="resize: vertical; min-height: 80px;"></textarea>
-                    <div style="text-align: right; font-size: 0.85em; color: #7f8c8d; margin-top: 5px;">
+                    <div style="text-align: right; font-size: 0.85em; color: rgba(255,255,255,0.32); margin-top: 5px;">
                         <span id="char-count">0</span>/200 characters
                     </div>
                 </div>
@@ -944,50 +980,50 @@
 
     <div class="modal" id="signin-modal">
         <div class="modal-content" style="position: relative; max-width: 420px; margin: auto;">
-            <span onclick="closeSignInModal()" style="position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #95a5a6;">&times;</span>
+            <span onclick="closeSignInModal()" style="position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: rgba(255,255,255,0.4);">&times;</span>
 
             <!-- Contextual prompt — shown when triggered by an action -->
-            <div id="signin-prompt" style="display:none; background:#EBF5FF; border:1px solid #B3D7FF; border-radius:8px; padding:10px 14px; margin-bottom:16px; margin-top:8px; font-size:0.9em; color:#007AFF; text-align:center;"></div>
+            <div id="signin-prompt" style="display:none; background:rgba(78,94,214,0.15); border:0.5px solid rgba(78,94,214,0.4); border-radius:8px; padding:10px 14px; margin-bottom:16px; margin-top:8px; font-size:0.9em; color:#7b8ff5; text-align:center;"></div>
 
             <!-- Tab bar -->
-            <div style="display: flex; border-bottom: 1.5px solid #E5E5EA; margin-bottom: 24px; margin-top: 10px;">
+            <div style="display: flex; border-bottom: 0.5px solid rgba(255,255,255,0.1); margin-bottom: 24px; margin-top: 10px;">
                 <button id="tab-signin" onclick="showAuthTab('signin')"
-                    style="flex:1; padding: 12px; border: none; background: none; font-size: 1em; font-weight: 600; cursor: pointer; color: #007AFF; border-bottom: 3px solid #007AFF; margin-bottom: -2px;">
+                    style="flex:1; padding: 12px; border: none; background: none; font-size: 1em; font-weight: 600; cursor: pointer; color: #7b8ff5; border-bottom: 2px solid #4e5ed6; margin-bottom: -1px;">
                     Sign In
                 </button>
                 <button id="tab-register" onclick="showAuthTab('register')"
-                    style="flex:1; padding: 12px; border: none; background: none; font-size: 1em; font-weight: 600; cursor: pointer; color: #8E8E93; border-bottom: 3px solid transparent; margin-bottom: -2px;">
+                    style="flex:1; padding: 12px; border: none; background: none; font-size: 1em; font-weight: 600; cursor: pointer; color: rgba(255,255,255,0.35); border-bottom: 2px solid transparent; margin-bottom: -1px;">
                     Create Account
                 </button>
             </div>
 
             <!-- Sign In tab -->
             <div id="auth-tab-signin">
-                <button onclick="handleAuthClick()" style="width:100%; padding: 12px; background: #fff; border: 2px solid #ddd; border-radius: 8px; font-size: 1em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; font-weight: 500;">
+                <button onclick="handleAuthClick()" style="width:100%; padding: 12px; background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.18); border-radius: 8px; font-size: 1em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; font-weight: 500; color: white; transition: background 0.2s;">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:20px; height:20px;" alt="Google">
                     Continue with Google
                 </button>
-                <div style="text-align: center; color: #95a5a6; margin-bottom: 20px; font-size: 0.9em;">— or sign in with email —</div>
-                <div id="signin-error" style="display:none; color:#e74c3c; font-size:0.9em; margin-bottom:12px; text-align:center;"></div>
-                <input id="signin-email" type="email" placeholder="Email address" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box;">
-                <input id="signin-password" type="password" placeholder="Password" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:12px; box-sizing:border-box;">
-                <label style="display:flex; align-items:center; gap:8px; font-size:0.9em; color:#555; margin-bottom:16px; cursor:pointer;">
+                <div style="text-align: center; color: rgba(255,255,255,0.3); margin-bottom: 20px; font-size: 0.9em;">— or sign in with email —</div>
+                <div id="signin-error" style="display:none; color:#FF6B6B; font-size:0.9em; margin-bottom:12px; text-align:center;"></div>
+                <input id="signin-email" type="email" placeholder="Email address" style="width:100%; padding:10px 12px; border:0.5px solid rgba(255,255,255,0.15); border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box; background:rgba(255,255,255,0.07); color:white;">
+                <input id="signin-password" type="password" placeholder="Password" style="width:100%; padding:10px 12px; border:0.5px solid rgba(255,255,255,0.15); border-radius:6px; font-size:1em; margin-bottom:12px; box-sizing:border-box; background:rgba(255,255,255,0.07); color:white;">
+                <label style="display:flex; align-items:center; gap:8px; font-size:0.9em; color:rgba(255,255,255,0.5); margin-bottom:16px; cursor:pointer;">
                     <input type="checkbox" id="remember-me-check"> Remember me for 90 days
                 </label>
                 <button onclick="handleEmailSignIn()" class="btn btn-primary" style="width:100%; padding:12px; font-size:1em;">Sign In</button>
             </div>
 
             <p style="text-align:center; margin-top:16px; margin-bottom:0; font-size:0.85em;">
-                <a href="#" onclick="closeSignInModal(); return false;" style="color:#95a5a6; text-decoration:none;">Continue browsing without signing in →</a>
+                <a href="#" onclick="closeSignInModal(); return false;" style="color:rgba(255,255,255,0.35); text-decoration:none;">Continue browsing without signing in →</a>
             </p>
 
             <!-- Create Account tab -->
             <div id="auth-tab-register" style="display:none;">
                 <div id="register-message" style="display:none; padding:12px; border-radius:6px; margin-bottom:16px; font-size:0.9em; text-align:center;"></div>
-                <input id="reg-name" type="text" placeholder="Display name" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box;">
-                <input id="reg-email" type="email" placeholder="Email address" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box;">
-                <input id="reg-password" type="password" placeholder="Password (min 8 characters)" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box;">
-                <input id="reg-confirm" type="password" placeholder="Confirm password" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:16px; box-sizing:border-box;">
+                <input id="reg-name" type="text" placeholder="Display name" style="width:100%; padding:10px 12px; border:0.5px solid rgba(255,255,255,0.15); border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box; background:rgba(255,255,255,0.07); color:white;">
+                <input id="reg-email" type="email" placeholder="Email address" style="width:100%; padding:10px 12px; border:0.5px solid rgba(255,255,255,0.15); border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box; background:rgba(255,255,255,0.07); color:white;">
+                <input id="reg-password" type="password" placeholder="Password (min 8 characters)" style="width:100%; padding:10px 12px; border:0.5px solid rgba(255,255,255,0.15); border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box; background:rgba(255,255,255,0.07); color:white;">
+                <input id="reg-confirm" type="password" placeholder="Confirm password" style="width:100%; padding:10px 12px; border:0.5px solid rgba(255,255,255,0.15); border-radius:6px; font-size:1em; margin-bottom:16px; box-sizing:border-box; background:rgba(255,255,255,0.07); color:white;">
                 <button onclick="handleRegister()" class="btn btn-primary" style="width:100%; padding:12px; font-size:1em;">Create Account</button>
             </div>
         </div>
@@ -996,7 +1032,7 @@
     <div class="modal" id="confirm-modal">
         <div class="modal-content">
             <h2>Confirm Deletion</h2>
-            <p style="margin: 20px 0; color: #2c3e50;">Are you sure you want to delete this lead?</p>
+            <p style="margin: 20px 0; color: rgba(255,255,255,0.7);">Are you sure you want to delete this lead?</p>
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
                 <button type="button" class="btn btn-primary" style="background: #e74c3c;" onclick="confirmDelete()">Delete</button>
@@ -1075,9 +1111,11 @@
         function showBanner(message, type) {
             const banner = document.createElement('div');
             banner.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);
-                padding:12px 24px;border-radius:8px;font-weight:600;z-index:9999;
-                background:${type === 'success' ? '#27ae60' : '#e74c3c'};color:white;
-                box-shadow:0 4px 12px rgba(0,0,0,0.2);`;
+                padding:12px 24px;border-radius:10px;font-weight:600;z-index:9999;
+                background:${type === 'success' ? 'rgba(23,204,69,0.18)' : 'rgba(255,59,48,0.18)'};
+                color:${type === 'success' ? '#17cc45' : '#FF6B6B'};
+                border:0.5px solid ${type === 'success' ? 'rgba(23,204,69,0.4)' : 'rgba(255,59,48,0.4)'};
+                backdrop-filter:blur(12px);box-shadow:0 4px 20px rgba(0,0,0,0.4);`;
             banner.textContent = message;
             document.body.appendChild(banner);
             setTimeout(() => banner.remove(), 5000);
@@ -1133,7 +1171,7 @@
                     body: JSON.stringify({ email })
                 });
                 const data = await res.json();
-                errorEl.style.color = res.ok ? '#27ae60' : '#e74c3c';
+                errorEl.style.color = res.ok ? '#17cc45' : '#FF6B6B';
                 errorEl.textContent = data.message || data.error || 'Please try again.';
             } catch (e) {
                 errorEl.textContent = 'Failed to send. Please try again.';
@@ -1182,8 +1220,8 @@
         function showRegMsg(msg, type) {
             const el = document.getElementById('register-message');
             el.textContent = msg;
-            el.style.background = type === 'success' ? '#d5f5e3' : '#fde8e8';
-            el.style.color = type === 'success' ? '#1e8449' : '#c0392b';
+            el.style.background = type === 'success' ? 'rgba(23,204,69,0.12)' : 'rgba(255,59,48,0.12)';
+            el.style.color = type === 'success' ? '#17cc45' : '#FF6B6B';
             el.style.display = 'block';
         }
 
@@ -1191,10 +1229,10 @@
             const isSignin = tab === 'signin';
             document.getElementById('auth-tab-signin').style.display = isSignin ? 'block' : 'none';
             document.getElementById('auth-tab-register').style.display = isSignin ? 'none' : 'block';
-            document.getElementById('tab-signin').style.color = isSignin ? '#007AFF' : '#8E8E93';
-            document.getElementById('tab-signin').style.borderBottom = isSignin ? '3px solid #007AFF' : '3px solid transparent';
-            document.getElementById('tab-register').style.color = isSignin ? '#8E8E93' : '#007AFF';
-            document.getElementById('tab-register').style.borderBottom = isSignin ? '3px solid transparent' : '3px solid #007AFF';
+            document.getElementById('tab-signin').style.color = isSignin ? '#7b8ff5' : 'rgba(255,255,255,0.35)';
+            document.getElementById('tab-signin').style.borderBottom = isSignin ? '2px solid #4e5ed6' : '2px solid transparent';
+            document.getElementById('tab-register').style.color = isSignin ? 'rgba(255,255,255,0.35)' : '#7b8ff5';
+            document.getElementById('tab-register').style.borderBottom = isSignin ? '2px solid transparent' : '2px solid #4e5ed6';
         }
 
         function handleSignoutClick() {
@@ -1274,7 +1312,7 @@
             const status   = document.getElementById('feedback-status');
 
             if (!email || !message) {
-                status.style.cssText = 'display:block; color:#e74c3c;';
+                status.style.cssText = 'display:block; color:#FF6B6B;';
                 status.textContent = 'Email and message are required.';
                 return;
             }
@@ -1286,12 +1324,12 @@
                     body: JSON.stringify({ fromEmail: email, category, message })
                 });
                 if (!res.ok) throw new Error();
-                status.style.cssText = 'display:block; color:#27ae60;';
+                status.style.cssText = 'display:block; color:#17cc45;';
                 status.textContent = "✓ Sent! We'll get back to you soon.";
                 document.getElementById('feedback-message').value = '';
                 setTimeout(closeFeedbackModal, 2000);
             } catch {
-                status.style.cssText = 'display:block; color:#e74c3c;';
+                status.style.cssText = 'display:block; color:#FF6B6B;';
                 status.textContent = 'Failed to send. Please try again.';
             }
         }
@@ -1412,7 +1450,7 @@
 
         function showAdminStatus(msg, ok) {
             const el = document.getElementById('admin-broadcast-status');
-            el.style.cssText = `display:block; color:${ok ? '#27ae60' : '#e74c3c'};`;
+            el.style.cssText = `display:block; color:${ok ? '#17cc45' : '#FF6B6B'};`;
             el.textContent = msg;
         }
 
@@ -1692,7 +1730,7 @@
                 const [year, month, day] = card.appliedDate.split('-');
                 const localDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
                 const formatted = localDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                appliedDateHtml = `<div style="font-size:0.85em; color:#7f8c8d; margin-top:6px;">✅ Applied: ${formatted}</div>`;
+                appliedDateHtml = `<div style="font-size:0.82em; color:rgba(255,255,255,0.45); margin-top:5px;">✅ Applied: ${formatted}</div>`;
             }
 
             // Interview date — only show when a real date is set (skip TBD)
@@ -1714,48 +1752,47 @@
                         f = localDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                     }
 
-                    interviewHtml = `<div class="card-interview" style="font-size:0.95em; color:#34495e; margin-top:6px; font-weight:700;">🎤 Interview: ${f}</div>`;
+                    interviewHtml = `<div class="card-interview" style="font-size:0.88em; color:#31f2fe; margin-top:5px; font-weight:700; letter-spacing:-0.1px;">🎤 Interview: ${f}</div>`;
                 }
             }
 
-            const referredByHtml = card.referredBy ? `<div class="card-referred" style="font-size:0.85em; color:#7f8c8d; margin-top:6px;">👥 Referral: ${card.referredBy}</div>` : '';
+            const referredByHtml = card.referredBy ? `<div class="card-referred" style="font-size:0.82em; color:rgba(255,255,255,0.42); margin-top:5px;">👥 Referral: ${card.referredBy}</div>` : '';
             
             // Status badge and styling
             const statusConfig = {
-                'in-progress':                { emoji: '🔄', label: 'In Progress',          color: '#007AFF' },
-                'rejected':                   { emoji: '❌', label: 'Rejected',              color: '#8E8E93' },
-                'interview-schedule-pending': { emoji: '⏳', label: 'Interview Pending',     color: '#FF9500' },
-                'interview-date-confirmed':   { emoji: '✅', label: 'Interview Confirmed',   color: '#34C759' },
-                'interview-completed':        { emoji: '🎉', label: 'Interview Completed',   color: '#5856D6' },
-                'offer-pending':              { emoji: '🏆', label: 'Offer Pending',         color: '#FF9500' }
+                'in-progress':                { emoji: '🔄', label: 'In Progress',          color: 'rgba(78,94,214,0.7)',   text: '#7b8ff5' },
+                'rejected':                   { emoji: '❌', label: 'Rejected',              color: 'rgba(255,255,255,0.1)', text: 'rgba(255,255,255,0.38)' },
+                'interview-schedule-pending': { emoji: '⏳', label: 'Interview Pending',     color: 'rgba(255,149,0,0.18)', text: '#FF9500' },
+                'interview-date-confirmed':   { emoji: '✅', label: 'Interview Confirmed',   color: 'rgba(23,204,69,0.15)', text: '#17cc45' },
+                'interview-completed':        { emoji: '🎉', label: 'Interview Completed',   color: 'rgba(49,242,254,0.14)','text': '#31f2fe' },
+                'offer-pending':              { emoji: '🏆', label: 'Offer Pending',         color: 'rgba(255,149,0,0.2)',  text: '#FF9500' }
             };
             const statusInfo = statusConfig[card.status] || statusConfig['in-progress'];
-            const statusHtml = card.status ? `<div class="card-status" style="display: inline-block; background: ${statusInfo.color}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; margin-top: 8px;">${statusInfo.emoji} ${statusInfo.label}</div>` : '';
+            const statusHtml = card.status ? `<div class="card-status" style="display: inline-block; background: ${statusInfo.color}; color: ${statusInfo.text || 'white'}; padding: 3px 10px; border-radius: 20px; font-size: 0.72em; font-weight: 700; letter-spacing: 0.2px; margin-top: 8px;">${statusInfo.emoji} ${statusInfo.label}</div>` : '';
 
             // Conditional card background and reminder icon
             let reminderHtml = '';
             const color = card.color || 'white';
 
             if (color === 'gold') {
-                div.style.background = '#FFFBF0';
-                div.style.borderLeft = '3px solid #FF9500';
-                div.style.boxShadow = '0 1px 4px rgba(255,149,0,0.15)';
+                div.style.background = 'rgba(255,149,0,0.12)';
+                div.style.borderLeft = '2px solid rgba(255,149,0,0.6)';
+                div.style.boxShadow = '0 2px 20px rgba(0,0,0,0.35), 0 0 0 0.5px rgba(255,149,0,0.2)';
             } else if (color === 'grey') {
-                div.style.background = '#F2F2F7';
-                div.style.borderLeft = '3px solid #C7C7CC';
+                div.style.background = 'rgba(255,255,255,0.04)';
+                div.style.opacity = '0.65';
             } else if (color === 'yellow') {
-                div.style.background = '#FFF9EC';
-                div.style.borderLeft = '3px solid #FF9500';
+                div.style.background = 'rgba(255,149,0,0.08)';
+                div.style.borderLeft = '2px solid rgba(255,149,0,0.4)';
                 reminderHtml = `<div class="card-reminder" style="display:inline-block; margin-left:8px; font-size:0.95em;">🔔</div>`;
-            } else { // white
-                div.style.background = '#ffffff';
+            } else { // white/default
                 if (card.status === 'interview-schedule-pending') {
-                    div.style.borderLeft = '3px solid #C7C7CC';
+                    div.style.borderLeft = '2px solid rgba(255,255,255,0.12)';
                 }
             }
             
             // Add details if available
-            const detailsHtml = card.details ? `<div class="card-details" style="font-size: 0.85em; color: #7f8c8d; margin-top: 8px; line-height: 1.4;">${card.details}</div>` : '';
+            const detailsHtml = card.details ? `<div class="card-details" style="font-size: 0.82em; color: rgba(255,255,255,0.48); margin-top: 6px; line-height: 1.5;">${card.details}</div>` : '';
             
             div.innerHTML = `
                 <div style="display:flex; align-items:center; gap:8px; justify-content:space-between;">
@@ -2363,29 +2400,29 @@
 
     <div class="modal" id="privacy-modal">
         <div class="modal-content" style="max-width:520px; position:relative;">
-            <span onclick="closePrivacyModal()" style="position:absolute;right:20px;top:15px;font-size:24px;cursor:pointer;color:#95a5a6;">&times;</span>
-            <h2 style="color:#667eea; display:flex; align-items:center; gap:10px;"><i class="fas fa-shield-alt"></i> Privacy</h2>
+            <span onclick="closePrivacyModal()" style="position:absolute;right:20px;top:15px;font-size:24px;cursor:pointer;color:rgba(255,255,255,0.4);">&times;</span>
+            <h2 style="color:#31f2fe; display:flex; align-items:center; gap:10px;"><i class="fas fa-shield-alt"></i> Privacy</h2>
             <p class="privacy-text">We don't need your personal information to help you with the job search, you are responsible for protecting your own information. We also don't share any company/position data with any outside parties. However, Pitstop may provide timely and relevant guidance based on the information you've shared, only for the purpose of expediting your own job search process.</p>
         </div>
     </div>
 
     <div class="modal" id="admin-modal">
         <div class="modal-content" style="max-width:480px; position:relative;">
-            <span onclick="closeAdminModal()" style="position:absolute;right:20px;top:15px;font-size:24px;cursor:pointer;color:#95a5a6;">&times;</span>
+            <span onclick="closeAdminModal()" style="position:absolute;right:20px;top:15px;font-size:24px;cursor:pointer;color:rgba(255,255,255,0.4);">&times;</span>
             <h2>Admin Panel</h2>
-            <h3 style="color:#667eea; margin:20px 0 10px; font-size:1em;">Broadcast Message</h3>
-            <div id="admin-current-msg" style="display:none; background:#f8f9ff; border-radius:8px; padding:12px; margin-bottom:16px; font-size:0.9em; color:#555;"></div>
+            <h3 style="color:#31f2fe; margin:20px 0 10px; font-size:1em;">Broadcast Message</h3>
+            <div id="admin-current-msg" style="display:none; background:rgba(255,255,255,0.06); border-radius:8px; padding:12px; margin-bottom:16px; font-size:0.9em; color:rgba(255,255,255,0.6);"></div>
             <textarea id="admin-broadcast-text" maxlength="250" rows="4"
                 placeholder="Write a message to all users (max 250 characters)…"
                 oninput="updateBroadcastCounter()"
-                style="width:100%; border:1px solid #ddd; border-radius:6px; padding:10px; font-size:0.95em; resize:none; box-sizing:border-box;"></textarea>
-            <div style="text-align:right; font-size:0.8em; color:#95a5a6; margin:4px 0 12px;">
+                style="width:100%; border:0.5px solid rgba(255,255,255,0.15); border-radius:6px; padding:10px; font-size:0.95em; resize:none; box-sizing:border-box; background:rgba(255,255,255,0.07); color:white;"></textarea>
+            <div style="text-align:right; font-size:0.8em; color:rgba(255,255,255,0.3); margin:4px 0 12px;">
                 <span id="broadcast-counter">0</span>/250
             </div>
             <p id="admin-broadcast-status" style="display:none; font-size:0.9em; margin-bottom:12px;"></p>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeAdminModal()">Cancel</button>
-                <button id="admin-clear-btn" class="btn btn-secondary" style="display:none; color:#e74c3c;" onclick="clearBroadcast()">Clear Message</button>
+                <button id="admin-clear-btn" class="btn btn-secondary" style="display:none; color:#FF6B6B;" onclick="clearBroadcast()">Clear Message</button>
                 <button class="btn btn-primary" onclick="sendBroadcast()">Send to All Users</button>
             </div>
         </div>
