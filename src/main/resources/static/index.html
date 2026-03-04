@@ -567,6 +567,97 @@
             opacity: 0.85;
         }
 
+        /* ── Insight view ───────────────────────────────────────── */
+        .insight-card {
+            background: rgba(255,255,255,0.04);
+            border: 0.5px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 24px 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+            color: white;
+        }
+        .insight-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 1.05em;
+            font-weight: 700;
+            margin-bottom: 22px;
+            letter-spacing: -0.2px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .insight-stats-row {
+            display: flex;
+            gap: 48px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .insight-stat { min-width: 130px; }
+        .insight-stat-number {
+            font-size: 3.2em;
+            font-weight: 800;
+            letter-spacing: -2px;
+            line-height: 1;
+            color: #ffffff;
+            margin-bottom: 5px;
+        }
+        .insight-stat-label {
+            font-size: 0.83em;
+            color: rgba(255,255,255,0.45);
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+        .insight-stat-diff { font-size: 0.81em; font-weight: 600; }
+        .insight-focus-banner {
+            background: rgba(49,242,254,0.07);
+            border: 0.5px solid rgba(49,242,254,0.2);
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-size: 0.92em;
+            color: rgba(255,255,255,0.8);
+            margin-top: 4px;
+        }
+        .insight-chat-btn {
+            display: inline-block;
+            background: #4e5ed6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 18px;
+            font-size: 0.88em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        .insight-chat-btn:hover {
+            background: #3d4dba;
+            box-shadow: 0 4px 14px rgba(78,94,214,0.45);
+        }
+        .insight-status-badge {
+            font-size: 0.78em;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            letter-spacing: 0.2px;
+        }
+        .status-healthy  { background: rgba(23,204,69,0.15);  color: #17cc45; border: 0.5px solid rgba(23,204,69,0.3); }
+        .status-ok       { background: rgba(255,149,0,0.15);  color: #FF9500; border: 0.5px solid rgba(255,149,0,0.3); }
+        .status-building { background: rgba(78,94,214,0.15);  color: #7b8ff5; border: 0.5px solid rgba(78,94,214,0.3); }
+        .insight-message {
+            color: rgba(255,255,255,0.62);
+            font-size: 0.95em;
+            line-height: 1.7;
+            margin-bottom: 4px;
+        }
+        .insight-divider {
+            border: none;
+            border-top: 0.5px solid rgba(255,255,255,0.07);
+            margin: 18px 0;
+        }
+
         /* ── Calendar view ─────────────────────────────────────── */
         /* Segmented control — dark */
         .view-toggle {
@@ -801,6 +892,7 @@
                 <div class="view-toggle" id="view-toggle">
                     <button class="view-toggle-btn active" id="btn-board" onclick="switchView('board')">📋 Board</button>
                     <button class="view-toggle-btn" id="btn-calendar" onclick="switchView('calendar')">📅 Calendar</button>
+                    <button class="view-toggle-btn" id="btn-insight" onclick="switchView('insight')">💡 Insights</button>
                 </div>
             </div>
         </div>
@@ -890,6 +982,10 @@
                 Schedule Pending
             </div>
         </div>
+    </div>
+
+    <div id="insight-section" style="display:none;">
+        <div id="insight-content"></div>
     </div>
     </div><!-- end content-wrapper -->
 
@@ -2342,21 +2438,22 @@
             calendarInstance.render();
         }
 
-        /** Switch to 'board' or 'calendar' view. */
+        /** Switch to 'board', 'calendar', or 'insight' view. */
         function switchView(view) {
             const goCalendar = (view === 'calendar');
-            if (calendarView === goCalendar) return;
+            const goInsight  = (view === 'insight');
             calendarView = goCalendar;
-            document.querySelector('.board').style.display = calendarView ? 'none' : 'flex';
-            document.getElementById('calendar-section').style.display = calendarView ? 'block' : 'none';
-            document.getElementById('btn-board').classList.toggle('active', !calendarView);
-            document.getElementById('btn-calendar').classList.toggle('active', calendarView);
-            // Header width follows the active content:
-            // board view → max-content (aligns with swim lanes)
-            // calendar view → 1fr (fills full available width)
+            document.querySelector('.board').style.display = (!goCalendar && !goInsight) ? 'flex' : 'none';
+            document.getElementById('calendar-section').style.display = goCalendar ? 'block' : 'none';
+            document.getElementById('insight-section').style.display  = goInsight  ? 'block' : 'none';
+            document.getElementById('btn-board').classList.toggle('active', !goCalendar && !goInsight);
+            document.getElementById('btn-calendar').classList.toggle('active', goCalendar);
+            document.getElementById('btn-insight').classList.toggle('active', goInsight);
+            // board → max-content; calendar/insight → 1fr (full width)
             document.querySelector('.content-wrapper').style.gridTemplateColumns =
-                goCalendar ? '1fr' : '';
-            if (calendarView) initCalendar();
+                (goCalendar || goInsight) ? '1fr' : '';
+            if (goCalendar) initCalendar();
+            if (goInsight)  buildInsightView();
         }
 
         /** Legacy alias kept for any internal callers. */
@@ -2386,6 +2483,138 @@
         }
 
         // ── End calendar helpers ────────────────────────────────────────────────
+
+        // ══════════════════════════════════════════════════════════════════════
+        // MODULE 4 (JS): INSIGHT VIEW — weekly activity + overall progress
+        // ══════════════════════════════════════════════════════════════════════
+
+        /** Open feedback modal pre-selected to a specific category. */
+        function openFeedbackWithCategory(category) {
+            openFeedbackModal();
+            setTimeout(() => {
+                const sel = document.getElementById('feedback-category');
+                for (let i = 0; i < sel.options.length; i++) {
+                    if (sel.options[i].text === category) { sel.selectedIndex = i; break; }
+                }
+            }, 50);
+        }
+
+        /** Build and render the Insight view from current cards data. */
+        function buildInsightView() {
+            // ── Week range helpers ──────────────────────────────────────────
+            function getWeekRange(weeksAgo) {
+                const now = new Date();
+                const day = now.getDay(); // 0=Sun
+                const diffToMon = day === 0 ? -6 : 1 - day;
+                const mon = new Date(now);
+                mon.setDate(now.getDate() + diffToMon - weeksAgo * 7);
+                mon.setHours(0, 0, 0, 0);
+                const sun = new Date(mon);
+                sun.setDate(mon.getDate() + 6);
+                sun.setHours(23, 59, 59, 999);
+                return { start: mon, end: sun };
+            }
+
+            function inRange(dateStr, range) {
+                if (!dateStr) return false;
+                const [y, m, d] = dateStr.split('-');
+                const dt = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+                return dt >= range.start && dt <= range.end;
+            }
+
+            function fmtWeek(r) {
+                const opts = { month: 'short', day: 'numeric' };
+                return r.start.toLocaleDateString('en-US', opts) + ' – ' +
+                       r.end.toLocaleDateString('en-US', opts);
+            }
+
+            // ── Compute stats ───────────────────────────────────────────────
+            const thisWeek = getWeekRange(0);
+            const prevWeek = getWeekRange(1);
+
+            // Applications active (Last Action Date) this week vs last
+            const appThis = cards.filter(c => inRange(c.date, thisWeek)).length;
+            const appPrev = cards.filter(c => inRange(c.date, prevWeek)).length;
+            const appDiff = appThis - appPrev;
+
+            // Interview confirmations this week vs last (action date in range + confirmed status)
+            const intThis = cards.filter(c => inRange(c.date, thisWeek) && c.status === 'interview-date-confirmed').length;
+            const intPrev = cards.filter(c => inRange(c.date, prevWeek) && c.status === 'interview-date-confirmed').length;
+            const intDiff = intThis - intPrev;
+
+            // Total currently confirmed upcoming interviews (for focus banner)
+            const totalConfirmed = cards.filter(c => c.status === 'interview-date-confirmed').length;
+
+            // Overall progress
+            const hasAdvanced = cards.some(c =>
+                ['hm', 'next-rounds', 'final'].includes(c.stage) &&
+                c.status === 'interview-date-confirmed'
+            );
+            // "< 8 early stage cards this week" threshold
+            const seedingThis = cards.filter(c => inRange(c.date, thisWeek) && c.stage === 'seeding').length;
+            const isHealthy   = hasAdvanced;
+            const needsFocus  = !isHealthy && appThis < 8;
+
+            // ── Diff label ──────────────────────────────────────────────────
+            function diffLabel(diff) {
+                if (diff > 0) return `<span style="color:#17cc45">▲ ${diff} from last week</span>`;
+                if (diff < 0) return `<span style="color:#FF6B6B">▼ ${Math.abs(diff)} from last week</span>`;
+                return `<span style="color:rgba(255,255,255,0.3)">— same as last week</span>`;
+            }
+
+            // ── Progress badge + message ────────────────────────────────────
+            let badgeClass, badgeLabel, progressMsg, chatBtn = '';
+            if (isHealthy) {
+                badgeClass = 'status-healthy'; badgeLabel = '✅ Healthy';
+                progressMsg = 'You have active interviews at hiring manager or later stages — strong momentum. Dedicate the majority of your time to interview preparation and stay engaged with your pipeline.';
+                chatBtn = `<button class="insight-chat-btn" onclick="openFeedbackWithCategory('Interview Preparation')">💬 Get free interview prep support</button>`;
+            } else if (needsFocus) {
+                badgeClass = 'status-ok'; badgeLabel = '⚠️ Needs Focus';
+                progressMsg = 'No advanced-stage interviews confirmed yet and fewer than 8 applications updated this week. Focus on refining your resume, expanding or narrowing your search, and reaching out to referrers — the goal is to land first-round interviews.';
+                chatBtn = `<button class="insight-chat-btn" onclick="openFeedbackWithCategory('Resume Review')">💬 Get free resume & search advice now</button>`;
+            } else {
+                badgeClass = 'status-building'; badgeLabel = '🔄 Building';
+                progressMsg = 'You\'re building a solid pipeline with good weekly activity. Keep adding opportunities and following up to push into hiring manager and final-stage interviews.';
+            }
+
+            // ── Render ──────────────────────────────────────────────────────
+            document.getElementById('insight-content').innerHTML = `
+                <div class="insight-card">
+                    <div class="insight-card-header">
+                        <span>📅 Weekly Activity</span>
+                        <span style="font-size:0.8em; color:rgba(255,255,255,0.35); font-weight:500;">${fmtWeek(thisWeek)}</span>
+                    </div>
+                    <div class="insight-stats-row">
+                        <div class="insight-stat">
+                            <div class="insight-stat-number">${appThis}</div>
+                            <div class="insight-stat-label">Applications Updated</div>
+                            <div class="insight-stat-diff">${diffLabel(appDiff)}</div>
+                        </div>
+                        <div class="insight-stat">
+                            <div class="insight-stat-number" style="color:#31f2fe">${intThis}</div>
+                            <div class="insight-stat-label">Interviews Confirmed</div>
+                            <div class="insight-stat-diff">${diffLabel(intDiff)}</div>
+                        </div>
+                    </div>
+                    ${totalConfirmed > 0 ? `
+                    <div class="insight-focus-banner">
+                        <div style="margin-bottom:10px;">🎯 <strong>Focus tip:</strong> You have ${totalConfirmed} confirmed interview${totalConfirmed > 1 ? 's' : ''} — spend <strong>80%</strong> of your time on prep and <strong>20%</strong> on research &amp; applications.</div>
+                        <button class="insight-chat-btn" onclick="openFeedbackWithCategory('Interview Preparation')">💬 Get free interview prep support now</button>
+                    </div>` : ''}
+                </div>
+
+                <div class="insight-card">
+                    <div class="insight-card-header">
+                        <span>📊 Overall Progress</span>
+                        <span class="insight-status-badge ${badgeClass}">${badgeLabel}</span>
+                    </div>
+                    <p class="insight-message">${progressMsg}</p>
+                    ${chatBtn}
+                </div>
+            `;
+        }
+
+        // ── End Insight helpers ─────────────────────────────────────────────────
 
         // Update interview date input style in modal: enlarge and bold when a confirmed date exists
         function updateInterviewInputStyle() {
