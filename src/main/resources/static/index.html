@@ -1147,6 +1147,49 @@
     <!-- Google API scripts are no longer needed; logic is handled by the Java backend -->
 
     <script>
+        // ══════════════════════════════════════════════════════════════════════
+        // EVENT TRACKING — fire-and-forget, never throws, works for anon+auth
+        // ══════════════════════════════════════════════════════════════════════
+
+        /** Returns a stable anonymous session ID stored in localStorage. */
+        function getSessionId() {
+            let sid = localStorage.getItem('ps_sid');
+            if (!sid) {
+                sid = (typeof crypto !== 'undefined' && crypto.randomUUID)
+                    ? crypto.randomUUID()
+                    : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                        const r = Math.random() * 16 | 0;
+                        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+                    });
+                localStorage.setItem('ps_sid', sid);
+            }
+            return sid;
+        }
+
+        /**
+         * Track a user action event.
+         * @param {string} eventType  e.g. 'page_view', 'card_add'
+         * @param {object} eventData  optional key-value payload
+         */
+        function track(eventType, eventData = {}) {
+            try {
+                fetch(`${typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : ''}/api/events`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId: getSessionId(),
+                        eventType,
+                        eventData,
+                        page: window.location.pathname,
+                        referrer: document.referrer || null
+                    })
+                }).catch(() => {}); // swallow network errors
+            } catch (e) { /* never throw */ }
+        }
+
+        // ── End Event Tracking ────────────────────────────────────────────────
+
         // --- Global State ---
         let isGoogleConnected = false;
 
@@ -1225,6 +1268,7 @@
         }
 
         function handleAuthClick() {
+            track('google_sign_in_click');
             window.location.href = `${API_BASE_URL}/oauth2/authorization/google`;
         }
 
@@ -1249,6 +1293,7 @@
             });
 
             if (res.ok) {
+                track('sign_in_success', { method: 'email' });
                 window.location.reload();
             } else {
                 const data = await res.json().catch(() => ({}));
@@ -1300,7 +1345,9 @@
             });
             const data = await res.json();
 
+            track('register_submit');
             if (res.status === 201) {
+                track('register_success');
                 // Auto sign-in after registration
                 const formData = new URLSearchParams();
                 formData.append('username', email);
@@ -1339,6 +1386,7 @@
         }
 
         function handleSignoutClick() {
+            track('sign_out');
             fetch(`${API_BASE_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' })
                 .then(() => window.location.reload());
         }
@@ -1397,6 +1445,7 @@
         // ── Feedback / Support ───────────────────────────────────────────────────
 
         function openFeedbackModal() {
+            track('feedback_open');
             const emailInput = document.getElementById('feedback-email');
             if (currentUser && currentUser.email) emailInput.value = currentUser.email;
             document.getElementById('feedback-message').value = '';
@@ -1427,6 +1476,7 @@
                     body: JSON.stringify({ fromEmail: email, category, message })
                 });
                 if (!res.ok) throw new Error();
+                track('feedback_submit', { category });
                 status.style.cssText = 'display:block; color:#17cc45;';
                 status.textContent = "✓ Sent! We'll get back to you soon.";
                 document.getElementById('feedback-message').value = '';
@@ -1560,6 +1610,7 @@
         // ─────────────────────────────────────────────────────────────────────────
 
         function openSignInModal(prompt) {
+            track('sign_in_modal_open', { prompt: prompt || null });
             closeMenu();
             document.body.classList.add('signin-modal-open');
             const promptEl = document.getElementById('signin-prompt');
@@ -1649,6 +1700,7 @@
             console.log('Form values:', { position, company, stage, date, status, details });
 
             const action = editingCardId ? 'update' : 'create';
+            track(action === 'create' ? 'card_add' : 'card_edit', { stage, status });
             let cardToSave;
             if (action === 'update') {
                 // Update existing card
@@ -1787,6 +1839,7 @@
         }
 
         async function closeTodoAlert(alertKey) {
+            track('alert_dismiss', { alertKey });
             if (alertKey === 'get-started') {
                 document.getElementById('todo-modal-container').style.display = 'none';
                 return;
@@ -2155,7 +2208,7 @@
 
         async function confirmDelete() {
             if (deletingCardId) {
-                // We only need the ID to delete
+                track('card_delete');
                 await persistAndReload({ id: deletingCardId }, 'delete');
                 closeConfirmModal();
             }
@@ -2176,6 +2229,7 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            track('page_view');
             checkAuthStatus();
             const feedbackModal = document.getElementById('feedback-modal');
             if (feedbackModal) {
@@ -2440,6 +2494,7 @@
 
         /** Switch to 'board', 'calendar', or 'insight' view. */
         function switchView(view) {
+            track('view_switch', { view });
             const goCalendar = (view === 'calendar');
             const goInsight  = (view === 'insight');
             calendarView = goCalendar;

@@ -93,7 +93,8 @@ public class SecurityConfig {
                     "/oauth2/**", "/login/**", "/.well-known/**",
                     "/api/auth/status", "/api/auth/register", "/api/auth/verify-email", "/api/auth/resend-verification",
                     "/api/support/**",
-                    "/api/broadcast/current"
+                    "/api/broadcast/current",
+                    "/api/events"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
