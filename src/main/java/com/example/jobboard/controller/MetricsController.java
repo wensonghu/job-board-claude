@@ -64,10 +64,19 @@ public class MetricsController {
             "WHERE created_at >= NOW() - INTERVAL '7 days'", Long.class);
         result.put("activeSessions7d", activeSessions);
 
-        // ── Total registered users ────────────────────────────────────────────
+        // ── Total users + status breakdown ────────────────────────────────────
         Long totalUsers = jdbc.queryForObject(
             "SELECT COUNT(*) FROM app_user", Long.class);
         result.put("totalUsers", totalUsers);
+
+        Long registeredUsers = jdbc.queryForObject(
+            "SELECT COUNT(*) FROM app_user WHERE status = 'REGISTERED'", Long.class);
+        Long pendingUsers = jdbc.queryForObject(
+            "SELECT COUNT(*) FROM app_user WHERE status = 'PENDING'", Long.class);
+        result.put("userBreakdown", Map.of(
+            "registered", registeredUsers == null ? 0 : registeredUsers,
+            "pending",    pendingUsers    == null ? 0 : pendingUsers
+        ));
 
         // ── Device breakdown (last 30 days) ───────────────────────────────────
         Long mobileCount = jdbc.queryForObject(

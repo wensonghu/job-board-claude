@@ -4,6 +4,7 @@ import com.example.jobboard.dto.AlertDto;
 import com.example.jobboard.model.AlertDismissal;
 import com.example.jobboard.model.AppUser;
 import com.example.jobboard.model.Card;
+import com.example.jobboard.model.CardStage;
 import com.example.jobboard.model.CardStatus;
 import com.example.jobboard.repository.AlertDismissalRepository;
 import com.example.jobboard.repository.CardRepository;
@@ -62,6 +63,15 @@ public class AlertController {
                 String displayCompany = card.getCompany() != null
                         ? card.getCompany().replace(" [Offer]", "").trim() : "";
                 String msg = "🎉 Great job! Best of luck with the offer at " + displayCompany + "!";
+                alertMap.put(key, new AlertDto(key, msg));
+            }
+
+            // Recruiter screening confirmed alert
+            if (CardStage.RECRUITER.equals(card.getStage())
+                    && CardStatus.INTERVIEW_DATE_CONFIRMED.equals(card.getStatus())) {
+                String key = "recruiter-confirmed-" + card.getId();
+                activeKeys.add(key);
+                String msg = "🎊 Congrats on getting to the recruiter/HR stage of the hiring process, be yourself and focus on obtaining information about the actual job requirements beyond the job post.";
                 alertMap.put(key, new AlertDto(key, msg));
             }
 

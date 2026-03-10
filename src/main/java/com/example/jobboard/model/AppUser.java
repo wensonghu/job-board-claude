@@ -49,6 +49,13 @@ public class AppUser {
     @Column(name = "user_type", nullable = false)
     private String userType = "BETA";
 
+    @Column(name = "status", nullable = false, length = 20,
+            columnDefinition = "VARCHAR(20) NOT NULL DEFAULT 'PENDING'")
+    private String status = "PENDING";
+
+    @Column(name = "session_token", length = 64, unique = true)
+    private String sessionToken;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -89,4 +96,10 @@ public class AppUser {
 
     public String getUserType() { return userType; }
     public void setUserType(String userType) { this.userType = userType; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public String getSessionToken() { return sessionToken; }
+    public void setSessionToken(String sessionToken) { this.sessionToken = sessionToken; }
 }

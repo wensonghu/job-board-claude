@@ -5,6 +5,7 @@ import com.example.jobboard.model.AppUser;
 import com.example.jobboard.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +22,27 @@ public class UserController {
     private UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<Map<String, String>> register(@RequestBody RegistrationRequest request) {
+    public ResponseEntity<Map<String, String>> register(@RequestBody RegistrationRequest request,
+                                                         HttpServletRequest httpRequest) {
         try {
+            // Check if a PENDING (guest trial) user is in the session — convert instead of creating new
+            HttpSession session = httpRequest.getSession(false);
+            Long pendingId = (session != null) ? (Long) session.getAttribute("appUserId") : null;
+            if (pendingId != null) {
+                AppUser pending = null;
+                try { pending = userService.findById(pendingId); } catch (Exception ignored) {}
+                if (pending != null && "PENDING".equals(pending.getStatus())) {
+                    AppUser converted = userService.convertPendingUserToLocal(
+                            pending,
+                            request.getEmail(),
+                            request.getPassword(),
+                            request.getDisplayName());
+                    if (session != null) session.setAttribute("appUserId", converted.getId());
+                    return ResponseEntity.status(HttpStatus.CREATED)
+                            .body(Map.of("message", "Account created. You can now sign in."));
+                }
+            }
+            // Normal registration (no pending user in session)
             userService.register(request);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(Map.of("message", "Account created. You can now sign in."));
