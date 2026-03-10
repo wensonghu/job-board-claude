@@ -1088,6 +1088,17 @@
             <!-- Contextual prompt — shown when triggered by an action -->
             <div id="signin-prompt" style="display:none; background:rgba(78,94,214,0.15); border:0.5px solid rgba(78,94,214,0.4); border-radius:8px; padding:10px 14px; margin-bottom:16px; margin-top:8px; font-size:0.9em; color:#7b8ff5; text-align:center;"></div>
 
+            <!-- Guest/skip — prominent at top -->
+            <div style="text-align:center; margin-bottom:18px; padding-bottom:18px; border-bottom:0.5px solid rgba(255,255,255,0.1);">
+                <button onclick="closeSignInModal()"
+                        style="background:rgba(255,255,255,0.07); border:0.5px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.8); padding:11px 24px; border-radius:8px; cursor:pointer; font-size:0.9em; width:100%; transition:background 0.2s;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.12)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.07)'">
+                    Continue without signing in →
+                </button>
+                <p id="trial-days-label" style="font-size:0.75em; color:rgba(255,255,255,0.35); margin:8px 0 0;"></p>
+            </div>
+
             <!-- Tab bar -->
             <div style="display: flex; border-bottom: 0.5px solid rgba(255,255,255,0.1); margin-bottom: 24px; margin-top: 10px;">
                 <button id="tab-signin" onclick="showAuthTab('signin')"
@@ -1115,10 +1126,6 @@
                 </label>
                 <button onclick="handleEmailSignIn()" class="btn btn-primary" style="width:100%; padding:12px; font-size:1em;">Sign In</button>
             </div>
-
-            <p style="text-align:center; margin-top:16px; margin-bottom:0; font-size:0.85em;">
-                <a href="#" onclick="closeSignInModal(); return false;" style="color:rgba(255,255,255,0.35); text-decoration:none;">Continue browsing without signing in →</a>
-            </p>
 
             <!-- Create Account tab -->
             <div id="auth-tab-register" style="display:none;">
@@ -1201,6 +1208,9 @@
 
         // --- Auth State ---
         let currentUser = null;
+        let isPendingUser = false;
+        let trialDaysLeft = 7;
+        let trialExpired = false;
 
         // --- Broadcast State ---
         let activeBroadcast = null;
@@ -1232,11 +1242,38 @@
         // --- Backend API Configuration ---
         const API_BASE_URL = '';
 
+        // --- Guest Session Init ---
+        async function initSession() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/session/init`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionToken: getSessionId() })
+                });
+                if (res.ok) {
+                    const d = await res.json();
+                    isPendingUser = d.isPending || false;
+                    trialDaysLeft = d.trialDaysLeft != null ? d.trialDaysLeft : 7;
+                    trialExpired = d.trialExpired || false;
+                }
+            } catch (e) { /* silent — trial state stays at defaults */ }
+        }
+
         // --- Authentication ---
         async function checkAuthStatus() {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/auth/status`, { credentials: 'include' });
                 const data = await response.json();
+                // Merge pending trial info from /api/auth/status (server also computes it)
+                if (data.isPending) {
+                    isPendingUser = true;
+                    trialDaysLeft = data.trialDaysLeft != null ? data.trialDaysLeft : trialDaysLeft;
+                    trialExpired = data.trialExpired || false;
+                } else if (data.isSignedIn) {
+                    isPendingUser = false;
+                    trialExpired = false;
+                }
                 isGoogleConnected = data.isSignedIn;
                 updateAuthUI(data);
                 await checkBroadcast();
@@ -1413,7 +1450,11 @@
                 `;
                 document.getElementById('broadcast-btn').style.display = 'none';
                 document.getElementById('broadcast-btn').classList.remove('bell-active');
-                openSignInModal('Sign in to track and save your job applications.');
+                // Only auto-show modal when the trial has explicitly expired
+                if (authData.trialExpired || trialExpired) {
+                    openSignInModal('Your 7-day trial has ended. Sign in to keep your progress.');
+                }
+                // During active trial (or any other unauthenticated state): no modal on page load
             }
         }
 
@@ -1621,6 +1662,17 @@
             } else {
                 promptEl.style.display = 'none';
             }
+            // Update trial days label
+            const trialLabel = document.getElementById('trial-days-label');
+            if (trialLabel) {
+                if (trialExpired) {
+                    trialLabel.textContent = 'Trial ended — your data is still here';
+                } else if (isPendingUser) {
+                    trialLabel.textContent = trialDaysLeft + ' day' + (trialDaysLeft !== 1 ? 's' : '') + ' remaining in your free trial';
+                } else {
+                    trialLabel.textContent = 'Your progress is saved automatically';
+                }
+            }
             document.getElementById('signin-modal').classList.add('active');
             document.getElementById('todo-modal-container').style.display = 'none';
             showAuthTab('signin');
@@ -1805,8 +1857,8 @@
         // Falls back to showing get-started prompt if board is empty.
         async function loadAlerts() {
             const container = document.getElementById('todo-modal-container');
-            if (!currentUser) {
-                // Not signed in: show get-started only if board is empty and modal was dismissed
+            if (!currentUser && !isPendingUser) {
+                // Truly unauthenticated: show get-started only if board is empty and modal was dismissed
                 if (cards.length === 0 && signInModalDismissed) {
                     container.innerHTML = '';
                     container.appendChild(createGetStartedElement());
@@ -1816,6 +1868,7 @@
                 }
                 return;
             }
+            // Both REGISTERED and PENDING users can see interview alerts
             try {
                 const res = await fetch(`${API_BASE_URL}/api/alerts`, { credentials: 'include' });
                 const alerts = res.ok ? await res.json() : [];
@@ -1860,7 +1913,7 @@
             div.style.border = '0.5px solid rgba(78,94,214,0.4)';
             div.style.boxShadow = '0 2px 20px rgba(0,0,0,0.35), 0 0 0 0.5px rgba(78,94,214,0.15)';
             div.innerHTML = `
-                <span>🚀 Add cards for your new leads, companies you are applying to, interviews being scheduled</span>
+                <span>👋 Welcome! The best way to use the PitStop board is to create one card for each opportunity you are pursuing, start adding them based on the stage you are in. If you are starting fresh, focus on making your resume stand out!</span>
                 <span class="close-todo-modal" onclick="closeTodoAlert('get-started')">&times;</span>
             `;
             return div;
@@ -2103,10 +2156,6 @@
 
         // Modal functions
         function openModal(cardId = null, defaultStage = null) {
-            if (!currentUser) {
-                openSignInModal('Sign in to add and track your opportunities.');
-                return;
-            }
             const modal = document.getElementById('modal');
             const form = document.getElementById('card-form');
 
@@ -2229,8 +2278,9 @@
         });
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             track('page_view');
+            await initSession();   // Create/reconnect PENDING user before auth status check
             checkAuthStatus();
             const feedbackModal = document.getElementById('feedback-modal');
             if (feedbackModal) {
@@ -2546,6 +2596,11 @@
 
         /** Open feedback modal pre-selected to a specific category. */
         function openFeedbackWithCategory(category) {
+            // Guest/PENDING users must sign in to access support services
+            if (!currentUser) {
+                openSignInModal('Sign in to access ' + category + ' support.');
+                return;
+            }
             openFeedbackModal();
             setTimeout(() => {
                 const sel = document.getElementById('feedback-category');
@@ -2865,7 +2920,8 @@
 
         <!-- ── Users + Devices ── -->
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
-            ${statBox('Total Users',         m.totalUsers,        null)}
+            ${statBox('Registered Users', (m.userBreakdown||{}).registered ?? m.totalUsers, null)}
+            ${statBox('Trial (Pending)', (m.userBreakdown||{}).pending ?? 0, null)}
             ${statBox('Active Sessions (7d)', m.activeSessions7d,  null)}
             <div style="background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.08);
                         border-radius:12px;padding:16px 18px;flex:1;min-width:160px;">

@@ -35,8 +35,20 @@ public class OAuth2LoginSuccessHandler extends SavedRequestAwareAuthenticationSu
         String googleSub = oauth2User.getAttribute("sub");
         String displayName = oauth2User.getAttribute("name");
 
-        // Find or create the AppUser record for this Google login
-        AppUser appUser = userService.findOrCreateGoogleUser(email, googleSub, displayName);
+        // Check if there is a PENDING (guest trial) user in the session — convert if so
+        AppUser appUser;
+        Long pendingId = (Long) request.getSession().getAttribute("appUserId");
+        if (pendingId != null) {
+            com.example.jobboard.model.AppUser pendingUser = null;
+            try { pendingUser = userService.findById(pendingId); } catch (Exception ignored) {}
+            if (pendingUser != null && "PENDING".equals(pendingUser.getStatus())) {
+                appUser = userService.convertPendingUserViaGoogle(pendingUser, email, googleSub, displayName);
+            } else {
+                appUser = userService.findOrCreateGoogleUser(email, googleSub, displayName);
+            }
+        } else {
+            appUser = userService.findOrCreateGoogleUser(email, googleSub, displayName);
+        }
 
         // Store the AppUser id in the session so all requests can resolve it
         request.getSession().setAttribute("appUserId", appUser.getId());
