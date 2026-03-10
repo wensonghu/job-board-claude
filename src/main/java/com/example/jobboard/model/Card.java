@@ -71,6 +71,11 @@ public class Card {
 
     @Transient
     public String getColor() {
+        // 0. Gold: Offer pending — always highlighted
+        if (CardStatus.OFFER_PENDING.equals(this.status)) {
+            return "gold";
+        }
+
         // 1. Grey: Rejected OR 2 weeks since last action
         if (CardStatus.REJECTED.equals(this.status)) {
             return "grey";

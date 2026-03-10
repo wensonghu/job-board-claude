@@ -1,7 +1,9 @@
 package com.example.jobboard.config;
 
 import com.example.jobboard.security.AppUserDetailsService;
+import com.example.jobboard.security.FormLoginSuccessHandler;
 import com.example.jobboard.security.OAuth2LoginSuccessHandler;
+import com.example.jobboard.security.PendingUserAuthFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -13,6 +15,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
@@ -41,6 +44,12 @@ public class SecurityConfig {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private PendingUserAuthFilter pendingUserAuthFilter;
+
+    @Autowired
+    private FormLoginSuccessHandler formLoginSuccessHandler;
 
     @Value("${app.remember-me.key}")
     private String rememberMeKey;
@@ -74,6 +83,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            .addFilterBefore(pendingUserAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .cors(cors -> cors.configurationSource(request -> {
                 CorsConfiguration config = new CorsConfiguration();
                 config.setAllowedOrigins(java.util.List.of(
@@ -93,7 +103,9 @@ public class SecurityConfig {
                     "/oauth2/**", "/login/**", "/.well-known/**",
                     "/api/auth/status", "/api/auth/register", "/api/auth/verify-email", "/api/auth/resend-verification",
                     "/api/support/**",
-                    "/api/broadcast/current"
+                    "/api/broadcast/current",
+                    "/api/events",
+                    "/api/session/init"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
@@ -104,12 +116,7 @@ public class SecurityConfig {
             )
             .formLogin(form -> form
                 .loginProcessingUrl("/api/auth/login")
-                .successHandler((req, res, auth) -> {
-                    // Resolve AppUser on form login and store in session
-                    String email = auth.getName();
-                    req.getSession().setAttribute("appUserEmail", email);
-                    res.setStatus(HttpStatus.OK.value());
-                })
+                .successHandler(formLoginSuccessHandler)
                 .failureHandler((req, res, ex) -> {
                     res.setStatus(HttpStatus.UNAUTHORIZED.value());
                     res.setContentType("application/json");

@@ -27,8 +27,8 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(160deg, #060a12 0%, #0d1828 60%, #060a12 100%) fixed;
             min-height: 100vh;
             padding: 20px;
             padding-top: max(20px, env(safe-area-inset-top));
@@ -49,13 +49,16 @@
         }
 
         .header {
-            background: white;
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 0.5px solid rgba(255,255,255,0.1);
             padding: 20px 30px;
-            border-radius: 12px;
+            border-radius: 16px;
             position: relative;
             z-index: 1001;
             margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.35);
             display: flex;
             align-items: center;
             gap: 12px;
@@ -70,31 +73,32 @@
         }
 
 .header h1 {
-            color: #667eea;
-            font-family: 'Arial Black', sans-serif;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
             font-size: 1.8em;
+            font-weight: 800;
+            letter-spacing: -0.5px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
         .add-card-btn {
-            background: #667eea;
+            background: #4e5ed6;
             color: white;
             border: none;
             padding: 0 20px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 2.5em;
             line-height: 1.2;
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
+            font-weight: 400;
+            transition: all 0.2s;
         }
 
         .add-card-btn:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            background: #3d4dba;
+            box-shadow: 0 4px 14px rgba(78,94,214,0.45);
         }
 
         .content-wrapper {
@@ -111,12 +115,12 @@
         }
 
         .content-wrapper::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.06);
             border-radius: 5px;
         }
 
         .content-wrapper::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.2);
             border-radius: 5px;
         }
 
@@ -146,9 +150,36 @@
             .board::-webkit-scrollbar { display: none; }
         }
 
+        .board {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+        }
+
+        @media (max-width: 640px) {
+            /* On mobile the grid approach breaks 85vw column sizing —
+               restore independent board scroll so peek-next-column UX works */
+            .content-wrapper {
+                display: block;
+                overflow-x: visible;
+                scroll-snap-type: none;
+            }
+            .board {
+                gap: 12px;
+                padding-bottom: 12px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scroll-snap-type: x mandatory;
+                scroll-padding: 8px;
+            }
+            .board::-webkit-scrollbar { display: none; }
+        }
+
         .column {
-            background: #f8f9fa;
-            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 0.5px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
             padding: 15px;
             min-height: 500px;
             min-width: 392px;
@@ -156,34 +187,57 @@
             max-width: 420px;
             flex: 1;
             flex-shrink: 0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 16px rgba(0,0,0,0.25);
             scroll-snap-align: center;
         }
 
         .column-header {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            color: white;
-            font-weight: 600;
-            font-size: 1.1em;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 14px;
+            font-weight: 700;
+            font-size: 0.92em;
+            letter-spacing: 0.2px;
             text-align: center;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .seeding { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .recruiter { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-        .hm { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-        .next-rounds { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
-        .final { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .seeding     { background: rgba(49,242,254,0.12);  color: #31f2fe;  border: 0.5px solid rgba(49,242,254,0.25); }
+        .recruiter   { background: rgba(78,94,214,0.18);   color: #7b8ff5;  border: 0.5px solid rgba(78,94,214,0.35); }
+        .hm          { background: rgba(50,173,230,0.14);  color: #32ADE6;  border: 0.5px solid rgba(50,173,230,0.3); }
+        .next-rounds { background: rgba(255,149,0,0.12);   color: #FF9500;  border: 0.5px solid rgba(255,149,0,0.3); }
+        .final       { background: rgba(23,204,69,0.12);   color: #17cc45;  border: 0.5px solid rgba(23,204,69,0.28); }
 
         .count {
-            background: rgba(255,255,255,0.3);
-            padding: 4px 10px;
+            background: rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.7);
+            padding: 3px 9px;
             border-radius: 12px;
-            font-size: 0.9em;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .column-add-btn {
+            background: rgba(255,255,255,0.25);
+            border: none;
+            color: white;
+            font-size: 1.3em;
+            font-weight: 700;
+            line-height: 1;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .column-add-btn:hover {
+            background: rgba(255,255,255,0.45);
         }
 
         .column-add-btn {
@@ -212,19 +266,18 @@
         }
 
         .card {
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 12px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
             cursor: grab;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.35), 0 0 0 0.5px rgba(255,255,255,0.07);
+            transition: box-shadow 0.2s, transform 0.15s;
         }
 
         .card:hover {
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            transform: translateY(-2px);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.4), 0 0 0 0.5px rgba(255,255,255,0.12);
+            transform: translateY(-1px);
         }
 
         .card.dragging {
@@ -233,21 +286,22 @@
         }
 
         .card-title {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 8px;
-            font-size: 1.05em;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 4px;
+            font-size: 1.0em;
+            letter-spacing: -0.1px;
         }
 
         .card-company {
-            color: #7f8c8d;
-            font-size: 0.9em;
-            margin-bottom: 10px;
+            color: rgba(255,255,255,0.55);
+            font-size: 0.88em;
+            margin-bottom: 8px;
         }
 
         .card-date {
-            font-size: 0.85em;
-            color: #95a5a6;
+            font-size: 0.82em;
+            color: rgba(255,255,255,0.38);
             display: flex;
             align-items: center;
             gap: 5px;
@@ -259,7 +313,7 @@
             gap: 8px;
             margin-top: 10px;
             padding-top: 10px;
-            border-top: 1px solid #ecf0f1;
+            border-top: 0.5px solid rgba(255,255,255,0.08);
         }
 
         .card-actions button {
@@ -267,21 +321,21 @@
             border: none;
             cursor: pointer;
             padding: 4px 8px;
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 0.9em;
-            color: #7f8c8d;
-            transition: all 0.2s;
+            color: rgba(255,255,255,0.38);
+            transition: all 0.15s;
         }
 
         .card-actions button:hover {
-            background: #ecf0f1;
-            color: #2c3e50;
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.85);
         }
 
         .cards-container.drag-over {
-            background: rgba(102, 126, 234, 0.1);
-            border: 2px dashed #667eea;
-            border-radius: 8px;
+            background: rgba(78,94,214,0.1);
+            border: 1.5px dashed rgba(78,94,214,0.5);
+            border-radius: 12px;
         }
 
         .modal {
@@ -292,8 +346,9 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
         }
 
         .modal.active {
@@ -303,19 +358,22 @@
         }
 
         .modal-content {
-            background: white;
+            background: #0d1828;
+            border: 0.5px solid rgba(255,255,255,0.1);
             padding: 30px;
-            border-radius: 16px;
+            border-radius: 20px;
             width: 90%;
             max-width: 500px;
             max-height: 85vh;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.07);
         }
 
         .modal-content h2 {
-            color: #667eea;
+            color: #ffffff;
+            font-weight: 800;
+            letter-spacing: -0.3px;
             margin-bottom: 20px;
         }
 
@@ -326,22 +384,35 @@
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #2c3e50;
+            color: rgba(255,255,255,0.7);
             font-weight: 600;
+            font-size: 0.9em;
         }
 
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
+            border: 0.5px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
             font-size: 16px;
-            transition: border 0.3s;
+            transition: border-color 0.2s;
+            background: rgba(255,255,255,0.07);
+            color: #ffffff;
+        }
+
+        .form-group input::placeholder, .form-group textarea::placeholder {
+            color: rgba(255,255,255,0.28);
+        }
+
+        .form-group select option {
+            background: #0d1828;
+            color: #ffffff;
         }
 
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #31f2fe;
+            box-shadow: 0 0 0 2px rgba(49,242,254,0.12);
         }
 
         .modal-actions {
@@ -362,27 +433,30 @@
         }
 
         .btn-primary {
-            background: #667eea;
+            background: #4e5ed6;
             color: white;
         }
 
         .btn-primary:hover {
-            background: #5568d3;
+            background: #3d4dba;
+            box-shadow: 0 4px 14px rgba(78,94,214,0.45);
         }
 
         .btn-secondary {
-            background: #e9ecef;
-            color: #2c3e50;
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.7);
+            border: 0.5px solid rgba(255,255,255,0.12);
         }
 
         .btn-secondary:hover {
-            background: #dee2e6;
+            background: rgba(255,255,255,0.13);
+            color: white;
         }
 
         .empty-state {
             text-align: center;
             padding: 40px 20px;
-            color: #95a5a6;
+            color: rgba(255,255,255,0.28);
         }
 
         .caption-row {
@@ -396,11 +470,11 @@
         }
 
         #menu-btn {
-            background: none;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
+            background: rgba(255,255,255,0.08);
+            border: 0.5px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
             cursor: pointer;
-            color: #667eea;
+            color: rgba(255,255,255,0.75);
             font-size: 1rem;
             line-height: 1;
             transition: border-color 0.2s, background 0.2s;
@@ -411,8 +485,9 @@
             height: 40px;
         }
         #menu-btn:hover {
-            border-color: #667eea;
-            background: rgba(102,126,234,0.05);
+            border-color: rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.13);
+            color: white;
         }
 
         #menu-dropdown {
@@ -420,10 +495,12 @@
             position: absolute;
             left: 0;
             top: calc(100% + 8px);
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            background: rgba(13,24,40,0.95);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 0.5px solid rgba(255,255,255,0.12);
+            border-radius: 14px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             min-width: 160px;
             z-index: 1020;
             overflow: hidden;
@@ -434,19 +511,19 @@
             padding: 12px 18px;
             cursor: pointer;
             font-size: 0.9rem;
-            color: #2c3e50;
+            color: rgba(255,255,255,0.75);
             transition: background 0.15s;
             white-space: nowrap;
         }
-        .menu-item:hover { background: #f8f9ff; color: #667eea; }
+        .menu-item:hover { background: rgba(255,255,255,0.08); color: white; }
 
         .menu-greeting {
-            font-weight: 600;
-            color: #667eea;
+            font-weight: 700;
+            color: #31f2fe;
             cursor: default;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 0.5px solid rgba(255,255,255,0.08);
         }
-        .menu-greeting:hover { background: white; }
+        .menu-greeting:hover { background: transparent; }
 
         /* ── Mobile Responsive ──────────────────────────────────── */
         @media (max-width: 640px) {
@@ -497,13 +574,16 @@
         }
 
         .todo-modal-content {
-            background: #e74c3c;
+            background: rgba(49,242,254,0.08);
+            border: 0.5px solid rgba(49,242,254,0.28);
             color: white;
-            padding: 15px 25px;
+            padding: 14px 20px;
             border-radius: 12px;
-            font-weight: 700;
-            font-size: 1.1em;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-weight: 600;
+            font-size: 1em;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.35), 0 0 0 0.5px rgba(49,242,254,0.1);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -527,47 +607,148 @@
             cursor: pointer;
             line-height: 1;
             padding-left: 20px;
-            opacity: 0.8;
+            opacity: 0.45;
+            transition: opacity 0.2s;
+        }
+        .close-todo-modal:hover {
+            opacity: 0.85;
         }
 
-        /* ── Calendar view ─────────────────────────────────────── */
-        .view-toggle {
-            display: flex;
-            border: 2px solid #667eea;
-            border-radius: 8px;
-            overflow: hidden;
-            flex-shrink: 0;
+        /* ── Insight view ───────────────────────────────────────── */
+        .insight-card {
+            background: rgba(255,255,255,0.04);
+            border: 0.5px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 24px 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+            color: white;
         }
-        .view-toggle-btn {
-            padding: 8px 16px;
-            background: white;
-            color: #667eea;
+        .insight-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 1.05em;
+            font-weight: 700;
+            margin-bottom: 22px;
+            letter-spacing: -0.2px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .insight-stats-row {
+            display: flex;
+            gap: 48px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .insight-stat { min-width: 130px; }
+        .insight-stat-number {
+            font-size: 3.2em;
+            font-weight: 800;
+            letter-spacing: -2px;
+            line-height: 1;
+            color: #ffffff;
+            margin-bottom: 5px;
+        }
+        .insight-stat-label {
+            font-size: 0.83em;
+            color: rgba(255,255,255,0.45);
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+        .insight-stat-diff { font-size: 0.81em; font-weight: 600; }
+        .insight-focus-banner {
+            background: rgba(49,242,254,0.07);
+            border: 0.5px solid rgba(49,242,254,0.2);
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-size: 0.92em;
+            color: rgba(255,255,255,0.8);
+            margin-top: 4px;
+        }
+        .insight-chat-btn {
+            display: inline-block;
+            background: #4e5ed6;
+            color: white;
             border: none;
+            border-radius: 8px;
+            padding: 9px 18px;
             font-size: 0.88em;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s, color 0.2s;
+            transition: background 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        .insight-chat-btn:hover {
+            background: #3d4dba;
+            box-shadow: 0 4px 14px rgba(78,94,214,0.45);
+        }
+        .insight-status-badge {
+            font-size: 0.78em;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            letter-spacing: 0.2px;
+        }
+        .status-healthy  { background: rgba(23,204,69,0.15);  color: #17cc45; border: 0.5px solid rgba(23,204,69,0.3); }
+        .status-ok       { background: rgba(255,149,0,0.15);  color: #FF9500; border: 0.5px solid rgba(255,149,0,0.3); }
+        .status-building { background: rgba(78,94,214,0.15);  color: #7b8ff5; border: 0.5px solid rgba(78,94,214,0.3); }
+        .insight-message {
+            color: rgba(255,255,255,0.62);
+            font-size: 0.95em;
+            line-height: 1.7;
+            margin-bottom: 4px;
+        }
+        .insight-divider {
+            border: none;
+            border-top: 0.5px solid rgba(255,255,255,0.07);
+            margin: 18px 0;
+        }
+
+        /* ── Calendar view ─────────────────────────────────────── */
+        /* Segmented control — dark */
+        .view-toggle {
+            display: flex;
+            background: rgba(255,255,255,0.08);
+            border: 0.5px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 3px;
+            overflow: hidden;
+            flex-shrink: 0;
+            gap: 2px;
+        }
+        .view-toggle-btn {
+            padding: 7px 14px;
+            background: transparent;
+            color: rgba(255,255,255,0.5);
+            border: none;
+            border-radius: 7px;
+            font-size: 0.88em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
             display: flex;
             align-items: center;
             gap: 5px;
             white-space: nowrap;
         }
-        .view-toggle-btn:first-child {
-            border-right: 2px solid #667eea;
-        }
         .view-toggle-btn.active {
-            background: #667eea;
-            color: white;
+            background: rgba(78,94,214,0.35);
+            color: #ffffff;
+            font-weight: 700;
         }
         .view-toggle-btn:hover:not(.active) {
-            background: rgba(102,126,234,0.1);
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.75);
         }
         #calendar-section {
-            background: white;
-            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 0.5px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
             padding: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.3);
             margin-bottom: 20px;
+            color: white;
         }
         .calendar-toolbar {
             display: flex;
@@ -578,21 +759,22 @@
         }
         .tz-label {
             font-weight: 600;
-            color: #667eea;
+            color: #31f2fe;
             font-size: 0.95em;
         }
         #tz-selector {
-            border: 2px solid #e9ecef;
-            border-radius: 6px;
+            border: 0.5px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
             padding: 6px 10px;
             font-size: 0.9em;
-            color: #2c3e50;
+            color: white;
+            background: rgba(255,255,255,0.07);
             cursor: pointer;
             transition: border 0.2s;
         }
         #tz-selector:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #31f2fe;
         }
         #calendar-container {
             height: 700px;
@@ -604,18 +786,48 @@
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: #667eea;
+            background: #4e5ed6;
             color: white;
-            border: none;
+            border: 0.5px solid rgba(255,255,255,0.15);
             font-size: 1.4em;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(102,126,234,0.5);
+            box-shadow: 0 4px 20px rgba(78,94,214,0.5);
             z-index: 999;
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .feedback-fab:hover {
             transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(102,126,234,0.6);
+            box-shadow: 0 6px 24px rgba(78,94,214,0.65);
+        }
+        .privacy-fab {
+            position: fixed;
+            bottom: 28px;
+            right: 88px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(175,82,222,0.8);
+            color: white;
+            border: 0.5px solid rgba(255,255,255,0.12);
+            font-size: 1.3em;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(175,82,222,0.45);
+            z-index: 999;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .privacy-fab:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 24px rgba(175,82,222,0.6);
+        }
+        #privacy-modal .modal-content {
+            max-width: 520px;
+            position: relative;
+        }
+        #privacy-modal .privacy-text {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.65);
+            line-height: 1.7;
+            margin-top: 16px;
         }
         .privacy-fab {
             position: fixed;
@@ -658,7 +870,7 @@
             align-items: center;
             gap: 7px;
             font-size: 0.82em;
-            color: #555;
+            color: rgba(255,255,255,0.5);
         }
         .legend-dot {
             width: 13px;
@@ -679,7 +891,7 @@
             padding: 4px 8px;
             border-radius: 6px;
             position: relative;
-            color: #bdc3c7;
+            color: rgba(255,255,255,0.4);
             transition: color 0.3s, transform 0.2s;
             line-height: 1;
         }
@@ -749,14 +961,15 @@
                     <i class="fas fa-bell"></i><span class="broadcast-dot" id="broadcast-dot" style="display:none"></span>
                 </button>
                 <span id="broadcast-inline" style="display:none; align-items:center; gap:8px; flex:1; min-width:0;">
-                    <span id="broadcast-inline-content" style="color:#2c3e50; font-size:0.9rem; font-weight:500; word-break:break-word; line-height:1.5; flex:1; min-width:0;"></span>
-                    <button onclick="ackBroadcast()" style="background:none; border:none; cursor:pointer; font-size:1rem; color:#95a5a6; font-weight:600; line-height:1; padding:2px 6px; transition:color 0.2s; white-space:nowrap; flex-shrink:0;" onmouseover="this.style.color='#e74c3c'" onmouseout="this.style.color='#95a5a6'">&times; clear</button>
+                    <span id="broadcast-inline-content" style="color:rgba(255,255,255,0.85); font-size:0.9rem; font-weight:500; word-break:break-word; line-height:1.5; flex:1; min-width:0;"></span>
+                    <button onclick="ackBroadcast()" style="background:none; border:none; cursor:pointer; font-size:1rem; color:rgba(255,255,255,0.35); font-weight:600; line-height:1; padding:2px 6px; transition:color 0.2s; white-space:nowrap; flex-shrink:0;" onmouseover="this.style.color='#FF3B30'" onmouseout="this.style.color='rgba(255,255,255,0.35)'">&times; clear</button>
                 </span>
             </h1>
             <div class="caption-row">
                 <div class="view-toggle" id="view-toggle">
                     <button class="view-toggle-btn active" id="btn-board" onclick="switchView('board')">📋 Board</button>
                     <button class="view-toggle-btn" id="btn-calendar" onclick="switchView('calendar')">📅 Calendar</button>
+                    <button class="view-toggle-btn" id="btn-insight" onclick="switchView('insight')">💡 Insights</button>
                 </div>
             </div>
         </div>
@@ -849,6 +1062,11 @@
     </div>
     </div><!-- end content-wrapper -->
 
+    <div id="insight-section" style="display:none;">
+        <div id="insight-content"></div>
+    </div>
+    </div><!-- end content-wrapper -->
+
     <div class="modal" id="modal">
         <div class="modal-content">
             <h2 id="modal-title">Enter a new opportunity</h2>
@@ -864,7 +1082,7 @@
                 </div>
                 <div class="form-group">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <label style="display:flex; align-items:center; gap:6px; white-space:nowrap; font-weight:600; color:#2c3e50; flex-shrink:0;">
+                        <label style="display:flex; align-items:center; gap:6px; white-space:nowrap; font-weight:600; color:rgba(255,255,255,0.7); flex-shrink:0;">
                             <input type="checkbox" id="appliedChecked" onchange="toggleAppliedDate()"> Applied
                         </label>
                         <input type="date" id="appliedDate" style="display:none; flex:1;">
@@ -875,7 +1093,7 @@
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <div style="display: flex; gap: 10px; align-items: center;">
                             <input type="date" id="interviewDate" placeholder="Optional" style="flex: 1;">
-                            <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:#2c3e50; white-space: nowrap;">
+                            <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:rgba(255,255,255,0.7); white-space: nowrap;">
                                 <input type="checkbox" id="interviewDateTBD"> TBD
                             </label>
                         </div>
@@ -902,7 +1120,7 @@
                 <div class="form-group">
                     <label>Notes</label>
                     <textarea id="details" maxlength="200" placeholder="to-dos, names to contact, things to research, etc. Keep short and focused" style="resize: vertical; min-height: 80px;"></textarea>
-                    <div style="text-align: right; font-size: 0.85em; color: #7f8c8d; margin-top: 5px;">
+                    <div style="text-align: right; font-size: 0.85em; color: rgba(255,255,255,0.32); margin-top: 5px;">
                         <span id="char-count">0</span>/200 characters
                     </div>
                 </div>
@@ -924,6 +1142,7 @@
                         <option value="interview-schedule-pending">⏳ Interview Schedule Pending</option>
                         <option value="interview-date-confirmed">✅ Interview Date Confirmed</option>
                         <option value="interview-completed">🎉 Interview Completed</option>
+                        <option value="offer-pending">🏆 Offer Pending</option>
                         <option value="rejected">❌ Rejected</option>
                     </select>
                 </div>
@@ -942,50 +1161,57 @@
 
     <div class="modal" id="signin-modal">
         <div class="modal-content" style="position: relative; max-width: 420px; margin: auto;">
-            <span onclick="closeSignInModal()" style="position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #95a5a6;">&times;</span>
+            <span onclick="closeSignInModal()" style="position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: rgba(255,255,255,0.4);">&times;</span>
 
             <!-- Contextual prompt — shown when triggered by an action -->
-            <div id="signin-prompt" style="display:none; background:#eef0fd; border:1px solid #c5caef; border-radius:8px; padding:10px 14px; margin-bottom:16px; margin-top:8px; font-size:0.9em; color:#3d4db7; text-align:center;"></div>
+            <div id="signin-prompt" style="display:none; background:rgba(78,94,214,0.15); border:0.5px solid rgba(78,94,214,0.4); border-radius:8px; padding:10px 14px; margin-bottom:16px; margin-top:8px; font-size:0.9em; color:#7b8ff5; text-align:center;"></div>
+
+            <!-- Guest/skip — prominent at top -->
+            <div style="text-align:center; margin-bottom:18px; padding-bottom:18px; border-bottom:0.5px solid rgba(255,255,255,0.1);">
+                <button onclick="closeSignInModal()"
+                        style="background:rgba(255,255,255,0.07); border:0.5px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.8); padding:11px 24px; border-radius:8px; cursor:pointer; font-size:0.9em; width:100%; transition:background 0.2s;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.12)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.07)'">
+                    Continue without signing in →
+                </button>
+                <p id="trial-days-label" style="font-size:0.75em; color:rgba(255,255,255,0.35); margin:8px 0 0;"></p>
+            </div>
 
             <!-- Tab bar -->
-            <div style="display: flex; border-bottom: 2px solid #ecf0f1; margin-bottom: 24px; margin-top: 10px;">
+            <div style="display: flex; border-bottom: 0.5px solid rgba(255,255,255,0.1); margin-bottom: 24px; margin-top: 10px;">
                 <button id="tab-signin" onclick="showAuthTab('signin')"
-                    style="flex:1; padding: 12px; border: none; background: none; font-size: 1em; font-weight: 600; cursor: pointer; color: #667eea; border-bottom: 3px solid #667eea; margin-bottom: -2px;">
+                    style="flex:1; padding: 12px; border: none; background: none; font-size: 1em; font-weight: 600; cursor: pointer; color: #7b8ff5; border-bottom: 2px solid #4e5ed6; margin-bottom: -1px;">
                     Sign In
                 </button>
                 <button id="tab-register" onclick="showAuthTab('register')"
-                    style="flex:1; padding: 12px; border: none; background: none; font-size: 1em; font-weight: 600; cursor: pointer; color: #95a5a6; border-bottom: 3px solid transparent; margin-bottom: -2px;">
+                    style="flex:1; padding: 12px; border: none; background: none; font-size: 1em; font-weight: 600; cursor: pointer; color: rgba(255,255,255,0.35); border-bottom: 2px solid transparent; margin-bottom: -1px;">
                     Create Account
                 </button>
             </div>
 
             <!-- Sign In tab -->
             <div id="auth-tab-signin">
-                <button onclick="handleAuthClick()" style="width:100%; padding: 12px; background: #fff; border: 2px solid #ddd; border-radius: 8px; font-size: 1em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; font-weight: 500;">
+                <button onclick="handleAuthClick()" style="width:100%; padding: 12px; background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.18); border-radius: 8px; font-size: 1em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; font-weight: 500; color: white; transition: background 0.2s;">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:20px; height:20px;" alt="Google">
                     Continue with Google
                 </button>
-                <div style="text-align: center; color: #95a5a6; margin-bottom: 20px; font-size: 0.9em;">— or sign in with email —</div>
-                <div id="signin-error" style="display:none; color:#e74c3c; font-size:0.9em; margin-bottom:12px; text-align:center;"></div>
-                <input id="signin-email" type="email" placeholder="Email address" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box;">
-                <input id="signin-password" type="password" placeholder="Password" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:12px; box-sizing:border-box;">
-                <label style="display:flex; align-items:center; gap:8px; font-size:0.9em; color:#555; margin-bottom:16px; cursor:pointer;">
+                <div style="text-align: center; color: rgba(255,255,255,0.3); margin-bottom: 20px; font-size: 0.9em;">— or sign in with email —</div>
+                <div id="signin-error" style="display:none; color:#FF6B6B; font-size:0.9em; margin-bottom:12px; text-align:center;"></div>
+                <input id="signin-email" type="email" placeholder="Email address" style="width:100%; padding:10px 12px; border:0.5px solid rgba(255,255,255,0.15); border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box; background:rgba(255,255,255,0.07); color:white;">
+                <input id="signin-password" type="password" placeholder="Password" style="width:100%; padding:10px 12px; border:0.5px solid rgba(255,255,255,0.15); border-radius:6px; font-size:1em; margin-bottom:12px; box-sizing:border-box; background:rgba(255,255,255,0.07); color:white;">
+                <label style="display:flex; align-items:center; gap:8px; font-size:0.9em; color:rgba(255,255,255,0.5); margin-bottom:16px; cursor:pointer;">
                     <input type="checkbox" id="remember-me-check"> Remember me for 90 days
                 </label>
                 <button onclick="handleEmailSignIn()" class="btn btn-primary" style="width:100%; padding:12px; font-size:1em;">Sign In</button>
             </div>
 
-            <p style="text-align:center; margin-top:16px; margin-bottom:0; font-size:0.85em;">
-                <a href="#" onclick="closeSignInModal(); return false;" style="color:#95a5a6; text-decoration:none;">Continue browsing without signing in →</a>
-            </p>
-
             <!-- Create Account tab -->
             <div id="auth-tab-register" style="display:none;">
                 <div id="register-message" style="display:none; padding:12px; border-radius:6px; margin-bottom:16px; font-size:0.9em; text-align:center;"></div>
-                <input id="reg-name" type="text" placeholder="Display name" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box;">
-                <input id="reg-email" type="email" placeholder="Email address" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box;">
-                <input id="reg-password" type="password" placeholder="Password (min 8 characters)" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box;">
-                <input id="reg-confirm" type="password" placeholder="Confirm password" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:1em; margin-bottom:16px; box-sizing:border-box;">
+                <input id="reg-name" type="text" placeholder="Display name" style="width:100%; padding:10px 12px; border:0.5px solid rgba(255,255,255,0.15); border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box; background:rgba(255,255,255,0.07); color:white;">
+                <input id="reg-email" type="email" placeholder="Email address" style="width:100%; padding:10px 12px; border:0.5px solid rgba(255,255,255,0.15); border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box; background:rgba(255,255,255,0.07); color:white;">
+                <input id="reg-password" type="password" placeholder="Password (min 8 characters)" style="width:100%; padding:10px 12px; border:0.5px solid rgba(255,255,255,0.15); border-radius:6px; font-size:1em; margin-bottom:10px; box-sizing:border-box; background:rgba(255,255,255,0.07); color:white;">
+                <input id="reg-confirm" type="password" placeholder="Confirm password" style="width:100%; padding:10px 12px; border:0.5px solid rgba(255,255,255,0.15); border-radius:6px; font-size:1em; margin-bottom:16px; box-sizing:border-box; background:rgba(255,255,255,0.07); color:white;">
                 <button onclick="handleRegister()" class="btn btn-primary" style="width:100%; padding:12px; font-size:1em;">Create Account</button>
             </div>
         </div>
@@ -994,7 +1220,7 @@
     <div class="modal" id="confirm-modal">
         <div class="modal-content">
             <h2>Confirm Deletion</h2>
-            <p style="margin: 20px 0; color: #2c3e50;">Are you sure you want to delete this lead?</p>
+            <p style="margin: 20px 0; color: rgba(255,255,255,0.7);">Are you sure you want to delete this lead?</p>
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
                 <button type="button" class="btn btn-primary" style="background: #e74c3c;" onclick="confirmDelete()">Delete</button>
@@ -1006,6 +1232,49 @@
     <!-- Google API scripts are no longer needed; logic is handled by the Java backend -->
 
     <script>
+        // ══════════════════════════════════════════════════════════════════════
+        // EVENT TRACKING — fire-and-forget, never throws, works for anon+auth
+        // ══════════════════════════════════════════════════════════════════════
+
+        /** Returns a stable anonymous session ID stored in localStorage. */
+        function getSessionId() {
+            let sid = localStorage.getItem('ps_sid');
+            if (!sid) {
+                sid = (typeof crypto !== 'undefined' && crypto.randomUUID)
+                    ? crypto.randomUUID()
+                    : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                        const r = Math.random() * 16 | 0;
+                        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+                    });
+                localStorage.setItem('ps_sid', sid);
+            }
+            return sid;
+        }
+
+        /**
+         * Track a user action event.
+         * @param {string} eventType  e.g. 'page_view', 'card_add'
+         * @param {object} eventData  optional key-value payload
+         */
+        function track(eventType, eventData = {}) {
+            try {
+                fetch(`${typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : ''}/api/events`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId: getSessionId(),
+                        eventType,
+                        eventData,
+                        page: window.location.pathname,
+                        referrer: document.referrer || null
+                    })
+                }).catch(() => {}); // swallow network errors
+            } catch (e) { /* never throw */ }
+        }
+
+        // ── End Event Tracking ────────────────────────────────────────────────
+
         // --- Global State ---
         let isGoogleConnected = false;
 
@@ -1017,6 +1286,9 @@
 
         // --- Auth State ---
         let currentUser = null;
+        let isPendingUser = false;
+        let trialDaysLeft = 7;
+        let trialExpired = false;
 
         // --- Broadcast State ---
         let activeBroadcast = null;
@@ -1048,11 +1320,38 @@
         // --- Backend API Configuration ---
         const API_BASE_URL = '';
 
+        // --- Guest Session Init ---
+        async function initSession() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/session/init`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionToken: getSessionId() })
+                });
+                if (res.ok) {
+                    const d = await res.json();
+                    isPendingUser = d.isPending || false;
+                    trialDaysLeft = d.trialDaysLeft != null ? d.trialDaysLeft : 7;
+                    trialExpired = d.trialExpired || false;
+                }
+            } catch (e) { /* silent — trial state stays at defaults */ }
+        }
+
         // --- Authentication ---
         async function checkAuthStatus() {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/auth/status`, { credentials: 'include' });
                 const data = await response.json();
+                // Merge pending trial info from /api/auth/status (server also computes it)
+                if (data.isPending) {
+                    isPendingUser = true;
+                    trialDaysLeft = data.trialDaysLeft != null ? data.trialDaysLeft : trialDaysLeft;
+                    trialExpired = data.trialExpired || false;
+                } else if (data.isSignedIn) {
+                    isPendingUser = false;
+                    trialExpired = false;
+                }
                 isGoogleConnected = data.isSignedIn;
                 updateAuthUI(data);
                 await checkBroadcast();
@@ -1073,15 +1372,18 @@
         function showBanner(message, type) {
             const banner = document.createElement('div');
             banner.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);
-                padding:12px 24px;border-radius:8px;font-weight:600;z-index:9999;
-                background:${type === 'success' ? '#27ae60' : '#e74c3c'};color:white;
-                box-shadow:0 4px 12px rgba(0,0,0,0.2);`;
+                padding:12px 24px;border-radius:10px;font-weight:600;z-index:9999;
+                background:${type === 'success' ? 'rgba(23,204,69,0.18)' : 'rgba(255,59,48,0.18)'};
+                color:${type === 'success' ? '#17cc45' : '#FF6B6B'};
+                border:0.5px solid ${type === 'success' ? 'rgba(23,204,69,0.4)' : 'rgba(255,59,48,0.4)'};
+                backdrop-filter:blur(12px);box-shadow:0 4px 20px rgba(0,0,0,0.4);`;
             banner.textContent = message;
             document.body.appendChild(banner);
             setTimeout(() => banner.remove(), 5000);
         }
 
         function handleAuthClick() {
+            track('google_sign_in_click');
             window.location.href = `${API_BASE_URL}/oauth2/authorization/google`;
         }
 
@@ -1106,13 +1408,14 @@
             });
 
             if (res.ok) {
+                track('sign_in_success', { method: 'email' });
                 window.location.reload();
             } else {
                 const data = await res.json().catch(() => ({}));
                 if (data.error === 'not_verified') {
                     errorEl.innerHTML = 'Please verify your email before signing in. '
                         + '<a href="#" onclick="resendVerification(\'' + email.replace(/'/g, '') + '\');return false;" '
-                        + 'style="color:#667eea;text-decoration:underline;cursor:pointer;">Resend verification email</a>';
+                        + 'style="color:#007AFF;text-decoration:underline;cursor:pointer;">Resend verification email</a>';
                 } else {
                     errorEl.textContent = 'Invalid email or password.';
                 }
@@ -1131,7 +1434,7 @@
                     body: JSON.stringify({ email })
                 });
                 const data = await res.json();
-                errorEl.style.color = res.ok ? '#27ae60' : '#e74c3c';
+                errorEl.style.color = res.ok ? '#17cc45' : '#FF6B6B';
                 errorEl.textContent = data.message || data.error || 'Please try again.';
             } catch (e) {
                 errorEl.textContent = 'Failed to send. Please try again.';
@@ -1157,7 +1460,9 @@
             });
             const data = await res.json();
 
+            track('register_submit');
             if (res.status === 201) {
+                track('register_success');
                 // Auto sign-in after registration
                 const formData = new URLSearchParams();
                 formData.append('username', email);
@@ -1180,8 +1485,8 @@
         function showRegMsg(msg, type) {
             const el = document.getElementById('register-message');
             el.textContent = msg;
-            el.style.background = type === 'success' ? '#d5f5e3' : '#fde8e8';
-            el.style.color = type === 'success' ? '#1e8449' : '#c0392b';
+            el.style.background = type === 'success' ? 'rgba(23,204,69,0.12)' : 'rgba(255,59,48,0.12)';
+            el.style.color = type === 'success' ? '#17cc45' : '#FF6B6B';
             el.style.display = 'block';
         }
 
@@ -1189,13 +1494,14 @@
             const isSignin = tab === 'signin';
             document.getElementById('auth-tab-signin').style.display = isSignin ? 'block' : 'none';
             document.getElementById('auth-tab-register').style.display = isSignin ? 'none' : 'block';
-            document.getElementById('tab-signin').style.color = isSignin ? '#667eea' : '#95a5a6';
-            document.getElementById('tab-signin').style.borderBottom = isSignin ? '3px solid #667eea' : '3px solid transparent';
-            document.getElementById('tab-register').style.color = isSignin ? '#95a5a6' : '#667eea';
-            document.getElementById('tab-register').style.borderBottom = isSignin ? '3px solid transparent' : '3px solid #667eea';
+            document.getElementById('tab-signin').style.color = isSignin ? '#7b8ff5' : 'rgba(255,255,255,0.35)';
+            document.getElementById('tab-signin').style.borderBottom = isSignin ? '2px solid #4e5ed6' : '2px solid transparent';
+            document.getElementById('tab-register').style.color = isSignin ? 'rgba(255,255,255,0.35)' : '#7b8ff5';
+            document.getElementById('tab-register').style.borderBottom = isSignin ? '2px solid transparent' : '2px solid #4e5ed6';
         }
 
         function handleSignoutClick() {
+            track('sign_out');
             fetch(`${API_BASE_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' })
                 .then(() => window.location.reload());
         }
@@ -1206,7 +1512,8 @@
             if (authData.isSignedIn) {
                 const firstName = (authData.name || authData.email || '').split(' ')[0];
                 const adminItem = (authData.role === 'ADMIN')
-                    ? `<div class="menu-item" onclick="openAdminModal(); closeMenu()">Admin</div>`
+                    ? `<div class="menu-item" onclick="openAdminModal(); closeMenu()">Admin</div>
+                       <div class="menu-item" onclick="openMonitoringModal(); closeMenu()">Monitoring</div>`
                     : '';
                 dropdown.innerHTML = `
                     <div class="menu-item menu-greeting">Hi, ${firstName}</div>
@@ -1221,7 +1528,11 @@
                 `;
                 document.getElementById('broadcast-btn').style.display = 'none';
                 document.getElementById('broadcast-btn').classList.remove('bell-active');
-                openSignInModal('Sign in to track and save your job applications.');
+                // Only auto-show modal when the trial has explicitly expired
+                if (authData.trialExpired || trialExpired) {
+                    openSignInModal('Your 7-day trial has ended. Sign in to keep your progress.');
+                }
+                // During active trial (or any other unauthenticated state): no modal on page load
             }
         }
 
@@ -1254,6 +1565,7 @@
         // ── Feedback / Support ───────────────────────────────────────────────────
 
         function openFeedbackModal() {
+            track('feedback_open');
             const emailInput = document.getElementById('feedback-email');
             if (currentUser && currentUser.email) emailInput.value = currentUser.email;
             document.getElementById('feedback-message').value = '';
@@ -1272,7 +1584,7 @@
             const status   = document.getElementById('feedback-status');
 
             if (!email || !message) {
-                status.style.cssText = 'display:block; color:#e74c3c;';
+                status.style.cssText = 'display:block; color:#FF6B6B;';
                 status.textContent = 'Email and message are required.';
                 return;
             }
@@ -1284,12 +1596,13 @@
                     body: JSON.stringify({ fromEmail: email, category, message })
                 });
                 if (!res.ok) throw new Error();
-                status.style.cssText = 'display:block; color:#27ae60;';
+                track('feedback_submit', { category });
+                status.style.cssText = 'display:block; color:#17cc45;';
                 status.textContent = "✓ Sent! We'll get back to you soon.";
                 document.getElementById('feedback-message').value = '';
                 setTimeout(closeFeedbackModal, 2000);
             } catch {
-                status.style.cssText = 'display:block; color:#e74c3c;';
+                status.style.cssText = 'display:block; color:#FF6B6B;';
                 status.textContent = 'Failed to send. Please try again.';
             }
         }
@@ -1410,13 +1723,14 @@
 
         function showAdminStatus(msg, ok) {
             const el = document.getElementById('admin-broadcast-status');
-            el.style.cssText = `display:block; color:${ok ? '#27ae60' : '#e74c3c'};`;
+            el.style.cssText = `display:block; color:${ok ? '#17cc45' : '#FF6B6B'};`;
             el.textContent = msg;
         }
 
         // ─────────────────────────────────────────────────────────────────────────
 
         function openSignInModal(prompt) {
+            track('sign_in_modal_open', { prompt: prompt || null });
             closeMenu();
             document.body.classList.add('signin-modal-open');
             const promptEl = document.getElementById('signin-prompt');
@@ -1425,6 +1739,17 @@
                 promptEl.style.display = 'block';
             } else {
                 promptEl.style.display = 'none';
+            }
+            // Update trial days label
+            const trialLabel = document.getElementById('trial-days-label');
+            if (trialLabel) {
+                if (trialExpired) {
+                    trialLabel.textContent = 'Trial ended — your data is still here';
+                } else if (isPendingUser) {
+                    trialLabel.textContent = trialDaysLeft + ' day' + (trialDaysLeft !== 1 ? 's' : '') + ' remaining in your free trial';
+                } else {
+                    trialLabel.textContent = 'Your progress is saved automatically';
+                }
             }
             document.getElementById('signin-modal').classList.add('active');
             document.getElementById('todo-modal-container').style.display = 'none';
@@ -1506,6 +1831,7 @@
             console.log('Form values:', { position, company, stage, date, status, details });
 
             const action = editingCardId ? 'update' : 'create';
+            track(action === 'create' ? 'card_add' : 'card_edit', { stage, status });
             let cardToSave;
             if (action === 'update') {
                 // Update existing card
@@ -1578,23 +1904,15 @@
             Object.keys(grouped).forEach(stage => {
                 const container = document.querySelector(`[data-column="${stage}"]`);
                 
-                let sortedCards;
-                if (stage === 'seeding') {
-                    // Seeding: sort by last action date descending
-                    sortedCards = grouped[stage].sort((a, b) => {
-                        const dateA = a.date || '0000-01-01';
-                        const dateB = b.date || '0000-01-01';
-                        return dateB.localeCompare(dateA);
-                    });
-                } else {
-                    // Other stages: sort by status (in-progress first, rejected last)
-                    sortedCards = grouped[stage].sort((a, b) => {
-                        const statusOrder = { 'in-progress': 0, 'interview-date-confirmed': 0, 'interview-completed': 0, 'interview-schedule-pending': 0.5, 'rejected': 1 };
-                        const aStatus = a.status || 'in-progress';
-                        const bStatus = b.status || 'in-progress';
-                        return (statusOrder[aStatus] || 0) - (statusOrder[bStatus] || 0);
-                    });
-                }
+                // All stages: offer-pending first, rejected last, otherwise sort by date DESC
+                const sortedCards = grouped[stage].sort((a, b) => {
+                    const order = s => s === 'offer-pending' ? 0 : s === 'rejected' ? 2 : 1;
+                    const orderDiff = order(a.status) - order(b.status);
+                    if (orderDiff !== 0) return orderDiff;
+                    const dateA = a.date || '0000-01-01';
+                    const dateB = b.date || '0000-01-01';
+                    return dateB.localeCompare(dateA);
+                });
                 
                 sortedCards.forEach(card => {
                     container.appendChild(createCardElement(card));
@@ -1617,8 +1935,8 @@
         // Falls back to showing get-started prompt if board is empty.
         async function loadAlerts() {
             const container = document.getElementById('todo-modal-container');
-            if (!currentUser) {
-                // Not signed in: show get-started only if board is empty and modal was dismissed
+            if (!currentUser && !isPendingUser) {
+                // Truly unauthenticated: show get-started only if board is empty and modal was dismissed
                 if (cards.length === 0 && signInModalDismissed) {
                     container.innerHTML = '';
                     container.appendChild(createGetStartedElement());
@@ -1628,6 +1946,7 @@
                 }
                 return;
             }
+            // Both REGISTERED and PENDING users can see interview alerts
             try {
                 const res = await fetch(`${API_BASE_URL}/api/alerts`, { credentials: 'include' });
                 const alerts = res.ok ? await res.json() : [];
@@ -1652,6 +1971,7 @@
         }
 
         async function closeTodoAlert(alertKey) {
+            track('alert_dismiss', { alertKey });
             if (alertKey === 'get-started') {
                 document.getElementById('todo-modal-container').style.display = 'none';
                 return;
@@ -1667,9 +1987,11 @@
         function createGetStartedElement() {
             const div = document.createElement('div');
             div.className = 'todo-modal-content';
-            div.style.background = '#667eea';
+            div.style.background = 'rgba(78,94,214,0.15)';
+            div.style.border = '0.5px solid rgba(78,94,214,0.4)';
+            div.style.boxShadow = '0 2px 20px rgba(0,0,0,0.35), 0 0 0 0.5px rgba(78,94,214,0.15)';
             div.innerHTML = `
-                <span>🚀 Add cards for your new leads, companies you are applying to, interviews being scheduled</span>
+                <span>👋 Welcome! The best way to use the PitStop board is to create one card for each opportunity you are pursuing, start adding them based on the stage you are in. If you are starting fresh, focus on making your resume stand out!</span>
                 <span class="close-todo-modal" onclick="closeTodoAlert('get-started')">&times;</span>
             `;
             return div;
@@ -1698,7 +2020,7 @@
                 const [year, month, day] = card.appliedDate.split('-');
                 const localDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
                 const formatted = localDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                appliedDateHtml = `<div style="font-size:0.85em; color:#7f8c8d; margin-top:6px;">✅ Applied: ${formatted}</div>`;
+                appliedDateHtml = `<div style="font-size:0.82em; color:rgba(255,255,255,0.45); margin-top:5px;">✅ Applied: ${formatted}</div>`;
             }
 
             // Interview date — only show when a real date is set (skip TBD)
@@ -1720,44 +2042,47 @@
                         f = localDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                     }
 
-                    interviewHtml = `<div class="card-interview" style="font-size:0.95em; color:#34495e; margin-top:6px; font-weight:700;">🎤 Interview: ${f}</div>`;
+                    interviewHtml = `<div class="card-interview" style="font-size:0.88em; color:#31f2fe; margin-top:5px; font-weight:700; letter-spacing:-0.1px;">🎤 Interview: ${f}</div>`;
                 }
             }
 
-            const referredByHtml = card.referredBy ? `<div class="card-referred" style="font-size:0.85em; color:#7f8c8d; margin-top:6px;">👥 Referral: ${card.referredBy}</div>` : '';
+            const referredByHtml = card.referredBy ? `<div class="card-referred" style="font-size:0.82em; color:rgba(255,255,255,0.42); margin-top:5px;">👥 Referral: ${card.referredBy}</div>` : '';
             
             // Status badge and styling
             const statusConfig = {
-                'in-progress': { emoji: '🔄', label: 'In Progress', color: '#3498db' },
-                'rejected': { emoji: '❌', label: 'Rejected', color: '#95a5a6' },
-                'interview-schedule-pending': { emoji: '⏳', label: 'Interview Pending', color: '#7f8c8d' },
-                'interview-date-confirmed': { emoji: '✅', label: 'Interview Confirmed', color: '#27ae60' },
-                'interview-completed': { emoji: '🎉', label: 'Interview Completed', color: '#8e44ad' }
+                'in-progress':                { emoji: '🔄', label: 'In Progress',          color: 'rgba(78,94,214,0.7)',   text: '#7b8ff5' },
+                'rejected':                   { emoji: '❌', label: 'Rejected',              color: 'rgba(255,255,255,0.1)', text: 'rgba(255,255,255,0.38)' },
+                'interview-schedule-pending': { emoji: '⏳', label: 'Interview Pending',     color: 'rgba(255,149,0,0.18)', text: '#FF9500' },
+                'interview-date-confirmed':   { emoji: '✅', label: 'Interview Confirmed',   color: 'rgba(23,204,69,0.15)', text: '#17cc45' },
+                'interview-completed':        { emoji: '🎉', label: 'Interview Completed',   color: 'rgba(49,242,254,0.14)','text': '#31f2fe' },
+                'offer-pending':              { emoji: '🏆', label: 'Offer Pending',         color: 'rgba(255,149,0,0.2)',  text: '#FF9500' }
             };
             const statusInfo = statusConfig[card.status] || statusConfig['in-progress'];
-            const statusHtml = card.status ? `<div class="card-status" style="display: inline-block; background: ${statusInfo.color}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; margin-top: 8px;">${statusInfo.emoji} ${statusInfo.label}</div>` : '';
+            const statusHtml = card.status ? `<div class="card-status" style="display: inline-block; background: ${statusInfo.color}; color: ${statusInfo.text || 'white'}; padding: 3px 10px; border-radius: 20px; font-size: 0.72em; font-weight: 700; letter-spacing: 0.2px; margin-top: 8px;">${statusInfo.emoji} ${statusInfo.label}</div>` : '';
 
             // Conditional card background and reminder icon
             let reminderHtml = '';
             const color = card.color || 'white';
 
-            if (color === 'grey') {
-                div.style.background = '#f0f0f0';
-                div.style.borderLeft = '4px solid #95a5a6';
+            if (color === 'gold') {
+                div.style.background = 'rgba(255,149,0,0.12)';
+                div.style.borderLeft = '2px solid rgba(255,149,0,0.6)';
+                div.style.boxShadow = '0 2px 20px rgba(0,0,0,0.35), 0 0 0 0.5px rgba(255,149,0,0.2)';
+            } else if (color === 'grey') {
+                div.style.background = 'rgba(255,255,255,0.04)';
+                div.style.opacity = '0.65';
             } else if (color === 'yellow') {
-                div.style.background = '#fff7e6';
-                div.style.borderLeft = '4px solid #f6c84c';
+                div.style.background = 'rgba(255,149,0,0.08)';
+                div.style.borderLeft = '2px solid rgba(255,149,0,0.4)';
                 reminderHtml = `<div class="card-reminder" style="display:inline-block; margin-left:8px; font-size:0.95em;">🔔</div>`;
-            } else { // white
-                div.style.background = '#ffffff';
-                // Special border for pending interviews, even if background is white
+            } else { // white/default
                 if (card.status === 'interview-schedule-pending') {
-                    div.style.borderLeft = '4px solid #b0bec5';
+                    div.style.borderLeft = '2px solid rgba(255,255,255,0.12)';
                 }
             }
             
             // Add details if available
-            const detailsHtml = card.details ? `<div class="card-details" style="font-size: 0.85em; color: #7f8c8d; margin-top: 8px; line-height: 1.4;">${card.details}</div>` : '';
+            const detailsHtml = card.details ? `<div class="card-details" style="font-size: 0.82em; color: rgba(255,255,255,0.48); margin-top: 6px; line-height: 1.5;">${card.details}</div>` : '';
             
             div.innerHTML = `
                 <div style="display:flex; align-items:center; gap:8px; justify-content:space-between;">
@@ -1843,19 +2168,33 @@
             container.addEventListener('drop', (e) => {
                 e.preventDefault();
                 container.classList.remove('drag-over');
-                
+
                 if (draggedCard) {
                     const newStage = container.dataset.column;
                     const cardId = parseInt(draggedCard.dataset.id);
-                    const card = cards.find(c => c.id === cardId);
-                    
-                    if (card) {
-                        const updatedCard = { ...card, stage: newStage };
-                        persistAndReload(updatedCard, 'update');
-                    }
+                    updateCardStage(cardId, newStage);
                 }
             });
         });
+
+        // Stage-only update for drag-and-drop (does not trigger status rules)
+        async function updateCardStage(cardId, newStage) {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/cards/${cardId}/stage`, {
+                    method: 'PATCH',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ stage: newStage })
+                });
+                if (!res.ok && res.status === 401) {
+                    openSignInModal('Sign in required — your changes were not saved.');
+                    return;
+                }
+            } catch (e) {
+                console.error('Failed to update stage:', e);
+            }
+            await loadCards();
+        }
 
         // Central function to persist changes to the backend and reload the board
         async function persistAndReload(card, action) {
@@ -1895,10 +2234,6 @@
 
         // Modal functions
         function openModal(cardId = null, defaultStage = null) {
-            if (!currentUser) {
-                openSignInModal('Sign in to add and track your opportunities.');
-                return;
-            }
             const modal = document.getElementById('modal');
             const form = document.getElementById('card-form');
 
@@ -2001,7 +2336,7 @@
 
         async function confirmDelete() {
             if (deletingCardId) {
-                // We only need the ID to delete
+                track('card_delete');
                 await persistAndReload({ id: deletingCardId }, 'delete');
                 closeConfirmModal();
             }
@@ -2021,7 +2356,9 @@
         });
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            track('page_view');
+            await initSession();   // Create/reconnect PENDING user before auth status check
             checkAuthStatus();
             const feedbackModal = document.getElementById('feedback-modal');
             if (feedbackModal) {
@@ -2284,21 +2621,23 @@
             calendarInstance.render();
         }
 
-        /** Switch to 'board' or 'calendar' view. */
+        /** Switch to 'board', 'calendar', or 'insight' view. */
         function switchView(view) {
+            track('view_switch', { view });
             const goCalendar = (view === 'calendar');
-            if (calendarView === goCalendar) return;
+            const goInsight  = (view === 'insight');
             calendarView = goCalendar;
-            document.querySelector('.board').style.display = calendarView ? 'none' : 'flex';
-            document.getElementById('calendar-section').style.display = calendarView ? 'block' : 'none';
-            document.getElementById('btn-board').classList.toggle('active', !calendarView);
-            document.getElementById('btn-calendar').classList.toggle('active', calendarView);
-            // Header width follows the active content:
-            // board view → max-content (aligns with swim lanes)
-            // calendar view → 1fr (fills full available width)
+            document.querySelector('.board').style.display = (!goCalendar && !goInsight) ? 'flex' : 'none';
+            document.getElementById('calendar-section').style.display = goCalendar ? 'block' : 'none';
+            document.getElementById('insight-section').style.display  = goInsight  ? 'block' : 'none';
+            document.getElementById('btn-board').classList.toggle('active', !goCalendar && !goInsight);
+            document.getElementById('btn-calendar').classList.toggle('active', goCalendar);
+            document.getElementById('btn-insight').classList.toggle('active', goInsight);
+            // board → max-content; calendar/insight → 1fr (full width)
             document.querySelector('.content-wrapper').style.gridTemplateColumns =
-                goCalendar ? '1fr' : '';
-            if (calendarView) initCalendar();
+                (goCalendar || goInsight) ? '1fr' : '';
+            if (goCalendar) initCalendar();
+            if (goInsight)  buildInsightView();
         }
 
         /** Legacy alias kept for any internal callers. */
@@ -2329,6 +2668,143 @@
 
         // ── End calendar helpers ────────────────────────────────────────────────
 
+        // ══════════════════════════════════════════════════════════════════════
+        // MODULE 4 (JS): INSIGHT VIEW — weekly activity + overall progress
+        // ══════════════════════════════════════════════════════════════════════
+
+        /** Open feedback modal pre-selected to a specific category. */
+        function openFeedbackWithCategory(category) {
+            // Guest/PENDING users must sign in to access support services
+            if (!currentUser) {
+                openSignInModal('Sign in to access ' + category + ' support.');
+                return;
+            }
+            openFeedbackModal();
+            setTimeout(() => {
+                const sel = document.getElementById('feedback-category');
+                for (let i = 0; i < sel.options.length; i++) {
+                    if (sel.options[i].text === category) { sel.selectedIndex = i; break; }
+                }
+            }, 50);
+        }
+
+        /** Build and render the Insight view from current cards data. */
+        function buildInsightView() {
+            // ── Week range helpers ──────────────────────────────────────────
+            function getWeekRange(weeksAgo) {
+                const now = new Date();
+                const day = now.getDay(); // 0=Sun
+                const diffToMon = day === 0 ? -6 : 1 - day;
+                const mon = new Date(now);
+                mon.setDate(now.getDate() + diffToMon - weeksAgo * 7);
+                mon.setHours(0, 0, 0, 0);
+                const sun = new Date(mon);
+                sun.setDate(mon.getDate() + 6);
+                sun.setHours(23, 59, 59, 999);
+                return { start: mon, end: sun };
+            }
+
+            function inRange(dateStr, range) {
+                if (!dateStr) return false;
+                const [y, m, d] = dateStr.split('-');
+                const dt = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+                return dt >= range.start && dt <= range.end;
+            }
+
+            function fmtWeek(r) {
+                const opts = { month: 'short', day: 'numeric' };
+                return r.start.toLocaleDateString('en-US', opts) + ' – ' +
+                       r.end.toLocaleDateString('en-US', opts);
+            }
+
+            // ── Compute stats ───────────────────────────────────────────────
+            const thisWeek = getWeekRange(0);
+            const prevWeek = getWeekRange(1);
+
+            // Applications active (Last Action Date) this week vs last
+            const appThis = cards.filter(c => inRange(c.date, thisWeek)).length;
+            const appPrev = cards.filter(c => inRange(c.date, prevWeek)).length;
+            const appDiff = appThis - appPrev;
+
+            // Interview confirmations this week vs last (action date in range + confirmed status)
+            const intThis = cards.filter(c => inRange(c.date, thisWeek) && c.status === 'interview-date-confirmed').length;
+            const intPrev = cards.filter(c => inRange(c.date, prevWeek) && c.status === 'interview-date-confirmed').length;
+            const intDiff = intThis - intPrev;
+
+            // Total currently confirmed upcoming interviews (for focus banner)
+            const totalConfirmed = cards.filter(c => c.status === 'interview-date-confirmed').length;
+
+            // Overall progress
+            const hasAdvanced = cards.some(c =>
+                ['hm', 'next-rounds', 'final'].includes(c.stage) &&
+                c.status === 'interview-date-confirmed'
+            );
+            // "< 8 early stage cards this week" threshold
+            const seedingThis = cards.filter(c => inRange(c.date, thisWeek) && c.stage === 'seeding').length;
+            const isHealthy   = hasAdvanced;
+            const needsFocus  = !isHealthy && appThis < 8;
+
+            // ── Diff label ──────────────────────────────────────────────────
+            function diffLabel(diff) {
+                if (diff > 0) return `<span style="color:#17cc45">▲ ${diff} from last week</span>`;
+                if (diff < 0) return `<span style="color:#FF6B6B">▼ ${Math.abs(diff)} from last week</span>`;
+                return `<span style="color:rgba(255,255,255,0.3)">— same as last week</span>`;
+            }
+
+            // ── Progress badge + message ────────────────────────────────────
+            let badgeClass, badgeLabel, progressMsg, chatBtn = '';
+            if (isHealthy) {
+                badgeClass = 'status-healthy'; badgeLabel = '✅ Healthy';
+                progressMsg = 'You have active interviews at hiring manager or later stages — strong momentum. Dedicate the majority of your time to interview preparation and stay engaged with your pipeline.';
+                chatBtn = `<button class="insight-chat-btn" onclick="openFeedbackWithCategory('Interview Preparation')">💬 Get free interview prep support</button>`;
+            } else if (needsFocus) {
+                badgeClass = 'status-ok'; badgeLabel = '⚠️ Needs Focus';
+                progressMsg = 'No advanced-stage interviews confirmed yet and fewer than 8 applications updated this week. Focus on refining your resume, expanding or narrowing your search, and reaching out to referrers — the goal is to land first-round interviews.';
+                chatBtn = `<button class="insight-chat-btn" onclick="openFeedbackWithCategory('Resume Review')">💬 Get free resume & search advice now</button>`;
+            } else {
+                badgeClass = 'status-building'; badgeLabel = '🔄 Building';
+                progressMsg = 'You\'re building a solid pipeline with good weekly activity. Keep adding opportunities and following up to push into hiring manager and final-stage interviews.';
+            }
+
+            // ── Render ──────────────────────────────────────────────────────
+            document.getElementById('insight-content').innerHTML = `
+                <div class="insight-card">
+                    <div class="insight-card-header">
+                        <span>📅 Weekly Activity</span>
+                        <span style="font-size:0.8em; color:rgba(255,255,255,0.35); font-weight:500;">${fmtWeek(thisWeek)}</span>
+                    </div>
+                    <div class="insight-stats-row">
+                        <div class="insight-stat">
+                            <div class="insight-stat-number">${appThis}</div>
+                            <div class="insight-stat-label">Applications Updated</div>
+                            <div class="insight-stat-diff">${diffLabel(appDiff)}</div>
+                        </div>
+                        <div class="insight-stat">
+                            <div class="insight-stat-number" style="color:#31f2fe">${intThis}</div>
+                            <div class="insight-stat-label">Interviews Confirmed</div>
+                            <div class="insight-stat-diff">${diffLabel(intDiff)}</div>
+                        </div>
+                    </div>
+                    ${totalConfirmed > 0 ? `
+                    <div class="insight-focus-banner">
+                        <div style="margin-bottom:10px;">🎯 <strong>Focus tip:</strong> You have ${totalConfirmed} confirmed interview${totalConfirmed > 1 ? 's' : ''} — spend <strong>80%</strong> of your time on prep and <strong>20%</strong> on research &amp; applications.</div>
+                        <button class="insight-chat-btn" onclick="openFeedbackWithCategory('Interview Preparation')">💬 Get free interview prep support now</button>
+                    </div>` : ''}
+                </div>
+
+                <div class="insight-card">
+                    <div class="insight-card-header">
+                        <span>📊 Overall Progress</span>
+                        <span class="insight-status-badge ${badgeClass}">${badgeLabel}</span>
+                    </div>
+                    <p class="insight-message">${progressMsg}</p>
+                    ${chatBtn}
+                </div>
+            `;
+        }
+
+        // ── End Insight helpers ─────────────────────────────────────────────────
+
         // Update interview date input style in modal: enlarge and bold when a confirmed date exists
         function updateInterviewInputStyle() {
             const el = document.getElementById('interviewDate');
@@ -2351,29 +2827,29 @@
 
     <div class="modal" id="privacy-modal">
         <div class="modal-content" style="max-width:520px; position:relative;">
-            <span onclick="closePrivacyModal()" style="position:absolute;right:20px;top:15px;font-size:24px;cursor:pointer;color:#95a5a6;">&times;</span>
-            <h2 style="color:#667eea; display:flex; align-items:center; gap:10px;"><i class="fas fa-shield-alt"></i> Privacy</h2>
+            <span onclick="closePrivacyModal()" style="position:absolute;right:20px;top:15px;font-size:24px;cursor:pointer;color:rgba(255,255,255,0.4);">&times;</span>
+            <h2 style="color:#31f2fe; display:flex; align-items:center; gap:10px;"><i class="fas fa-shield-alt"></i> Privacy</h2>
             <p class="privacy-text">We don't need your personal information to help you with the job search, you are responsible for protecting your own information. We also don't share any company/position data with any outside parties. However, Pitstop may provide timely and relevant guidance based on the information you've shared, only for the purpose of expediting your own job search process.</p>
         </div>
     </div>
 
     <div class="modal" id="admin-modal">
         <div class="modal-content" style="max-width:480px; position:relative;">
-            <span onclick="closeAdminModal()" style="position:absolute;right:20px;top:15px;font-size:24px;cursor:pointer;color:#95a5a6;">&times;</span>
+            <span onclick="closeAdminModal()" style="position:absolute;right:20px;top:15px;font-size:24px;cursor:pointer;color:rgba(255,255,255,0.4);">&times;</span>
             <h2>Admin Panel</h2>
-            <h3 style="color:#667eea; margin:20px 0 10px; font-size:1em;">Broadcast Message</h3>
-            <div id="admin-current-msg" style="display:none; background:#f8f9ff; border-radius:8px; padding:12px; margin-bottom:16px; font-size:0.9em; color:#555;"></div>
+            <h3 style="color:#31f2fe; margin:20px 0 10px; font-size:1em;">Broadcast Message</h3>
+            <div id="admin-current-msg" style="display:none; background:rgba(255,255,255,0.06); border-radius:8px; padding:12px; margin-bottom:16px; font-size:0.9em; color:rgba(255,255,255,0.6);"></div>
             <textarea id="admin-broadcast-text" maxlength="250" rows="4"
                 placeholder="Write a message to all users (max 250 characters)…"
                 oninput="updateBroadcastCounter()"
-                style="width:100%; border:1px solid #ddd; border-radius:6px; padding:10px; font-size:0.95em; resize:none; box-sizing:border-box;"></textarea>
-            <div style="text-align:right; font-size:0.8em; color:#95a5a6; margin:4px 0 12px;">
+                style="width:100%; border:0.5px solid rgba(255,255,255,0.15); border-radius:6px; padding:10px; font-size:0.95em; resize:none; box-sizing:border-box; background:rgba(255,255,255,0.07); color:white;"></textarea>
+            <div style="text-align:right; font-size:0.8em; color:rgba(255,255,255,0.3); margin:4px 0 12px;">
                 <span id="broadcast-counter">0</span>/250
             </div>
             <p id="admin-broadcast-status" style="display:none; font-size:0.9em; margin-bottom:12px;"></p>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeAdminModal()">Cancel</button>
-                <button id="admin-clear-btn" class="btn btn-secondary" style="display:none; color:#e74c3c;" onclick="clearBroadcast()">Clear Message</button>
+                <button id="admin-clear-btn" class="btn btn-secondary" style="display:none; color:#FF6B6B;" onclick="clearBroadcast()">Clear Header Message</button>
                 <button class="btn btn-primary" onclick="sendBroadcast()">Send to All Users</button>
             </div>
         </div>
@@ -2389,9 +2865,10 @@
             <div class="form-group">
                 <label>Category</label>
                 <select id="feedback-category">
-                    <option>General Feedback</option>
-                    <option>Bug Report</option>
+                    <option>Resume Review</option>
+                    <option>Interview Preparation</option>
                     <option>Feature Request</option>
+                    <option>Report a Bug</option>
                     <option>Others</option>
                 </select>
             </div>
@@ -2406,6 +2883,161 @@
             </div>
         </div>
     </div>
+
+    <!-- ── MONITORING MODAL ─────────────────────────────────────────────── -->
+    <div class="modal" id="monitoring-modal">
+        <div class="modal-content" style="max-width:680px; position:relative;">
+            <span onclick="closeMonitoringModal()" style="position:absolute;right:20px;top:15px;font-size:24px;cursor:pointer;color:rgba(255,255,255,0.4);">&times;</span>
+            <h2 style="color:#31f2fe; display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                <i class="fas fa-chart-line"></i> Monitoring
+            </h2>
+            <p style="font-size:0.8em; color:rgba(255,255,255,0.3); margin-bottom:20px;" id="monitoring-updated"></p>
+            <div id="monitoring-body" style="color:rgba(255,255,255,0.65); font-size:0.9em;">
+                <p style="color:rgba(255,255,255,0.35);">Loading…</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ── Monitoring modal ──────────────────────────────────────────────────────
+
+    function openMonitoringModal() {
+        document.getElementById('monitoring-modal').classList.add('active');
+        document.getElementById('monitoring-body').innerHTML =
+            '<p style="color:rgba(255,255,255,0.35);">Loading…</p>';
+        fetch(`${API_BASE_URL}/api/admin/metrics`, { credentials: 'include' })
+            .then(r => r.ok ? r.json() : Promise.reject(r.status))
+            .then(renderMetrics)
+            .catch(e => {
+                document.getElementById('monitoring-body').innerHTML =
+                    `<p style="color:#FF6B6B;">Failed to load metrics (${e}).</p>`;
+            });
+    }
+
+    function closeMonitoringModal() {
+        document.getElementById('monitoring-modal').classList.remove('active');
+    }
+
+    document.getElementById('monitoring-modal').addEventListener('click', e => {
+        if (e.target.id === 'monitoring-modal') closeMonitoringModal();
+    });
+
+    function pct(num, denom) {
+        if (!denom) return '—';
+        return Math.round((num / denom) * 100) + '%';
+    }
+
+    function diff(a, b) {
+        const d = a - b;
+        if (d > 0) return `<span style="color:#17cc45">▲ ${d}</span>`;
+        if (d < 0) return `<span style="color:#FF6B6B">▼ ${Math.abs(d)}</span>`;
+        return `<span style="color:rgba(255,255,255,0.3)">—</span>`;
+    }
+
+    function statBox(label, value, sub) {
+        return `
+        <div style="background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.08);
+                    border-radius:12px;padding:16px 18px;min-width:120px;flex:1;">
+            <div style="font-size:2em;font-weight:800;letter-spacing:-1px;color:#fff;line-height:1;">${value}</div>
+            <div style="font-size:0.78em;color:rgba(255,255,255,0.42);margin-top:4px;">${label}</div>
+            ${sub ? `<div style="font-size:0.78em;margin-top:4px;">${sub}</div>` : ''}
+        </div>`;
+    }
+
+    function funnelRow(label, count, pctStr, dropColor) {
+        return `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;
+                    border-bottom:0.5px solid rgba(255,255,255,0.06);">
+            <div style="width:180px;color:rgba(255,255,255,0.6);font-size:0.88em;">${label}</div>
+            <div style="font-size:1.2em;font-weight:700;color:#fff;width:70px;">${count.toLocaleString()}</div>
+            <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:4px;height:8px;">
+                <div style="background:${dropColor};height:8px;border-radius:4px;width:${pctStr};transition:width 0.4s;"></div>
+            </div>
+            <div style="width:44px;text-align:right;font-size:0.85em;color:rgba(255,255,255,0.45);">${pctStr}</div>
+        </div>`;
+    }
+
+    function renderMetrics(m) {
+        const f = m.funnel;
+        const tw = m.thisWeek;
+        const lw = m.lastWeek;
+        const dev = m.devices;
+        const totalDevice = (dev.mobile + dev.desktop) || 1;
+        const mobilePct = Math.round((dev.mobile / totalDevice) * 100);
+        const desktopPct = 100 - mobilePct;
+
+        document.getElementById('monitoring-updated').textContent =
+            'Updated just now · All times Pacific';
+
+        document.getElementById('monitoring-body').innerHTML = `
+
+        <!-- ── Funnel ── -->
+        <div style="margin-bottom:24px;">
+            <div style="font-size:0.78em;font-weight:700;letter-spacing:0.8px;
+                        color:rgba(255,255,255,0.35);text-transform:uppercase;margin-bottom:12px;">
+                Acquisition Funnel (All Time)
+            </div>
+            ${funnelRow('Page Views',        f.pageViews,        '100%',                                   '#31f2fe')}
+            ${funnelRow('Sign-In Modal',     f.modalOpens,       pct(f.modalOpens, f.pageViews),           '#4e5ed6')}
+            ${funnelRow('Register Submit',   f.registerAttempts, pct(f.registerAttempts, f.pageViews),     '#FF9500')}
+            ${funnelRow('Register Success',  f.registerSuccess,  pct(f.registerSuccess, f.pageViews),      '#17cc45')}
+            ${funnelRow('Return Sign-Ins',   f.signIns,          pct(f.signIns, f.registerSuccess),        '#7b8ff5')}
+        </div>
+
+        <!-- ── This week vs last week ── -->
+        <div style="font-size:0.78em;font-weight:700;letter-spacing:0.8px;
+                    color:rgba(255,255,255,0.35);text-transform:uppercase;margin-bottom:12px;">
+            This Week vs Last Week
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+            ${statBox('Page Views',    tw.pageViews,   diff(tw.pageViews,   lw.pageViews))}
+            ${statBox('New Accounts',  tw.newAccounts, diff(tw.newAccounts, lw.newAccounts))}
+            ${statBox('Cards Added',   tw.cardsAdded,  diff(tw.cardsAdded,  lw.cardsAdded))}
+            ${statBox('Sign-Ins',      tw.signIns,     diff(tw.signIns,     lw.signIns))}
+        </div>
+
+        <!-- ── Users + Devices ── -->
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+            ${statBox('Registered Users', (m.userBreakdown||{}).registered ?? m.totalUsers, null)}
+            ${statBox('Trial (Pending)', (m.userBreakdown||{}).pending ?? 0, null)}
+            ${statBox('Active Sessions (7d)', m.activeSessions7d,  null)}
+            <div style="background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.08);
+                        border-radius:12px;padding:16px 18px;flex:1;min-width:160px;">
+                <div style="font-size:0.78em;color:rgba(255,255,255,0.42);margin-bottom:10px;">
+                    Device (30d page views)
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+                    <div style="flex:${mobilePct};background:#4e5ed6;height:10px;border-radius:4px 0 0 4px;"></div>
+                    <div style="flex:${desktopPct};background:#31f2fe;height:10px;border-radius:0 4px 4px 0;"></div>
+                </div>
+                <div style="font-size:0.8em;display:flex;gap:16px;">
+                    <span><span style="color:#7b8ff5">■</span> Mobile ${mobilePct}%</span>
+                    <span><span style="color:#31f2fe">■</span> Desktop ${desktopPct}%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Top Events ── -->
+        <div style="font-size:0.78em;font-weight:700;letter-spacing:0.8px;
+                    color:rgba(255,255,255,0.35);text-transform:uppercase;margin-bottom:10px;">
+            Top Events (Last 30 Days)
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:0.85em;">
+            <tr style="color:rgba(255,255,255,0.3);font-size:0.78em;">
+                <th style="text-align:left;padding:6px 0;font-weight:600;">Event</th>
+                <th style="text-align:right;padding:6px 8px;font-weight:600;">Count</th>
+                <th style="text-align:right;padding:6px 0;font-weight:600;">Unique Sessions</th>
+            </tr>
+            ${(m.topEvents || []).map(e => `
+            <tr style="border-top:0.5px solid rgba(255,255,255,0.05);">
+                <td style="padding:7px 0;color:rgba(255,255,255,0.7);">${e.event_type}</td>
+                <td style="padding:7px 8px;text-align:right;color:#fff;font-weight:600;">${Number(e.total).toLocaleString()}</td>
+                <td style="padding:7px 0;text-align:right;color:rgba(255,255,255,0.4);">${Number(e.unique_sessions).toLocaleString()}</td>
+            </tr>`).join('')}
+        </table>
+        `;
+    }
+    </script>
 </body>
 
 

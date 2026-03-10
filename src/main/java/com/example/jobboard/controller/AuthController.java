@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,6 +36,7 @@ public class AuthController {
         if (authentication == null || !authentication.isAuthenticated()
                 || "anonymousUser".equals(authentication.getName())) {
             response.put("isSignedIn", false);
+            response.put("isPending", false);
             response.put("name", "");
             response.put("email", "");
             response.put("authProvider", "");
@@ -42,7 +45,23 @@ public class AuthController {
 
         try {
             AppUser user = resolveUser(authentication, request);
+
+            // PENDING users are authenticated via PendingUserAuthFilter but are not fully registered
+            if ("PENDING".equals(user.getStatus())) {
+                long daysUsed = ChronoUnit.DAYS.between(user.getCreatedAt().toLocalDate(), LocalDate.now());
+                long trialDaysLeft = Math.max(0, 7 - daysUsed);
+                response.put("isSignedIn", false);
+                response.put("isPending", true);
+                response.put("trialDaysLeft", trialDaysLeft);
+                response.put("trialExpired", daysUsed >= 7);
+                response.put("name", "");
+                response.put("email", "");
+                response.put("authProvider", "");
+                return ResponseEntity.ok(response);
+            }
+
             response.put("isSignedIn", true);
+            response.put("isPending", false);
             response.put("name", user.getDisplayName() != null ? user.getDisplayName() : user.getEmail());
             response.put("email", user.getEmail());
             response.put("authProvider", user.getAuthProvider().name().toLowerCase());
@@ -53,6 +72,7 @@ public class AuthController {
         } catch (Exception e) {
             logger.warn("Auth status: authenticated but could not resolve user — {}", e.getMessage());
             response.put("isSignedIn", false);
+            response.put("isPending", false);
             response.put("name", "");
             response.put("email", "");
             response.put("authProvider", "");
