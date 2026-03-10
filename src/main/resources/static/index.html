@@ -7,7 +7,21 @@
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>PitStop</title>
+    <title>PitStop — Your Job Search Kanban Board</title>
+    <meta name="description" content="PitStop is a free kanban board for your job search. Track every opportunity, get interview countdowns, and never lose a lead again.">
+
+    <!-- Open Graph / LinkedIn / iMessage -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://wensonghu.github.io/pitstop/">
+    <meta property="og:title" content="PitStop — Your Job Search Kanban Board">
+    <meta property="og:description" content="Free kanban board for job searching. Track leads, get interview countdowns, and spot offers at a glance. No spreadsheet needed.">
+    <meta property="og:image" content="https://wensonghu.github.io/pitstop/og-preview.png">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PitStop — Your Job Search Kanban Board">
+    <meta name="twitter:description" content="Free kanban board for job searching. Track leads, get interview countdowns, and spot offers at a glance.">
+    <meta name="twitter:image" content="https://wensonghu.github.io/pitstop/og-preview.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -874,7 +888,7 @@
     <div class="header">
         <div class="header-logo">
             <h1>
-                <i class="fa fa-circle-check fa-sm"></i> PitStop
+                🏁 PitStop
                 <div class="header-menu">
                     <button id="menu-btn" onclick="toggleMenu()"><i class="fas fa-list"></i></button>
                     <div id="menu-dropdown"></div>
@@ -902,6 +916,41 @@
     <!-- ── MODULE 2: ALERTS ─────────────────────────────────────────────── -->
     <div id="todo-modal-container" class="todo-modal"></div>
     <!-- ── END MODULE 2: ALERTS ──────────────────────────────────────────── -->
+
+    <!-- ── MODULE 2.5: LANDING HERO MODAL (shown once to unauthenticated visitors) ── -->
+    <div class="modal" id="landing-hero-modal">
+        <div class="modal-content" style="position:relative; max-width:480px; text-align:center;">
+            <span onclick="closeLandingHero()" style="position:absolute; right:20px; top:15px; font-size:24px; cursor:pointer; color:rgba(255,255,255,0.4);">&times;</span>
+            <div style="font-size:2.5em; margin-bottom:12px;">🏁</div>
+            <h2 style="font-size:1.6em; margin-bottom:12px;">Your job search, under control.</h2>
+            <p style="color:rgba(255,255,255,0.6); font-size:0.95em; line-height:1.65; margin-bottom:24px;">
+                PitStop is a free kanban board built for job hunting.
+                Track every lead, get interview countdown alerts, and get focused advice step by step.
+                No more spreadsheets. Contact the support team for resume review and advice.
+            </p>
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:20px;">
+                <button onclick="closeLandingHero(); openSignInModal(); showAuthTab('register');"
+                        style="background:#4e5ed6; color:white; border:none; padding:12px 28px; border-radius:10px; font-size:1em; font-weight:700; cursor:pointer;">
+                    Create Free Account
+                </button>
+                <button onclick="closeLandingHero(); openSignInModal(); showAuthTab('signin');"
+                        style="background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.8); border:0.5px solid rgba(255,255,255,0.2); padding:12px 24px; border-radius:10px; font-size:1em; cursor:pointer;">
+                    Sign In
+                </button>
+            </div>
+            <div style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap; color:rgba(255,255,255,0.4); font-size:0.82em; margin-bottom:20px;">
+                <span>🟡 Interview in 48h alert</span>
+                <span>🥇 Offer pipeline tracking</span>
+                <span>📋 Drag-and-drop stages</span>
+                <span>🔒 Private by default</span>
+            </div>
+            <button onclick="closeLandingHero()"
+                    style="background:none; border:none; color:rgba(255,255,255,0.35); font-size:0.85em; cursor:pointer; text-decoration:underline;">
+                Continue without signing in
+            </button>
+        </div>
+    </div>
+    <!-- ── END MODULE 2.5: LANDING HERO MODAL ───────────────────────────── -->
 
     <!-- ── MODULE 3: BOARD ──────────────────────────────────────────────── -->
     <div class="board">
@@ -1430,6 +1479,12 @@
 
         function updateAuthUI(authData) {
             currentUser = authData.isSignedIn ? authData : null;
+
+            // Show landing hero modal once to any non-signed-in visitor
+            if (!authData.isSignedIn && !localStorage.getItem('pitstop_hero_seen')) {
+                openLandingHero();
+            }
+
             const dropdown = document.getElementById('menu-dropdown');
             if (authData.isSignedIn) {
                 const firstName = (authData.name || authData.email || '').split(' ')[0];
@@ -1647,6 +1702,17 @@
             const el = document.getElementById('admin-broadcast-status');
             el.style.cssText = `display:block; color:${ok ? '#17cc45' : '#FF6B6B'};`;
             el.textContent = msg;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────────
+
+        function openLandingHero() {
+            document.getElementById('landing-hero-modal').classList.add('active');
+        }
+
+        function closeLandingHero() {
+            document.getElementById('landing-hero-modal').classList.remove('active');
+            localStorage.setItem('pitstop_hero_seen', '1');
         }
 
         // ─────────────────────────────────────────────────────────────────────────
