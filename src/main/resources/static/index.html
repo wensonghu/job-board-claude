@@ -521,10 +521,18 @@
                 font-size: 1em;
                 padding: 6px 8px;
             }
-            /* Modals: better padding */
+            /* Modals: pin to top below URL bar, cap height to visible viewport */
+            .modal.active {
+                align-items: flex-start;
+                padding-top: max(56px, env(safe-area-inset-top));
+                padding-left: 8px;
+                padding-right: 8px;
+                padding-bottom: max(16px, env(safe-area-inset-bottom));
+            }
             .modal-content {
                 padding: 16px;
-                width: calc(100% - 16px);
+                width: 100%;
+                max-height: calc(100svh - max(72px, env(safe-area-inset-top)) - max(16px, env(safe-area-inset-bottom)));
             }
             /* Calendar */
             #calendar-container {
