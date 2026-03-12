@@ -3021,15 +3021,15 @@
 
     function renderMetrics(m) {
         const f = m.funnel;
-        const tw = m.thisWeek;
-        const lw = m.lastWeek;
+        const td = m.today;
+        const yd = m.yesterday;
         const dev = m.devices;
         const totalDevice = (dev.mobile + dev.desktop) || 1;
         const mobilePct = Math.round((dev.mobile / totalDevice) * 100);
         const desktopPct = 100 - mobilePct;
 
         document.getElementById('monitoring-updated').textContent =
-            'Updated just now · All times Pacific';
+            'Updated just now · All times Pacific · Admin/test accounts excluded';
 
         document.getElementById('monitoring-body').innerHTML = `
 
@@ -3046,23 +3046,32 @@
             ${funnelRow('Return Sign-Ins',   f.signIns,          pct(f.signIns, f.registerSuccess),        '#7b8ff5')}
         </div>
 
-        <!-- ── This week vs last week ── -->
+        <!-- ── Today vs Yesterday ── -->
         <div style="font-size:0.78em;font-weight:700;letter-spacing:0.8px;
                     color:rgba(255,255,255,0.35);text-transform:uppercase;margin-bottom:12px;">
-            This Week vs Last Week
+            Today vs Yesterday
         </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
-            ${statBox('Page Views',    tw.pageViews,   diff(tw.pageViews,   lw.pageViews))}
-            ${statBox('New Accounts',  tw.newAccounts, diff(tw.newAccounts, lw.newAccounts))}
-            ${statBox('Cards Added',   tw.cardsAdded,  diff(tw.cardsAdded,  lw.cardsAdded))}
-            ${statBox('Sign-Ins',      tw.signIns,     diff(tw.signIns,     lw.signIns))}
+            ${statBox('Page Views',    td.pageViews,   diff(td.pageViews,   yd.pageViews))}
+            ${statBox('New Accounts',  td.newAccounts, diff(td.newAccounts, yd.newAccounts))}
+            ${statBox('Cards Added',   td.cardsAdded,  diff(td.cardsAdded,  yd.cardsAdded))}
+            ${statBox('Sign-Ins',      td.signIns,     diff(td.signIns,     yd.signIns))}
         </div>
 
-        <!-- ── Users + Devices ── -->
+        <!-- ── Users + Resume Reviews + Devices ── -->
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
             ${statBox('Registered Users', (m.userBreakdown||{}).registered ?? m.totalUsers, null)}
             ${statBox('Trial (Pending)', (m.userBreakdown||{}).pending ?? 0, null)}
-            ${statBox('Active Sessions (7d)', m.activeSessions7d,  null)}
+            ${statBox('Active Sessions (7d)', m.activeSessions7d, null)}
+            <div onclick="loadResumeReviews()"
+                 style="background:rgba(255,255,255,0.05);border:0.5px solid rgba(78,94,214,0.4);
+                        border-radius:12px;padding:16px 18px;min-width:120px;flex:1;cursor:pointer;
+                        transition:background 0.2s;"
+                 onmouseover="this.style.background='rgba(78,94,214,0.12)'"
+                 onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                <div style="font-size:2em;font-weight:800;letter-spacing:-1px;color:#7b8ff5;line-height:1;">${m.resumeReviewCount}</div>
+                <div style="font-size:0.78em;color:rgba(255,255,255,0.42);margin-top:4px;">Resume Reviews ↗</div>
+            </div>
             <div style="background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.08);
                         border-radius:12px;padding:16px 18px;flex:1;min-width:160px;">
                 <div style="font-size:0.78em;color:rgba(255,255,255,0.42);margin-bottom:10px;">
@@ -3077,6 +3086,15 @@
                     <span><span style="color:#31f2fe">■</span> Desktop ${desktopPct}%</span>
                 </div>
             </div>
+        </div>
+
+        <!-- ── Resume Review Drill-Down (hidden until clicked) ── -->
+        <div id="resume-review-list" style="display:none;margin-bottom:24px;">
+            <div style="font-size:0.78em;font-weight:700;letter-spacing:0.8px;
+                        color:rgba(255,255,255,0.35);text-transform:uppercase;margin-bottom:10px;">
+                Resume Review Requests
+            </div>
+            <div id="resume-review-body" style="color:rgba(255,255,255,0.5);font-size:0.85em;">Loading…</div>
         </div>
 
         <!-- ── Top Events ── -->
@@ -3098,6 +3116,29 @@
             </tr>`).join('')}
         </table>
         `;
+    }
+
+    function loadResumeReviews() {
+        const list = document.getElementById('resume-review-list');
+        const body = document.getElementById('resume-review-body');
+        if (!list || !body) return;
+        if (list.style.display !== 'none') { list.style.display = 'none'; return; }
+        list.style.display = 'block';
+        body.textContent = 'Loading…';
+        fetch(`${API_BASE_URL}/api/admin/metrics/resume-reviews`, { credentials: 'include' })
+            .then(r => r.ok ? r.json() : Promise.reject(r.status))
+            .then(rows => {
+                if (!rows.length) { body.textContent = 'No resume review requests yet.'; return; }
+                body.innerHTML = rows.map(r => `
+                    <div style="padding:10px 0;border-bottom:0.5px solid rgba(255,255,255,0.06);">
+                        <div style="color:#7b8ff5;font-weight:600;">${r.email}</div>
+                        <div style="color:rgba(255,255,255,0.5);font-size:0.85em;margin-top:2px;">
+                            ${new Date(r.created_at).toLocaleString('en-US',{timeZone:'America/Los_Angeles'})}
+                        </div>
+                        <div style="color:rgba(255,255,255,0.7);margin-top:4px;white-space:pre-wrap;">${r.message}</div>
+                    </div>`).join('');
+            })
+            .catch(() => { body.textContent = 'Failed to load.'; });
     }
     </script>
 </body>
