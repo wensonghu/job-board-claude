@@ -139,6 +139,10 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
     }
 
+    public java.util.Optional<AppUser> findBySessionToken(String sessionToken) {
+        return appUserRepository.findBySessionToken(sessionToken);
+    }
+
     /**
      * Look up or create a PENDING (guest) user by session token.
      * Idempotent — safe to call on every page load.

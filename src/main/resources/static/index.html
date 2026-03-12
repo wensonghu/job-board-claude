@@ -1513,7 +1513,7 @@
             const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
                 method: 'POST', credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, displayName })
+                body: JSON.stringify({ email, password, displayName, sessionToken: getSessionId() })
             });
             const data = await res.json();
 

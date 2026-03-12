@@ -4,6 +4,7 @@ public class RegistrationRequest {
     private String email;
     private String password;
     private String displayName;
+    private String sessionToken;
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
@@ -13,4 +14,7 @@ public class RegistrationRequest {
 
     public String getDisplayName() { return displayName; }
     public void setDisplayName(String displayName) { this.displayName = displayName; }
+
+    public String getSessionToken() { return sessionToken; }
+    public void setSessionToken(String sessionToken) { this.sessionToken = sessionToken; }
 }
