@@ -25,24 +25,31 @@ public class UserController {
     public ResponseEntity<Map<String, String>> register(@RequestBody RegistrationRequest request,
                                                          HttpServletRequest httpRequest) {
         try {
-            // Check if a PENDING (guest trial) user is in the session — convert instead of creating new
+            // Resolve PENDING user: check HTTP session first, then fall back to sessionToken in body
+            // (session cookie may be absent on iOS Safari or after cookie expiry)
             HttpSession session = httpRequest.getSession(false);
             Long pendingId = (session != null) ? (Long) session.getAttribute("appUserId") : null;
+            AppUser pending = null;
             if (pendingId != null) {
-                AppUser pending = null;
                 try { pending = userService.findById(pendingId); } catch (Exception ignored) {}
-                if (pending != null && "PENDING".equals(pending.getStatus())) {
-                    AppUser converted = userService.convertPendingUserToLocal(
-                            pending,
-                            request.getEmail(),
-                            request.getPassword(),
-                            request.getDisplayName());
-                    if (session != null) session.setAttribute("appUserId", converted.getId());
-                    return ResponseEntity.status(HttpStatus.CREATED)
-                            .body(Map.of("message", "Account created. You can now sign in."));
-                }
+                if (pending != null && !"PENDING".equals(pending.getStatus())) pending = null;
             }
-            // Normal registration (no pending user in session)
+            if (pending == null && request.getSessionToken() != null && !request.getSessionToken().isBlank()) {
+                pending = userService.findBySessionToken(request.getSessionToken()).orElse(null);
+                if (pending != null && !"PENDING".equals(pending.getStatus())) pending = null;
+            }
+            if (pending != null) {
+                AppUser converted = userService.convertPendingUserToLocal(
+                        pending,
+                        request.getEmail(),
+                        request.getPassword(),
+                        request.getDisplayName());
+                if (session == null) session = httpRequest.getSession(true);
+                session.setAttribute("appUserId", converted.getId());
+                return ResponseEntity.status(HttpStatus.CREATED)
+                        .body(Map.of("message", "Account created. You can now sign in."));
+            }
+            // Normal registration (no pending user found)
             userService.register(request);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(Map.of("message", "Account created. You can now sign in."));
