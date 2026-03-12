@@ -1153,7 +1153,6 @@
                         onmouseout="this.style.background='rgba(255,255,255,0.07)'">
                     Continue without signing in →
                 </button>
-                <p id="trial-days-label" style="font-size:0.75em; color:rgba(255,255,255,0.35); margin:8px 0 0;"></p>
             </div>
 
             <!-- Tab bar -->
@@ -1735,17 +1734,6 @@
                 promptEl.style.display = 'block';
             } else {
                 promptEl.style.display = 'none';
-            }
-            // Update trial days label
-            const trialLabel = document.getElementById('trial-days-label');
-            if (trialLabel) {
-                if (trialExpired) {
-                    trialLabel.textContent = 'Trial ended — your data is still here';
-                } else if (isPendingUser) {
-                    trialLabel.textContent = trialDaysLeft + ' day' + (trialDaysLeft !== 1 ? 's' : '') + ' remaining in your free trial';
-                } else {
-                    trialLabel.textContent = 'Your progress is saved automatically';
-                }
             }
             document.getElementById('signin-modal').classList.add('active');
             document.getElementById('todo-modal-container').style.display = 'none';
