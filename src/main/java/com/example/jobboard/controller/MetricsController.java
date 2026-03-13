@@ -12,14 +12,18 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -133,6 +137,89 @@ public class MetricsController {
         result.put("topEvents", topEvents);
 
         return ResponseEntity.ok(result);
+    }
+
+    // ── Generic metric drill-down ─────────────────────────────────────────────
+
+    @GetMapping("/drill-down")
+    public ResponseEntity<?> getDrillDown(
+            @RequestParam String event,
+            @RequestParam(defaultValue = "alltime") String period,
+            Authentication auth, HttpServletRequest req) {
+
+        AppUser user = resolveUser(auth, req);
+        if (!"ADMIN".equals(user.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        List<Long> excludedIds = jdbc.queryForList(
+            "SELECT id FROM app_user WHERE role = 'ADMIN' " +
+            "OR email ILIKE '%demotest%' OR email ILIKE '%@pitstop.local'", Long.class);
+        String excl = buildExclusionClause(excludedIds);
+
+        String periodFilter = switch (period) {
+            case "today" ->
+                " AND created_at >= date_trunc('day', NOW() AT TIME ZONE 'America/Los_Angeles')" +
+                "                   AT TIME ZONE 'America/Los_Angeles'";
+            case "yesterday" ->
+                " AND created_at >= (date_trunc('day', NOW() AT TIME ZONE 'America/Los_Angeles')" +
+                "                    - INTERVAL '1 day') AT TIME ZONE 'America/Los_Angeles'" +
+                " AND created_at <   date_trunc('day', NOW() AT TIME ZONE 'America/Los_Angeles')" +
+                "                    AT TIME ZONE 'America/Los_Angeles'";
+            default -> "";
+        };
+
+        List<Map<String, Object>> rows;
+
+        if ("sessions_7d".equals(event)) {
+            // Active sessions drill-down: one row per session
+            rows = jdbc.queryForList(
+                "SELECT session_id, " +
+                "       MIN(created_at) AS first_seen, " +
+                "       MAX(created_at) AS last_seen, " +
+                "       COUNT(*) AS event_count, " +
+                "       MAX(user_id_hash) AS user_id_hash " +
+                "FROM user_action " +
+                "WHERE created_at >= NOW() - INTERVAL '7 days'" + excl +
+                " GROUP BY session_id ORDER BY last_seen DESC LIMIT 100");
+        } else {
+            rows = jdbc.queryForList(
+                "SELECT created_at, session_id, user_id_hash, event_data " +
+                "FROM user_action WHERE event_type = ?" + excl + periodFilter +
+                " ORDER BY created_at DESC LIMIT 100",
+                event);
+        }
+
+        // Build hash → user lookup from the unique hashes in results
+        Set<String> hashes = rows.stream()
+            .map(r -> (String) r.get("user_id_hash"))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        Map<String, Map<String, Object>> hashToUser = new HashMap<>();
+        if (!hashes.isEmpty()) {
+            List<Map<String, Object>> allUsers = jdbc.queryForList(
+                "SELECT id, email, status FROM app_user");
+            for (Map<String, Object> u : allUsers) {
+                String h = sha256(u.get("id").toString());
+                if (hashes.contains(h)) hashToUser.put(h, u);
+            }
+        }
+
+        List<Map<String, Object>> enriched = rows.stream().map(row -> {
+            Map<String, Object> out = new LinkedHashMap<>(row);
+            String hash = (String) row.get("user_id_hash");
+            if (hash != null && hashToUser.containsKey(hash)) {
+                Map<String, Object> u = hashToUser.get(hash);
+                out.put("user_id", u.get("id"));
+                out.put("email", u.get("email"));
+                out.put("user_status", u.get("status"));
+            }
+            out.remove("user_id_hash");
+            return out;
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(enriched);
     }
 
     // ── Resume review drill-down ──────────────────────────────────────────────
