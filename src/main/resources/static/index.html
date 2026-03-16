@@ -1004,35 +1004,111 @@
 
     <!-- ── MODULE 2.5: LANDING HERO MODAL (shown once to unauthenticated visitors) ── -->
     <div class="modal" id="landing-hero-modal">
-        <div class="modal-content" style="position:relative; max-width:480px; text-align:center;">
-            <span onclick="closeLandingHero()" style="position:absolute; right:20px; top:15px; font-size:24px; cursor:pointer; color:rgba(255,255,255,0.4);">&times;</span>
-            <div style="font-size:2.5em; margin-bottom:12px;">🏁</div>
-            <h2 style="font-size:1.6em; margin-bottom:12px;">Your job search, under control.</h2>
-            <p style="color:rgba(255,255,255,0.6); font-size:0.95em; line-height:1.65; margin-bottom:24px;">
-                PitStop is a free kanban board built for job hunting.
-                Track every lead, get interview countdown alerts, and get focused advice step by step.
-                No more spreadsheets. Contact the support team for resume review and advice.
+        <div class="modal-content" style="position:relative; max-width:520px; padding:24px 24px 20px;">
+            <span onclick="closeLandingHero()" style="position:absolute; right:16px; top:14px; font-size:22px; cursor:pointer; color:rgba(255,255,255,0.25); line-height:1;">&times;</span>
+
+            <!-- Header -->
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+                <span style="font-size:1.4em;">🏁</span>
+                <span style="font-size:0.75em; font-weight:700; letter-spacing:1px; color:rgba(255,255,255,0.3); text-transform:uppercase;">PitStop</span>
+            </div>
+            <h2 style="font-size:1.45em; font-weight:800; letter-spacing:-0.4px; margin:0 0 4px; line-height:1.2;">
+                Track every application.<br>Miss nothing.
+            </h2>
+            <p style="color:rgba(255,255,255,0.4); font-size:0.82em; margin:0 0 18px;">
+                Free job search kanban — no account needed to start.
             </p>
-            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:20px;">
+
+            <!-- Mini board preview -->
+            <div style="background:rgba(0,0,0,0.25); border:0.5px solid rgba(255,255,255,0.08);
+                        border-radius:12px; padding:12px 10px 10px; margin-bottom:16px; overflow:hidden;">
+                <div style="display:flex; gap:7px; overflow-x:auto; padding-bottom:2px;">
+
+                    <!-- Early Stage -->
+                    <div style="min-width:130px; flex-shrink:0;">
+                        <div style="font-size:0.67em; font-weight:700; color:rgba(255,255,255,0.3);
+                                    text-transform:uppercase; letter-spacing:0.5px; margin-bottom:7px; padding-left:2px;">
+                            🌱 Early Stage
+                        </div>
+                        <div style="background:rgba(255,255,255,0.06); border-radius:7px; padding:8px 9px; margin-bottom:5px;">
+                            <div style="font-size:0.8em; font-weight:600; color:rgba(255,255,255,0.82);">Google</div>
+                            <div style="font-size:0.72em; color:rgba(255,255,255,0.38); margin-top:1px;">Product Manager</div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.06); border-radius:7px; padding:8px 9px;">
+                            <div style="font-size:0.8em; font-weight:600; color:rgba(255,255,255,0.82);">Notion</div>
+                            <div style="font-size:0.72em; color:rgba(255,255,255,0.38); margin-top:1px;">Growth PM</div>
+                        </div>
+                    </div>
+
+                    <!-- Active Interviews -->
+                    <div style="min-width:138px; flex-shrink:0;">
+                        <div style="font-size:0.67em; font-weight:700; color:rgba(255,255,255,0.3);
+                                    text-transform:uppercase; letter-spacing:0.5px; margin-bottom:7px; padding-left:2px;">
+                            📞 Interviewing
+                        </div>
+                        <div style="background:rgba(255,150,0,0.1); border-radius:7px; padding:8px 9px;
+                                    border-left:2px solid #FF9500; margin-bottom:5px;">
+                            <div style="font-size:0.8em; font-weight:600; color:rgba(255,255,255,0.82);">Stripe</div>
+                            <div style="font-size:0.72em; color:rgba(255,255,255,0.38); margin-top:1px;">Senior PM</div>
+                            <div style="font-size:0.7em; color:#FF9500; font-weight:700; margin-top:5px;">⏰ Interview in 2 days</div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.06); border-radius:7px; padding:8px 9px;">
+                            <div style="font-size:0.8em; font-weight:600; color:rgba(255,255,255,0.82);">Airbnb</div>
+                            <div style="font-size:0.72em; color:rgba(255,255,255,0.38); margin-top:1px;">3rd round</div>
+                        </div>
+                    </div>
+
+                    <!-- Offer -->
+                    <div style="min-width:110px; flex-shrink:0;">
+                        <div style="font-size:0.67em; font-weight:700; color:rgba(255,255,255,0.3);
+                                    text-transform:uppercase; letter-spacing:0.5px; margin-bottom:7px; padding-left:2px;">
+                            🎯 Offer
+                        </div>
+                        <div style="background:rgba(23,204,69,0.08); border-radius:7px; padding:8px 9px;
+                                    border-left:2px solid #17cc45;">
+                            <div style="font-size:0.8em; font-weight:600; color:rgba(255,255,255,0.82);">LinkedIn</div>
+                            <div style="font-size:0.72em; color:#17cc45; font-weight:600; margin-top:2px;">Offer received 🎉</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Support callout -->
+            <div style="background:rgba(123,143,245,0.07); border:0.5px solid rgba(123,143,245,0.18);
+                        border-radius:10px; padding:10px 13px; margin-bottom:18px;
+                        display:flex; align-items:flex-start; gap:10px;">
+                <span style="font-size:1.1em; margin-top:1px;">💬</span>
+                <div style="font-size:0.8em; color:rgba(255,255,255,0.5); line-height:1.55;">
+                    <span style="color:rgba(255,255,255,0.78); font-weight:600;">Free resume review.</span>
+                    When you're ready, message the support team for resume feedback and low-cost mock interview coaching from PMs.
+                </div>
+            </div>
+
+            <!-- Primary CTAs — equal weight -->
+            <div style="display:flex; gap:9px; margin-bottom:12px;">
                 <button onclick="closeLandingHero(); openSignInModal(); showAuthTab('register');"
-                        style="background:#4e5ed6; color:white; border:none; padding:12px 28px; border-radius:10px; font-size:1em; font-weight:700; cursor:pointer;">
-                    Create Free Account
+                        style="flex:1; background:#4e5ed6; color:white; border:none; padding:13px 16px;
+                               border-radius:10px; font-size:0.92em; font-weight:700; cursor:pointer;
+                               letter-spacing:0.1px;">
+                    Start Free →
                 </button>
-                <button onclick="closeLandingHero(); openSignInModal(); showAuthTab('signin');"
-                        style="background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.8); border:0.5px solid rgba(255,255,255,0.2); padding:12px 24px; border-radius:10px; font-size:1em; cursor:pointer;">
-                    Sign In
+                <button onclick="closeLandingHero()"
+                        style="flex:1; background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.6);
+                               border:0.5px solid rgba(255,255,255,0.14); padding:13px 16px;
+                               border-radius:10px; font-size:0.92em; cursor:pointer;">
+                    Continue without account
                 </button>
             </div>
-            <div style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap; color:rgba(255,255,255,0.4); font-size:0.82em; margin-bottom:20px;">
-                <span>🟡 Interview in 48h alert</span>
-                <span>🥇 Offer pipeline tracking</span>
-                <span>📋 Drag-and-drop stages</span>
-                <span>🔒 Private by default</span>
+
+            <!-- Sign in link -->
+            <div style="text-align:center;">
+                <span onclick="closeLandingHero(); openSignInModal(); showAuthTab('signin');"
+                      style="font-size:0.78em; color:rgba(255,255,255,0.28); cursor:pointer;
+                             text-decoration:underline;">
+                    Already have an account? Sign in
+                </span>
             </div>
-            <button onclick="closeLandingHero()"
-                    style="background:none; border:none; color:rgba(255,255,255,0.35); font-size:0.85em; cursor:pointer; text-decoration:underline;">
-                Continue without signing in
-            </button>
         </div>
     </div>
     <!-- ── END MODULE 2.5: LANDING HERO MODAL ───────────────────────────── -->
