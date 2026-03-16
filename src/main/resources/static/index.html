@@ -2997,8 +2997,22 @@
 
         <!-- ── Users + Resume Reviews + Devices ── -->
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
-            ${statBox('Registered Users', (m.userBreakdown||{}).registered ?? m.totalUsers, null)}
-            ${statBox('Trial (Pending)', (m.userBreakdown||{}).pending ?? 0, null)}
+            <div onclick="loadUserBehavior('REGISTERED')"
+                 onmouseover="this.style.background='rgba(255,255,255,0.09)'"
+                 onmouseout="this.style.background='rgba(255,255,255,0.05)'"
+                 style="background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.08);
+                        border-radius:12px;padding:16px 18px;min-width:120px;flex:1;cursor:pointer;">
+                <div style="font-size:2em;font-weight:800;letter-spacing:-1px;color:#fff;line-height:1;">${(m.userBreakdown||{}).registered ?? m.totalUsers}</div>
+                <div style="font-size:0.78em;color:rgba(255,255,255,0.42);margin-top:4px;">Registered Users ↗</div>
+            </div>
+            <div onclick="loadUserBehavior('PENDING')"
+                 onmouseover="this.style.background='rgba(255,150,0,0.12)'"
+                 onmouseout="this.style.background='rgba(255,255,255,0.05)'"
+                 style="background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,150,0,0.25);
+                        border-radius:12px;padding:16px 18px;min-width:120px;flex:1;cursor:pointer;">
+                <div style="font-size:2em;font-weight:800;letter-spacing:-1px;color:#FF9500;line-height:1;">${(m.userBreakdown||{}).pending ?? 0}</div>
+                <div style="font-size:0.78em;color:rgba(255,255,255,0.42);margin-top:4px;">Trial Users ↗</div>
+            </div>
             ${statBox('Active Sessions (7d)', m.activeSessions7d, null, 'sessions_7d', 'alltime')}
             <div onclick="loadResumeReviews()"
                  style="background:rgba(255,255,255,0.05);border:0.5px solid rgba(78,94,214,0.4);
@@ -3073,6 +3087,120 @@
         _activeDrillKey = null;
         const panel = document.getElementById('metric-drill-panel');
         if (panel) panel.style.display = 'none';
+    }
+
+    function loadUserBehavior(status) {
+        const panel = document.getElementById('metric-drill-panel');
+        const title = document.getElementById('metric-drill-title');
+        const body  = document.getElementById('metric-drill-body');
+        if (!panel || !title || !body) return;
+
+        const key = 'behavior|' + status;
+        if (_activeDrillKey === key) { closeDrillDown(); return; }
+        _activeDrillKey = key;
+
+        const label = status === 'PENDING' ? 'Trial User Behavior' : 'Registered User Behavior';
+        title.textContent = label;
+        body.innerHTML = '<div style="color:rgba(255,255,255,0.35);padding:8px 0;">Loading…</div>';
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        fetch(`${API_BASE_URL}/api/admin/metrics/user-behavior?status=${status}`, { credentials: 'include' })
+            .then(r => r.ok ? r.json() : Promise.reject(r.status))
+            .then(data => {
+                const s = data.summary || {};
+                const users = data.users || [];
+                const total = s.total || 0;
+                const pct = (n) => total ? Math.round((n / total) * 100) + '%' : '0%';
+
+                const fmtTime = ts => ts
+                    ? new Date(ts).toLocaleString('en-US', { timeZone: 'America/Los_Angeles',
+                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                    : '—';
+
+                // Summary bar
+                const cohortBars = [
+                    { label: 'Added a card',       n: s.withCards,          color: '#17cc45' },
+                    { label: 'Opened sign-in modal', n: s.withModalOpen,    color: '#4e5ed6' },
+                    { label: 'Attempted register', n: s.withRegisterAttempt,color: '#FF9500' },
+                    { label: 'Signed in',          n: s.withSignIn,         color: '#7b8ff5' },
+                    { label: 'Never active',        n: s.neverActive,       color: 'rgba(255,255,255,0.2)' },
+                ].filter(b => status === 'PENDING' ? true : b.label !== 'Attempted register');
+
+                const summaryHtml = `
+                <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;
+                            padding:14px 16px;background:rgba(255,255,255,0.03);border-radius:8px;">
+                    <div style="min-width:80px;">
+                        <div style="font-size:1.6em;font-weight:800;color:#fff;">${total}</div>
+                        <div style="font-size:0.75em;color:rgba(255,255,255,0.3);">Total</div>
+                    </div>
+                    <div style="min-width:80px;">
+                        <div style="font-size:1.6em;font-weight:800;color:#fff;">${s.avgSessions}</div>
+                        <div style="font-size:0.75em;color:rgba(255,255,255,0.3);">Avg Sessions</div>
+                    </div>
+                    <div style="min-width:80px;">
+                        <div style="font-size:1.6em;font-weight:800;color:#fff;">${s.avgCards}</div>
+                        <div style="font-size:0.75em;color:rgba(255,255,255,0.3);">Avg Cards</div>
+                    </div>
+                </div>
+                <div style="margin-bottom:18px;">
+                    ${cohortBars.map(b => `
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                        <div style="width:150px;font-size:0.82em;color:rgba(255,255,255,0.55);">${b.label}</div>
+                        <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:4px;height:6px;">
+                            <div style="background:${b.color};height:6px;border-radius:4px;width:${pct(b.n)};"></div>
+                        </div>
+                        <div style="width:60px;font-size:0.82em;color:rgba(255,255,255,0.4);text-align:right;">
+                            ${b.n} <span style="color:rgba(255,255,255,0.2);">(${pct(b.n)})</span>
+                        </div>
+                    </div>`).join('')}
+                </div>`;
+
+                // Per-user table
+                const isPending = status === 'PENDING';
+                const tableHtml = `
+                <table style="width:100%;border-collapse:collapse;font-size:0.8em;min-width:600px;">
+                    <tr style="color:rgba(255,255,255,0.25);font-size:0.78em;">
+                        ${isPending ? '<th style="text-align:left;padding:4px 6px 8px 0;">Day</th>' : ''}
+                        <th style="text-align:left;padding:4px 6px 8px 0;">ID</th>
+                        <th style="text-align:left;padding:4px 8px 8px;">Email</th>
+                        <th style="text-align:right;padding:4px 8px 8px;">Sessions</th>
+                        <th style="text-align:right;padding:4px 8px 8px;">PVs</th>
+                        <th style="text-align:right;padding:4px 8px 8px;">Cards</th>
+                        <th style="text-align:right;padding:4px 8px 8px;">Edits</th>
+                        <th style="text-align:right;padding:4px 8px 8px;">Modal</th>
+                        ${isPending ? '<th style="text-align:right;padding:4px 8px 8px;">Reg?</th>' : '<th style="text-align:right;padding:4px 8px 8px;">Sign-Ins</th>'}
+                        <th style="text-align:right;padding:4px 0 8px;">Last Seen</th>
+                    </tr>
+                    ${users.map(u => {
+                        const active = u.sessions > 0;
+                        const email = u.email && !u.email.includes('@pitstop.local')
+                            ? `<span style="color:rgba(255,255,255,0.7);">${u.email}</span>`
+                            : `<span style="color:rgba(255,255,255,0.2);">guest</span>`;
+                        const regCell = isPending
+                            ? `<td style="text-align:right;padding:5px 8px;">${u.register_attempts > 0
+                                ? `<span style="color:#FF9500;">${u.register_attempts}</span>` : '<span style="color:rgba(255,255,255,0.15);">—</span>'}</td>`
+                            : `<td style="text-align:right;padding:5px 8px;color:rgba(255,255,255,0.5);">${u.sign_ins}</td>`;
+                        return `<tr style="border-top:0.5px solid rgba(255,255,255,0.05);${!active?'opacity:0.4;':''}">
+                            ${isPending ? `<td style="padding:5px 6px 5px 0;color:#FF9500;font-weight:600;">D${u.trial_day}</td>` : ''}
+                            <td style="padding:5px 6px 5px 0;color:rgba(255,255,255,0.35);">#${u.user_id}</td>
+                            <td style="padding:5px 8px;">${email}</td>
+                            <td style="text-align:right;padding:5px 8px;color:#fff;font-weight:${u.sessions>1?'700':'400'};">${u.sessions}</td>
+                            <td style="text-align:right;padding:5px 8px;color:rgba(255,255,255,0.4);">${u.page_views}</td>
+                            <td style="text-align:right;padding:5px 8px;color:${u.cards_live>0?'#17cc45':'rgba(255,255,255,0.2)'};">${u.cards_live}</td>
+                            <td style="text-align:right;padding:5px 8px;color:rgba(255,255,255,0.4);">${u.card_edits}</td>
+                            <td style="text-align:right;padding:5px 8px;color:${u.modal_opens>0?'#4e5ed6':'rgba(255,255,255,0.2)'};">${u.modal_opens}</td>
+                            ${regCell}
+                            <td style="text-align:right;padding:5px 0;color:rgba(255,255,255,0.35);white-space:nowrap;">${fmtTime(u.last_seen)}</td>
+                        </tr>`;
+                    }).join('')}
+                </table>`;
+
+                body.innerHTML = summaryHtml + '<div style="overflow-x:auto;">' + tableHtml + '</div>';
+            })
+            .catch(() => {
+                body.innerHTML = '<div style="color:#ff6b6b;padding:8px 0;">Failed to load.</div>';
+            });
     }
 
     function loadDrillDown(eventKey, period, label) {
