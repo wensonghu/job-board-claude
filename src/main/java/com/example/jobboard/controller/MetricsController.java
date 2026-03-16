@@ -18,6 +18,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -220,6 +224,134 @@ public class MetricsController {
         }).collect(Collectors.toList());
 
         return ResponseEntity.ok(enriched);
+    }
+
+    // ── User behavior cohort ─────────────────────────────────────────────────
+
+    @GetMapping("/user-behavior")
+    public ResponseEntity<?> getUserBehavior(
+            @RequestParam(defaultValue = "PENDING") String status,
+            Authentication auth, HttpServletRequest req) {
+
+        AppUser admin = resolveUser(auth, req);
+        if (!"ADMIN".equals(admin.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        // Load all users with the requested status
+        List<Map<String, Object>> users = jdbc.queryForList(
+            "SELECT id, email, status, created_at FROM app_user WHERE status = ? ORDER BY created_at DESC",
+            status);
+
+        if (users.isEmpty()) {
+            return ResponseEntity.ok(Map.of(
+                "summary", Map.of("total", 0), "users", List.of()));
+        }
+
+        // Build hash → user and id → hash maps
+        Map<String, Map<String, Object>> hashToUser = new HashMap<>();
+        Map<Long, String> idToHash = new HashMap<>();
+        for (Map<String, Object> u : users) {
+            Long uid = ((Number) u.get("id")).longValue();
+            String h = sha256(uid.toString());
+            hashToUser.put(h, u);
+            idToHash.put(uid, h);
+        }
+
+        // Query aggregated event counts per user_id_hash
+        String hashIn = hashToUser.keySet().stream()
+            .map(h -> "'" + h + "'").collect(Collectors.joining(","));
+
+        List<Map<String, Object>> stats = jdbc.queryForList(
+            "SELECT user_id_hash, " +
+            "       COUNT(DISTINCT session_id)                                      AS sessions, " +
+            "       MIN(created_at)                                                 AS first_event, " +
+            "       MAX(created_at)                                                 AS last_seen, " +
+            "       SUM(CASE WHEN event_type = 'page_view'          THEN 1 ELSE 0 END) AS page_views, " +
+            "       SUM(CASE WHEN event_type = 'card_add'           THEN 1 ELSE 0 END) AS card_adds, " +
+            "       SUM(CASE WHEN event_type = 'card_edit'          THEN 1 ELSE 0 END) AS card_edits, " +
+            "       SUM(CASE WHEN event_type = 'card_delete'        THEN 1 ELSE 0 END) AS card_deletes, " +
+            "       SUM(CASE WHEN event_type = 'sign_in_modal_open' THEN 1 ELSE 0 END) AS modal_opens, " +
+            "       SUM(CASE WHEN event_type = 'register_submit'    THEN 1 ELSE 0 END) AS register_attempts, " +
+            "       SUM(CASE WHEN event_type = 'register_success'   THEN 1 ELSE 0 END) AS register_success, " +
+            "       SUM(CASE WHEN event_type = 'sign_in_success'    THEN 1 ELSE 0 END) AS sign_ins, " +
+            "       SUM(CASE WHEN event_type = 'alert_dismiss'      THEN 1 ELSE 0 END) AS alert_dismisses " +
+            "FROM user_action WHERE user_id_hash IN (" + hashIn + ") GROUP BY user_id_hash");
+
+        Map<String, Map<String, Object>> statsMap = stats.stream()
+            .collect(Collectors.toMap(r -> (String) r.get("user_id_hash"), r -> r));
+
+        // Get live card counts from card table
+        String idIn = users.stream().map(u -> u.get("id").toString()).collect(Collectors.joining(","));
+        Map<Long, Long> cardCounts = new HashMap<>();
+        jdbc.queryForList("SELECT user_id, COUNT(*) AS cnt FROM card WHERE user_id IN (" + idIn + ") GROUP BY user_id")
+            .forEach(r -> cardCounts.put(((Number) r.get("user_id")).longValue(), ((Number) r.get("cnt")).longValue()));
+
+        // Enrich each user row
+        boolean isPending = "PENDING".equals(status);
+        List<Map<String, Object>> enriched = new ArrayList<>();
+        for (Map<String, Object> u : users) {
+            Long uid = ((Number) u.get("id")).longValue();
+            String h = idToHash.get(uid);
+            Map<String, Object> s = statsMap.getOrDefault(h, Map.of());
+            Map<String, Object> out = new LinkedHashMap<>();
+            out.put("user_id", uid);
+            out.put("email", u.get("email"));
+            out.put("account_created", u.get("created_at"));
+            if (isPending) {
+                Timestamp ts = (Timestamp) u.get("created_at");
+                long days = ts != null
+                    ? ChronoUnit.DAYS.between(ts.toLocalDateTime().toLocalDate(), LocalDate.now()) : 0;
+                out.put("trial_day", days + 1);
+            }
+            out.put("sessions",           toLong(s.get("sessions")));
+            out.put("page_views",         toLong(s.get("page_views")));
+            out.put("card_adds",          toLong(s.get("card_adds")));
+            out.put("card_edits",         toLong(s.get("card_edits")));
+            out.put("card_deletes",       toLong(s.get("card_deletes")));
+            out.put("modal_opens",        toLong(s.get("modal_opens")));
+            out.put("register_attempts",  toLong(s.get("register_attempts")));
+            out.put("sign_ins",           toLong(s.get("sign_ins")));
+            out.put("alert_dismisses",    toLong(s.get("alert_dismisses")));
+            out.put("cards_live",         cardCounts.getOrDefault(uid, 0L));
+            out.put("last_seen",          s.get("last_seen"));
+            enriched.add(out);
+        }
+
+        // Sort: users with any activity first, then by last_seen desc
+        enriched.sort((a, b) -> {
+            Timestamp la = (Timestamp) a.get("last_seen");
+            Timestamp lb = (Timestamp) b.get("last_seen");
+            if (la == null && lb == null) return 0;
+            if (la == null) return 1;
+            if (lb == null) return -1;
+            return lb.compareTo(la);
+        });
+
+        // Summary
+        long withCards     = enriched.stream().filter(u -> (Long) u.get("cards_live") > 0).count();
+        long withModal     = enriched.stream().filter(u -> (Long) u.get("modal_opens") > 0).count();
+        long withRegAttempt= enriched.stream().filter(u -> (Long) u.get("register_attempts") > 0).count();
+        long neverActive   = enriched.stream().filter(u -> u.get("last_seen") == null).count();
+        double avgCards    = enriched.stream().mapToLong(u -> (Long) u.get("cards_live")).average().orElse(0);
+        double avgSessions = enriched.stream().mapToLong(u -> (Long) u.get("sessions")).average().orElse(0);
+        long withSignIn    = enriched.stream().filter(u -> (Long) u.get("sign_ins") > 0).count();
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("total",              enriched.size());
+        summary.put("withCards",          withCards);
+        summary.put("withModalOpen",      withModal);
+        summary.put("withRegisterAttempt",withRegAttempt);
+        summary.put("withSignIn",         withSignIn);
+        summary.put("neverActive",        neverActive);
+        summary.put("avgCards",           Math.round(avgCards * 10.0) / 10.0);
+        summary.put("avgSessions",        Math.round(avgSessions * 10.0) / 10.0);
+
+        return ResponseEntity.ok(Map.of("summary", summary, "users", enriched));
+    }
+
+    private long toLong(Object val) {
+        return val instanceof Number ? ((Number) val).longValue() : 0L;
     }
 
     // ── Resume review drill-down ──────────────────────────────────────────────
