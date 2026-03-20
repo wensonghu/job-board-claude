@@ -77,6 +77,46 @@ public class EmailService {
         }
     }
 
+    public void sendChatStartedNotification(Long userId, Long sessionId) {
+        if (resendApiKey == null || resendApiKey.isBlank()) {
+            logger.info("[CHAT STARTED] userId={} sessionId={}", userId, sessionId);
+            return;
+        }
+        String subject = "[PitStop] New live chat from user #" + userId;
+        String body = "A user has started a live support chat.\n\n"
+                + "User ID: " + userId + "\n"
+                + "Session ID: " + sessionId + "\n\n"
+                + "Open the monitoring panel → Chat tab to respond.\n"
+                + baseUrl + "/?admin=1";
+        try {
+            sendViaResend("onboarding@resend.dev", "wensonghu@gmail.com", subject, body);
+        } catch (Exception e) {
+            logger.error("Failed to send chat notification: {}", e.getMessage());
+        }
+    }
+
+    public void sendAccountSetupEmail(String toEmail, String name, String setupToken) {
+        String setupUrl = baseUrl + "/?setup-token=" + setupToken;
+        if (resendApiKey == null || resendApiKey.isBlank()) {
+            logger.info("[ACCOUNT SETUP] email={} url={}", toEmail, setupUrl);
+            return;
+        }
+        String subject = "Your PitStop account is ready";
+        String body = "Hi " + name + ",\n\n"
+                + "Your PitStop account has been set up.\n\n"
+                + "Click here to set your password and sign in:\n\n"
+                + setupUrl + "\n\n"
+                + "This link expires in 72 hours. Your cards and progress are already saved.\n\n"
+                + "— PitStop Support";
+        try {
+            sendViaResend("onboarding@resend.dev", toEmail, subject, body);
+            logger.info("Account setup email sent to {}", toEmail);
+        } catch (Exception e) {
+            logger.error("Failed to send setup email to {}: {}", toEmail, e.getMessage());
+            throw new RuntimeException("Failed to send account setup email", e);
+        }
+    }
+
     private void sendViaResend(String from, String to, String subject, String text) throws Exception {
         String json = "{"
                 + "\"from\":\"PitStop <" + from + ">\","

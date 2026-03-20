@@ -143,6 +143,18 @@ public class UserService {
         return appUserRepository.findBySessionToken(sessionToken);
     }
 
+    public AppUser saveUser(AppUser user) {
+        return appUserRepository.save(user);
+    }
+
+    /** Find user by their pending setup token (reuses verificationToken column). */
+    public AppUser findBySetupToken(String token) {
+        return appUserRepository.findByVerificationToken(token)
+                .filter(u -> u.getVerificationTokenExpiry() != null
+                        && u.getVerificationTokenExpiry().isAfter(LocalDateTime.now()))
+                .orElse(null);
+    }
+
     /**
      * Look up or create a PENDING (guest) user by session token.
      * Idempotent — safe to call on every page load.

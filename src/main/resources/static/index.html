@@ -1669,6 +1669,135 @@
 
         // Note: feedback-modal outside-click listener is registered in DOMContentLoaded below.
 
+        // ── Live Chat (user side) ─────────────────────────────────────────────
+        let _chatPoll = null;
+        let _chatSessionId = null;
+
+        function openChatPanel() {
+            document.getElementById('chat-panel').style.display = 'flex';
+            pollChatSession();
+            if (_chatPoll) clearInterval(_chatPoll);
+            _chatPoll = setInterval(pollChatSession, 3000);
+        }
+
+        function closeChatPanel() {
+            document.getElementById('chat-panel').style.display = 'none';
+            if (_chatPoll) { clearInterval(_chatPoll); _chatPoll = null; }
+        }
+
+        async function pollChatSession() {
+            try {
+                const r = await fetch(`${API_BASE_URL}/api/chat/session`, { credentials: 'include' });
+                if (!r.ok) return;
+                const d = await r.json();
+                if (d.hasSession) {
+                    _chatSessionId = d.sessionId;
+                    renderChatMessages(d.messages || []);
+                    document.getElementById('chat-start-state').style.display = 'none';
+                    document.getElementById('chat-input-area').style.display = 'block';
+                } else {
+                    document.getElementById('chat-start-state').style.display = 'block';
+                    document.getElementById('chat-input-area').style.display = 'none';
+                }
+            } catch (e) { /* silent */ }
+        }
+
+        function renderChatMessages(messages) {
+            const container = document.getElementById('chat-messages');
+            const wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 20;
+            container.innerHTML = messages.map(m => {
+                const isAdmin  = m.senderType === 'ADMIN';
+                const isSystem = m.senderType === 'SYSTEM';
+                if (isSystem) return `<div style="text-align:center;font-size:0.72em;color:rgba(255,255,255,0.25);margin:4px 0;">${m.message}</div>`;
+                const align = isAdmin ? 'flex-end' : 'flex-start';
+                const bg    = isAdmin ? 'rgba(78,94,214,0.3)' : 'rgba(255,255,255,0.08)';
+                const label = isAdmin ? '<span style="font-size:0.68em;color:#7b8ff5;">Support</span>' : '<span style="font-size:0.68em;color:rgba(255,255,255,0.35);">You</span>';
+                return `<div style="display:flex;flex-direction:column;align-items:${align};gap:2px;">
+                    ${label}
+                    <div style="background:${bg};border-radius:10px;padding:7px 11px;font-size:0.83em;max-width:85%;word-break:break-word;line-height:1.45;">${m.message}</div>
+                </div>`;
+            }).join('');
+            if (wasAtBottom) container.scrollTop = container.scrollHeight;
+        }
+
+        async function startChatSession() {
+            const msg = document.getElementById('chat-first-msg').value.trim();
+            if (!msg) return;
+            const btn = document.querySelector('#chat-start-state button');
+            btn.disabled = true; btn.textContent = 'Sending…';
+            try {
+                const r = await fetch(`${API_BASE_URL}/api/chat/start`, {
+                    method: 'POST', credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg })
+                });
+                if (r.ok) {
+                    const d = await r.json();
+                    _chatSessionId = d.sessionId;
+                    renderChatMessages(d.messages || []);
+                    document.getElementById('chat-start-state').style.display = 'none';
+                    document.getElementById('chat-input-area').style.display = 'block';
+                }
+            } catch (e) { /* silent */ }
+            finally { btn.disabled = false; btn.textContent = 'Send Message'; }
+        }
+
+        async function sendChatMsg() {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg || !_chatSessionId) return;
+            input.value = '';
+            await fetch(`${API_BASE_URL}/api/chat/message`, {
+                method: 'POST', credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: msg })
+            });
+            pollChatSession();
+        }
+
+        // ── Account setup (admin-converted users) ────────────────────────────────
+
+        async function submitSetupPassword() {
+            const token    = document.getElementById('setup-token-val').value.trim();
+            const password = document.getElementById('setup-password').value.trim();
+            const status   = document.getElementById('setup-status');
+
+            status.style.display = 'none';
+            if (password.length < 6) {
+                status.textContent = 'Password must be at least 6 characters.';
+                status.style.color = '#FF6B6B';
+                status.style.display = 'block';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/auth/complete-setup`, {
+                    method: 'POST', credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, password })
+                });
+                if (res.ok) {
+                    status.textContent = 'Password set! Signing you in…';
+                    status.style.color = '#31f2fe';
+                    status.style.display = 'block';
+                    // Auto-sign-in: send to login page with stored credentials is awkward,
+                    // so just redirect to home after a moment — user will be signed in
+                    // by the remember-me or session on next checkAuthStatus call.
+                    // Actually, redirect to / to trigger a fresh session init.
+                    setTimeout(() => { location.href = '/'; }, 1500);
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    status.textContent = data.error || 'Something went wrong. Please try again.';
+                    status.style.color = '#FF6B6B';
+                    status.style.display = 'block';
+                }
+            } catch (e) {
+                status.textContent = 'Network error. Please try again.';
+                status.style.color = '#FF6B6B';
+                status.style.display = 'block';
+            }
+        }
+
         // ─────────────────────────────────────────────────────────────────────────
 
         // ── Broadcast ────────────────────────────────────────────────────────────
@@ -2084,6 +2213,17 @@
                     font-weight: 500;
                     width: 100%;
                 ">+ Add Your First Prospect</button>
+                <button onclick="openChatPanel()" style="
+                    background: transparent;
+                    border: 0.5px solid rgba(255,255,255,0.15);
+                    color: rgba(255,255,255,0.5);
+                    padding: 8px 18px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 0.82em;
+                    width: 100%;
+                    margin-top: 8px;
+                ">💬 Not sure where to start? Chat with us →</button>
             `;
             return div;
         }
@@ -2462,6 +2602,16 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             track('page_view');
+
+            // Account setup flow: admin-converted users land with ?setup-token=TOKEN
+            const setupToken = new URLSearchParams(location.search).get('setup-token');
+            if (setupToken) {
+                document.getElementById('setup-token-val').value = setupToken;
+                const overlay = document.getElementById('setup-overlay');
+                overlay.style.display = 'flex';
+                return; // Don't init session or redirect until setup is complete
+            }
+
             await initSession();   // Create/reconnect PENDING user before auth status check
             checkAuthStatus();
             const feedbackModal = document.getElementById('feedback-modal');
@@ -2778,9 +2928,9 @@
 
         /** Open feedback modal pre-selected to a specific category. */
         function openFeedbackWithCategory(category) {
-            // Guest/PENDING users must sign in to access support services
+            // PENDING and unauthenticated users go to live chat instead
             if (!currentUser) {
-                openSignInModal('Sign in to access ' + category + ' support.');
+                openChatPanel();
                 return;
             }
             openFeedbackModal();
@@ -2927,7 +3077,7 @@
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
 
     <button class="privacy-fab" onclick="openPrivacyModal()" title="Privacy"><i class="fas fa-shield-alt"></i></button>
-    <button class="feedback-fab" onclick="openFeedbackModal()" title="Contact Support / Send Feedback">💬</button>
+    <button class="feedback-fab" onclick="openChatPanel()" title="Live Support — Human, not AI">💬</button>
 
     <div class="modal" id="privacy-modal">
         <div class="modal-content" style="max-width:520px; position:relative;">
@@ -2988,6 +3138,44 @@
         </div>
     </div>
 
+    <!-- ── LIVE CHAT PANEL ──────────────────────────────────────────────── -->
+    <div id="chat-panel" style="position:fixed;bottom:90px;right:20px;width:320px;background:rgba(14,15,24,0.98);border:0.5px solid rgba(255,255,255,0.12);border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.65);display:none;flex-direction:column;z-index:1001;overflow:hidden;">
+        <div style="padding:13px 16px 10px;border-bottom:0.5px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+                <span style="font-size:0.92em;font-weight:600;color:white;">Live Support</span>
+                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#17cc45;margin-left:7px;vertical-align:middle;box-shadow:0 0 6px #17cc45;"></span>
+                <div style="font-size:0.7em;color:rgba(255,255,255,0.3);margin-top:3px;letter-spacing:0.2px;">Human · Not AI</div>
+            </div>
+            <button onclick="closeChatPanel()" style="background:none;border:none;color:rgba(255,255,255,0.35);font-size:20px;cursor:pointer;line-height:1;padding:0;margin-top:2px;">×</button>
+        </div>
+        <div id="chat-messages" style="overflow-y:auto;padding:12px 14px;min-height:100px;max-height:270px;display:flex;flex-direction:column;gap:8px;"></div>
+        <div id="chat-start-state" style="padding:12px 16px 16px;">
+            <p style="font-size:0.8em;color:rgba(255,255,255,0.4);margin-bottom:10px;line-height:1.5;">Ask anything — getting started, job search strategy, or how to use PitStop.</p>
+            <textarea id="chat-first-msg" rows="3" placeholder="Type your message…" style="width:100%;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;color:white;padding:9px 10px;font-size:0.82em;resize:none;box-sizing:border-box;font-family:inherit;outline:none;margin-bottom:8px;"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();startChatSession();}"></textarea>
+            <button onclick="startChatSession()" style="width:100%;background:#4e5ed6;border:none;color:white;padding:10px;border-radius:8px;cursor:pointer;font-size:0.88em;font-weight:600;">Send Message</button>
+        </div>
+        <div id="chat-input-area" style="display:none;padding:8px 10px 10px;border-top:0.5px solid rgba(255,255,255,0.07);">
+            <div style="display:flex;gap:6px;align-items:flex-end;">
+                <textarea id="chat-input" rows="2" placeholder="Type a message…" style="flex:1;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;color:white;padding:7px 10px;font-size:0.82em;resize:none;font-family:inherit;outline:none;"
+                    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMsg();}"></textarea>
+                <button onclick="sendChatMsg()" style="background:#4e5ed6;border:none;color:white;padding:8px 13px;border-radius:8px;cursor:pointer;font-size:0.88em;">→</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── ACCOUNT SETUP OVERLAY (admin-converted users) ────────────────── -->
+    <div id="setup-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:2000;align-items:center;justify-content:center;">
+        <div style="background:#14151f;border:0.5px solid rgba(255,255,255,0.12);border-radius:16px;padding:28px;width:340px;max-width:90vw;">
+            <h3 style="color:#31f2fe;margin-bottom:6px;">Set Your Password</h3>
+            <p style="font-size:0.83em;color:rgba(255,255,255,0.45);margin-bottom:18px;">Create a password to complete your PitStop account.</p>
+            <input type="hidden" id="setup-token-val"/>
+            <input type="password" id="setup-password" placeholder="New password (min 6 chars)" style="width:100%;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.15);border-radius:8px;color:white;padding:10px 12px;font-size:0.88em;box-sizing:border-box;outline:none;margin-bottom:10px;"/>
+            <p id="setup-status" style="display:none;font-size:0.82em;margin-bottom:10px;"></p>
+            <button onclick="submitSetupPassword()" style="width:100%;background:#4e5ed6;border:none;color:white;padding:11px;border-radius:8px;cursor:pointer;font-size:0.9em;font-weight:600;">Set Password & Sign In</button>
+        </div>
+    </div>
+
     <!-- ── MONITORING MODAL ─────────────────────────────────────────────── -->
     <div class="modal" id="monitoring-modal">
         <div class="modal-content" style="max-width:680px; position:relative;">
@@ -2995,9 +3183,16 @@
             <h2 style="color:#31f2fe; display:flex; align-items:center; gap:10px; margin-bottom:6px;">
                 <i class="fas fa-chart-line"></i> Monitoring
             </h2>
+            <div style="display:flex;gap:0;border-bottom:0.5px solid rgba(255,255,255,0.08);margin:4px 0 16px;">
+                <button id="mon-tab-metrics-btn" onclick="showMonTab('metrics')" style="background:none;border:none;border-bottom:2px solid #31f2fe;color:#31f2fe;padding:8px 16px 7px;cursor:pointer;font-size:0.82em;font-weight:600;letter-spacing:0.3px;margin-bottom:-1px;">Metrics</button>
+                <button id="mon-tab-chat-btn" onclick="showMonTab('chat')" style="background:none;border:none;border-bottom:2px solid transparent;color:rgba(255,255,255,0.4);padding:8px 16px 7px;cursor:pointer;font-size:0.82em;letter-spacing:0.3px;margin-bottom:-1px;">💬 Chat <span id="chat-open-badge" style="background:#FF6B6B;color:white;border-radius:10px;padding:1px 6px;font-size:0.78em;display:none;margin-left:3px;"></span></button>
+            </div>
             <p style="font-size:0.8em; color:rgba(255,255,255,0.3); margin-bottom:20px;" id="monitoring-updated"></p>
             <div id="monitoring-body" style="color:rgba(255,255,255,0.65); font-size:0.9em;">
                 <p style="color:rgba(255,255,255,0.35);">Loading…</p>
+            </div>
+            <div id="monitoring-chat-body" style="display:none;color:rgba(255,255,255,0.65);font-size:0.9em;">
+                <p style="color:rgba(255,255,255,0.35);">Loading chats…</p>
             </div>
         </div>
     </div>
@@ -3007,8 +3202,7 @@
 
     function openMonitoringModal() {
         document.getElementById('monitoring-modal').classList.add('active');
-        document.getElementById('monitoring-body').innerHTML =
-            '<p style="color:rgba(255,255,255,0.35);">Loading…</p>';
+        showMonTab('metrics');
         fetch(`${API_BASE_URL}/api/admin/metrics`, { credentials: 'include' })
             .then(r => r.ok ? r.json() : Promise.reject(r.status))
             .then(renderMetrics)
@@ -3016,9 +3210,145 @@
                 document.getElementById('monitoring-body').innerHTML =
                     `<p style="color:#FF6B6B;">Failed to load metrics (${e}).</p>`;
             });
+        // Pre-load chat badge
+        fetch(`${API_BASE_URL}/api/admin/chat/sessions`, { credentials: 'include' })
+            .then(r => r.ok ? r.json() : null)
+            .then(d => {
+                if (d && d.openCount > 0) {
+                    const b = document.getElementById('chat-open-badge');
+                    b.textContent = d.openCount; b.style.display = 'inline';
+                }
+            }).catch(() => {});
+    }
+
+    function showMonTab(tab) {
+        const isMetrics = tab === 'metrics';
+        document.getElementById('monitoring-body').style.display      = isMetrics ? '' : 'none';
+        document.getElementById('monitoring-updated').style.display   = isMetrics ? '' : 'none';
+        document.getElementById('monitoring-chat-body').style.display = isMetrics ? 'none' : '';
+        const mBtn = document.getElementById('mon-tab-metrics-btn');
+        const cBtn = document.getElementById('mon-tab-chat-btn');
+        mBtn.style.borderBottomColor = isMetrics ? '#31f2fe' : 'transparent';
+        mBtn.style.color = isMetrics ? '#31f2fe' : 'rgba(255,255,255,0.4)';
+        mBtn.style.fontWeight = isMetrics ? '600' : 'normal';
+        cBtn.style.borderBottomColor = isMetrics ? 'transparent' : '#31f2fe';
+        cBtn.style.color = isMetrics ? 'rgba(255,255,255,0.4)' : '#31f2fe';
+        cBtn.style.fontWeight = isMetrics ? 'normal' : '600';
+        if (!isMetrics) loadAdminChat();
+    }
+
+    let _adminChatPoll = null;
+
+    function loadAdminChat() {
+        if (_adminChatPoll) clearInterval(_adminChatPoll);
+        fetchAdminChat();
+        _adminChatPoll = setInterval(fetchAdminChat, 4000);
+    }
+
+    function fetchAdminChat() {
+        fetch(`${API_BASE_URL}/api/admin/chat/sessions`, { credentials: 'include' })
+            .then(r => r.ok ? r.json() : Promise.reject())
+            .then(renderAdminChat)
+            .catch(() => {});
+    }
+
+    function renderAdminChat(data) {
+        const badge = document.getElementById('chat-open-badge');
+        if (data.openCount > 0) { badge.textContent = data.openCount; badge.style.display = 'inline'; }
+        else badge.style.display = 'none';
+
+        const body = document.getElementById('monitoring-chat-body');
+        if (!data.sessions || data.sessions.length === 0) {
+            body.innerHTML = '<p style="color:rgba(255,255,255,0.3);padding:20px 0;">No open support chats.</p>';
+            return;
+        }
+        body.innerHTML = data.sessions.map(s => {
+            const msgs = (s.messages || []).map(m => {
+                const isAdmin  = m.senderType === 'ADMIN';
+                const isSystem = m.senderType === 'SYSTEM';
+                const bg = isSystem ? 'rgba(255,255,255,0.05)' : isAdmin ? 'rgba(78,94,214,0.2)' : 'rgba(255,255,255,0.07)';
+                const align = isAdmin ? 'flex-end' : 'flex-start';
+                const label = isSystem ? '<span style="color:rgba(255,255,255,0.25);font-size:0.72em;">system</span>'
+                    : isAdmin ? '<span style="color:#7b8ff5;font-size:0.72em;">you</span>'
+                    : '<span style="color:rgba(255,255,255,0.4);font-size:0.72em;">user</span>';
+                const time = m.createdAt ? m.createdAt.substring(11,16) : '';
+                return `<div style="display:flex;flex-direction:column;align-items:${align};gap:2px;margin-bottom:6px;">
+                    ${label}
+                    <div style="background:${bg};border-radius:8px;padding:6px 10px;font-size:0.82em;max-width:90%;word-break:break-word;">${escHtml(m.message)}</div>
+                    <span style="font-size:0.68em;color:rgba(255,255,255,0.2);">${time}</span>
+                </div>`;
+            }).join('');
+
+            const userLabel = s.userEmail
+                ? `<span style="color:rgba(255,255,255,0.7);">${escHtml(s.userEmail)}</span>`
+                : `<span style="color:rgba(255,255,255,0.35);">Guest #${s.userId}</span>`;
+
+            return `<div style="border:0.5px solid rgba(255,255,255,0.1);border-radius:12px;margin-bottom:16px;overflow:hidden;">
+                <div style="background:rgba(255,255,255,0.04);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
+                    <div>${userLabel} <span style="font-size:0.72em;color:rgba(255,255,255,0.25);margin-left:8px;">${s.createdAt.substring(0,16).replace('T',' ')}</span></div>
+                    <div style="display:flex;gap:6px;">
+                        ${s.userStatus === 'PENDING' ? `<button onclick="adminConvertUser(${s.sessionId})" style="background:rgba(23,204,69,0.15);border:0.5px solid rgba(23,204,69,0.3);color:#17cc45;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:0.75em;">Convert User</button>` : ''}
+                        <button onclick="adminCloseSession(${s.sessionId})" style="background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.4);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:0.75em;">Close</button>
+                    </div>
+                </div>
+                <div style="padding:10px 14px;max-height:240px;overflow-y:auto;">${msgs || '<p style="color:rgba(255,255,255,0.25);font-size:0.8em;">No messages yet.</p>'}</div>
+                <div style="padding:8px 12px 12px;border-top:0.5px solid rgba(255,255,255,0.06);display:flex;gap:6px;">
+                    <input id="admin-reply-${s.sessionId}" placeholder="Reply…" style="flex:1;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);border-radius:7px;color:white;padding:7px 10px;font-size:0.82em;outline:none;"
+                        onkeydown="if(event.key==='Enter')adminSendReply(${s.sessionId})"/>
+                    <button onclick="adminSendReply(${s.sessionId})" style="background:#4e5ed6;border:none;color:white;padding:7px 14px;border-radius:7px;cursor:pointer;font-size:0.82em;">Send</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    async function adminSendReply(sessionId) {
+        const input = document.getElementById('admin-reply-' + sessionId);
+        const msg = input.value.trim();
+        if (!msg) return;
+        input.value = '';
+        await fetch(`${API_BASE_URL}/api/admin/chat/session/${sessionId}/reply`, {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg })
+        });
+        fetchAdminChat();
+    }
+
+    async function adminCloseSession(sessionId) {
+        if (!confirm('Close this chat session?')) return;
+        await fetch(`${API_BASE_URL}/api/admin/chat/session/${sessionId}/close`, {
+            method: 'POST', credentials: 'include'
+        });
+        fetchAdminChat();
+    }
+
+    async function adminConvertUser(sessionId) {
+        const name  = prompt('Enter the user\'s full name:');
+        if (!name) return;
+        const email = prompt('Enter the user\'s email address:');
+        if (!email) return;
+        const res = await fetch(`${API_BASE_URL}/api/admin/chat/session/${sessionId}/convert`, {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email })
+        });
+        const d = await res.json();
+        if (d.converted) {
+            alert(d.emailSent
+                ? `✓ Account created for ${d.email}. Setup link sent to their email.`
+                : `✓ Account created for ${d.email}. (Email delivery failed — give them the link manually.)`);
+            fetchAdminChat();
+        } else {
+            alert('Error: ' + (d.error || 'Could not convert user'));
+        }
+    }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
     function closeMonitoringModal() {
+        if (_adminChatPoll) { clearInterval(_adminChatPoll); _adminChatPoll = null; }
         document.getElementById('monitoring-modal').classList.remove('active');
     }
 
