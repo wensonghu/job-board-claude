@@ -109,6 +109,7 @@ public class SecurityConfig {
                     "/api/events",
                     "/api/session/init",
                     "/api/chat/start",
+                    "/api/chat/availability",
                     "/api/auth/complete-setup"
                 ).permitAll()
                 .anyRequest().authenticated()

@@ -3,6 +3,7 @@ package com.example.jobboard.controller;
 import com.example.jobboard.model.AppUser;
 import com.example.jobboard.model.SupportChatMessage;
 import com.example.jobboard.model.SupportChatSession;
+import com.example.jobboard.repository.ChatScheduleRepository;
 import com.example.jobboard.repository.SupportChatMessageRepository;
 import com.example.jobboard.repository.SupportChatSessionRepository;
 import com.example.jobboard.service.EmailService;
@@ -12,6 +13,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +32,9 @@ public class SupportChatController {
     @Autowired private UserService userService;
     @Autowired private EmailService emailService;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private ChatScheduleRepository chatScheduleRepo;
+    @Autowired private JdbcTemplate jdbc;
+    @Autowired private ChatAvailabilityController chatAvailability;
 
     // ─── User endpoints ───────────────────────────────────────────────────────
 
@@ -55,8 +60,21 @@ public class SupportChatController {
             saveMessage(session.getId(), "USER", firstMessage);
         }
 
+        // Check business hours and post after-hours system message if needed
+        boolean afterHours = false;
+        try {
+            String tz = chatAvailability.getTimezone();
+            afterHours = !ChatAvailabilityController.isNowAvailable(
+                    chatScheduleRepo.findAllByOrderByDayOfWeekAsc(), tz);
+            if (afterHours && !firstMessage.isEmpty()) {
+                saveMessage(session.getId(), "SYSTEM",
+                        "We're currently outside business hours. We'll get back to you within 24 hours.");
+            }
+        } catch (Exception ignored) {}
+
         // Notify admin (non-blocking; failure doesn't break the flow)
-        try { emailService.sendChatStartedNotification(user.getId(), session.getId()); }
+        final boolean isAfterHours = afterHours;
+        try { emailService.sendChatStartedNotification(user.getId(), session.getId(), isAfterHours); }
         catch (Exception ignored) {}
 
         return ResponseEntity.ok(buildSessionView(session, user));

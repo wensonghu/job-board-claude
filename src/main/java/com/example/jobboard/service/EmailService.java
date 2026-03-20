@@ -77,13 +77,16 @@ public class EmailService {
         }
     }
 
-    public void sendChatStartedNotification(Long userId, Long sessionId) {
+    public void sendChatStartedNotification(Long userId, Long sessionId, boolean afterHours) {
         if (resendApiKey == null || resendApiKey.isBlank()) {
-            logger.info("[CHAT STARTED] userId={} sessionId={}", userId, sessionId);
+            logger.info("[CHAT STARTED] userId={} sessionId={} afterHours={}", userId, sessionId, afterHours);
             return;
         }
-        String subject = "[PitStop] New live chat from user #" + userId;
-        String body = "A user has started a live support chat.\n\n"
+        String prefix  = afterHours ? "⏰ After-hours " : "";
+        String subject = "[PitStop] " + prefix + "New live chat from user #" + userId;
+        String body = (afterHours
+                ? "A user sent a message outside business hours. They have been told to expect a reply within 24 hours.\n\n"
+                : "A user has started a live support chat.\n\n")
                 + "User ID: " + userId + "\n"
                 + "Session ID: " + sessionId + "\n\n"
                 + "Open the monitoring panel → Chat tab to respond.\n"

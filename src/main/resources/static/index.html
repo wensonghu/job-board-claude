@@ -1673,8 +1673,32 @@
         let _chatPoll = null;
         let _chatSessionId = null;
 
-        function openChatPanel() {
+        async function openChatPanel() {
             document.getElementById('chat-panel').style.display = 'flex';
+            // Check business hours and update indicator
+            try {
+                const r = await fetch(`${API_BASE_URL}/api/chat/availability`, { credentials: 'include' });
+                if (r.ok) {
+                    const d = await r.json();
+                    const dot = document.getElementById('chat-status-dot');
+                    const sub = document.getElementById('chat-status-sub');
+                    const btn = document.getElementById('chat-send-btn');
+                    const hint = document.getElementById('chat-start-hint');
+                    if (d.available) {
+                        dot.style.background = '#17cc45';
+                        dot.style.boxShadow  = '0 0 6px #17cc45';
+                        sub.textContent = 'Human · Not AI';
+                        if (btn)  btn.textContent  = 'Send Message';
+                        if (hint) hint.textContent = 'Ask anything — getting started, job search strategy, or how to use PitStop.';
+                    } else {
+                        dot.style.background = '#FF6B6B';
+                        dot.style.boxShadow  = '0 0 6px #FF6B6B';
+                        sub.textContent = 'Outside business hours';
+                        if (btn)  btn.textContent  = 'Leave a Message';
+                        if (hint) hint.textContent = "Leave us a message — we'll get back to you within 24 hours.";
+                    }
+                }
+            } catch(e) {}
             pollChatSession();
             if (_chatPoll) clearInterval(_chatPoll);
             _chatPoll = setInterval(pollChatSession, 3000);
@@ -3143,17 +3167,17 @@
         <div style="padding:13px 16px 10px;border-bottom:0.5px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:flex-start;">
             <div>
                 <span style="font-size:0.92em;font-weight:600;color:white;">Live Support</span>
-                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#17cc45;margin-left:7px;vertical-align:middle;box-shadow:0 0 6px #17cc45;"></span>
-                <div style="font-size:0.7em;color:rgba(255,255,255,0.3);margin-top:3px;letter-spacing:0.2px;">Human · Not AI</div>
+                <span id="chat-status-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#17cc45;margin-left:7px;vertical-align:middle;box-shadow:0 0 6px #17cc45;"></span>
+                <div id="chat-status-sub" style="font-size:0.7em;color:rgba(255,255,255,0.3);margin-top:3px;letter-spacing:0.2px;">Human · Not AI</div>
             </div>
             <button onclick="closeChatPanel()" style="background:none;border:none;color:rgba(255,255,255,0.35);font-size:20px;cursor:pointer;line-height:1;padding:0;margin-top:2px;">×</button>
         </div>
         <div id="chat-messages" style="overflow-y:auto;padding:12px 14px;min-height:100px;max-height:270px;display:flex;flex-direction:column;gap:8px;"></div>
         <div id="chat-start-state" style="padding:12px 16px 16px;">
-            <p style="font-size:0.8em;color:rgba(255,255,255,0.4);margin-bottom:10px;line-height:1.5;">Ask anything — getting started, job search strategy, or how to use PitStop.</p>
+            <p id="chat-start-hint" style="font-size:0.8em;color:rgba(255,255,255,0.4);margin-bottom:10px;line-height:1.5;">Ask anything — getting started, job search strategy, or how to use PitStop.</p>
             <textarea id="chat-first-msg" rows="3" placeholder="Type your message…" style="width:100%;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;color:white;padding:9px 10px;font-size:0.82em;resize:none;box-sizing:border-box;font-family:inherit;outline:none;margin-bottom:8px;"
                 onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();startChatSession();}"></textarea>
-            <button onclick="startChatSession()" style="width:100%;background:#4e5ed6;border:none;color:white;padding:10px;border-radius:8px;cursor:pointer;font-size:0.88em;font-weight:600;">Send Message</button>
+            <button id="chat-send-btn" onclick="startChatSession()" style="width:100%;background:#4e5ed6;border:none;color:white;padding:10px;border-radius:8px;cursor:pointer;font-size:0.88em;font-weight:600;">Send Message</button>
         </div>
         <div id="chat-input-area" style="display:none;padding:8px 10px 10px;border-top:0.5px solid rgba(255,255,255,0.07);">
             <div style="display:flex;gap:6px;align-items:flex-end;">
@@ -3192,7 +3216,8 @@
                 <p style="color:rgba(255,255,255,0.35);">Loading…</p>
             </div>
             <div id="monitoring-chat-body" style="display:none;color:rgba(255,255,255,0.65);font-size:0.9em;">
-                <p style="color:rgba(255,255,255,0.35);">Loading chats…</p>
+                <div id="admin-chat-sessions"><p style="color:rgba(255,255,255,0.35);">Loading chats…</p></div>
+                <div id="chat-hours-editor"></div>
             </div>
         </div>
     </div>
@@ -3234,7 +3259,7 @@
         cBtn.style.borderBottomColor = isMetrics ? 'transparent' : '#31f2fe';
         cBtn.style.color = isMetrics ? 'rgba(255,255,255,0.4)' : '#31f2fe';
         cBtn.style.fontWeight = isMetrics ? 'normal' : '600';
-        if (!isMetrics) loadAdminChat();
+        if (!isMetrics) { loadAdminChat(); loadChatHours(); }
     }
 
     let _adminChatPoll = null;
@@ -3257,7 +3282,7 @@
         if (data.openCount > 0) { badge.textContent = data.openCount; badge.style.display = 'inline'; }
         else badge.style.display = 'none';
 
-        const body = document.getElementById('monitoring-chat-body');
+        const body = document.getElementById('admin-chat-sessions');
         if (!data.sessions || data.sessions.length === 0) {
             body.innerHTML = '<p style="color:rgba(255,255,255,0.3);padding:20px 0;">No open support chats.</p>';
             return;
@@ -3345,6 +3370,85 @@
 
     function escHtml(s) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ── Chat Hours (admin) ───────────────────────────────────────────────────
+
+    const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+    async function loadChatHours() {
+        try {
+            const r = await fetch(`${API_BASE_URL}/api/chat/availability`, { credentials: 'include' });
+            if (!r.ok) return;
+            const d = await r.json();
+            renderChatHoursEditor(d.schedule, d.timezone);
+        } catch(e) {}
+    }
+
+    function renderChatHoursEditor(schedule, timezone) {
+        const container = document.getElementById('chat-hours-editor');
+        if (!container) return;
+
+        const rows = schedule.map(s => `
+            <tr>
+                <td style="padding:5px 10px 5px 0;color:rgba(255,255,255,0.6);font-size:0.82em;width:90px;">${DAY_NAMES[s.dayOfWeek]}</td>
+                <td style="padding:5px 8px 5px 0;">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                        <input type="checkbox" data-dow="${s.dayOfWeek}" class="ch-enabled" ${s.enabled ? 'checked' : ''}
+                            style="accent-color:#31f2fe;width:14px;height:14px;cursor:pointer;"/>
+                        <span style="font-size:0.75em;color:rgba(255,255,255,0.35);">Open</span>
+                    </label>
+                </td>
+                <td style="padding:5px 8px 5px 0;">
+                    <input type="time" data-dow="${s.dayOfWeek}" class="ch-open" value="${s.openTime}"
+                        style="background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);border-radius:6px;color:white;padding:4px 7px;font-size:0.78em;outline:none;"/>
+                </td>
+                <td style="padding:5px 0;">
+                    <span style="font-size:0.72em;color:rgba(255,255,255,0.25);margin-right:6px;">–</span>
+                    <input type="time" data-dow="${s.dayOfWeek}" class="ch-close" value="${s.closeTime}"
+                        style="background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);border-radius:6px;color:white;padding:4px 7px;font-size:0.78em;outline:none;"/>
+                </td>
+            </tr>`).join('');
+
+        container.innerHTML = `
+            <div style="margin-top:22px;padding-top:18px;border-top:0.5px solid rgba(255,255,255,0.07);">
+                <div style="font-size:0.78em;font-weight:600;color:rgba(255,255,255,0.4);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:12px;">⏰ Chat Hours</div>
+                <table style="border-collapse:collapse;width:100%;">${rows}</table>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+                    <span style="font-size:0.78em;color:rgba(255,255,255,0.35);">Timezone:</span>
+                    <input id="chat-tz-input" value="${escHtml(timezone)}"
+                        style="flex:1;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);border-radius:6px;color:white;padding:5px 8px;font-size:0.78em;outline:none;"
+                        placeholder="e.g. America/New_York"/>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+                    <button onclick="saveChatSchedule()" style="background:rgba(49,242,254,0.12);border:0.5px solid rgba(49,242,254,0.3);color:#31f2fe;padding:7px 18px;border-radius:7px;cursor:pointer;font-size:0.82em;">Save Hours</button>
+                    <span id="chat-hours-status" style="font-size:0.78em;color:rgba(255,255,255,0.35);"></span>
+                </div>
+            </div>`;
+    }
+
+    async function saveChatSchedule() {
+        const schedule = Array.from(document.querySelectorAll('.ch-enabled')).map(cb => ({
+            dayOfWeek: parseInt(cb.dataset.dow),
+            enabled:   cb.checked,
+            openTime:  document.querySelector(`.ch-open[data-dow="${cb.dataset.dow}"]`).value,
+            closeTime: document.querySelector(`.ch-close[data-dow="${cb.dataset.dow}"]`).value,
+        }));
+        const timezone = document.getElementById('chat-tz-input').value.trim();
+        const status   = document.getElementById('chat-hours-status');
+        status.textContent = 'Saving…';
+        try {
+            const r = await fetch(`${API_BASE_URL}/api/admin/chat/schedule`, {
+                method: 'PUT', credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ schedule, timezone })
+            });
+            status.textContent = r.ok ? '✓ Saved' : '✗ Error saving';
+            status.style.color = r.ok ? '#17cc45' : '#FF6B6B';
+        } catch(e) {
+            status.textContent = '✗ Network error';
+            status.style.color = '#FF6B6B';
+        }
     }
 
     function closeMonitoringModal() {
