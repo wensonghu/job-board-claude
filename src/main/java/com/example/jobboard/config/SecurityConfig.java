@@ -89,7 +89,9 @@ public class SecurityConfig {
                 config.setAllowedOrigins(java.util.List.of(
                     "null",
                     "https://wensonghu.github.io",
-                    "http://localhost:8080"
+                    "http://localhost:8080",
+                    "https://pitstopnext.com",
+                    "https://www.pitstopnext.com"
                 ));
                 config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 config.setAllowCredentials(true);

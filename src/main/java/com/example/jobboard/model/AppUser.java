@@ -56,6 +56,9 @@ public class AppUser {
     @Column(name = "session_token", length = 64, unique = true)
     private String sessionToken;
 
+    @Column(name = "session_token_expires_at")
+    private LocalDateTime sessionTokenExpiresAt;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -102,4 +105,7 @@ public class AppUser {
 
     public String getSessionToken() { return sessionToken; }
     public void setSessionToken(String sessionToken) { this.sessionToken = sessionToken; }
+
+    public LocalDateTime getSessionTokenExpiresAt() { return sessionTokenExpiresAt; }
+    public void setSessionTokenExpiresAt(LocalDateTime sessionTokenExpiresAt) { this.sessionTokenExpiresAt = sessionTokenExpiresAt; }
 }

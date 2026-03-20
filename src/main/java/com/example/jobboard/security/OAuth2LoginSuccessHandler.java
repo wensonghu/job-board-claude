@@ -53,6 +53,12 @@ public class OAuth2LoginSuccessHandler extends SavedRequestAwareAuthenticationSu
         // Store the AppUser id in the session so all requests can resolve it
         request.getSession().setAttribute("appUserId", appUser.getId());
 
+        // Bind the browser's persistent ps_sid to this account for 90-day auto-login
+        String guestToken = (String) request.getSession().getAttribute("guestSessionToken");
+        if (guestToken != null && !guestToken.isEmpty()) {
+            userService.renewSessionToken(appUser, guestToken);
+        }
+
         super.onAuthenticationSuccess(request, response, authentication);
     }
 }

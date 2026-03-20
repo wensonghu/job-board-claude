@@ -183,7 +183,8 @@ public class UserService {
         pending.setAuthProvider(AuthProvider.LOCAL);
         pending.setEmailVerified(true);
         pending.setStatus("REGISTERED");
-        pending.setSessionToken(null);
+        // Keep session_token so this browser is auto-authenticated for 90 days
+        pending.setSessionTokenExpiresAt(LocalDateTime.now().plusDays(90));
         AppUser saved = appUserRepository.save(pending);
         logger.info("Converted PENDING user {} to REGISTERED (email: {})", saved.getId(), email);
         emailService.sendNewUserNotification(email, displayName);
@@ -223,7 +224,8 @@ public class UserService {
         pending.setAuthProvider(AuthProvider.GOOGLE);
         pending.setEmailVerified(true);
         pending.setStatus("REGISTERED");
-        pending.setSessionToken(null);
+        // Keep session_token so this browser is auto-authenticated for 90 days
+        pending.setSessionTokenExpiresAt(LocalDateTime.now().plusDays(90));
         AppUser saved = appUserRepository.save(pending);
         logger.info("Converted PENDING user {} to REGISTERED (Google, email: {})", saved.getId(), email);
         return saved;
@@ -239,6 +241,26 @@ public class UserService {
         // alert_dismissal has a unique constraint on (user_id, alert_key) — delete PENDING's to avoid conflicts
         jdbcTemplate.update("DELETE FROM alert_dismissal WHERE user_id = ?", pending.getId());
         appUserRepository.delete(pending);
+    }
+
+    /**
+     * Bind a browser's persistent token to this user for 90 days.
+     * Called after form login or Google OAuth so the next page load auto-authenticates.
+     */
+    public void renewSessionToken(AppUser user, String token) {
+        user.setSessionToken(token);
+        user.setSessionTokenExpiresAt(LocalDateTime.now().plusDays(90));
+        appUserRepository.save(user);
+        logger.info("Renewed 90-day session token for user id={}", user.getId());
+    }
+
+    /**
+     * Clear an expired or invalidated persistent session token.
+     */
+    public void clearSessionToken(AppUser user) {
+        user.setSessionToken(null);
+        user.setSessionTokenExpiresAt(null);
+        appUserRepository.save(user);
     }
 
     private static String sha256Hex(String input) {
