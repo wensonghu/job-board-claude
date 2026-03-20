@@ -1979,6 +1979,12 @@
                 });
                 updateCount(stage, sortedCards.length);
             });
+
+            // Show empty-state CTA in Early Stage when the board is completely blank
+            if (cards.length === 0) {
+                const seedingContainer = document.querySelector('[data-column="seeding"]');
+                if (seedingContainer) seedingContainer.appendChild(createEmptyBoardCTA());
+            }
         }
 
         // Check if a card requires attention (yellow status)
@@ -2044,6 +2050,44 @@
             await loadAlerts();
         }
 
+        function createEmptyBoardCTA() {
+            const div = document.createElement('div');
+            div.style.cssText = `
+                margin: 12px 8px;
+                padding: 20px 20px 18px;
+                background: rgba(49,242,254,0.05);
+                border: 0.5px solid rgba(49,242,254,0.2);
+                border-radius: 12px;
+                color: rgba(255,255,255,0.75);
+                font-size: 0.82em;
+                line-height: 1.65;
+            `;
+            div.innerHTML = `
+                <div style="font-size:0.95em;font-weight:600;color:rgba(49,242,254,0.85);margin-bottom:10px;">
+                    Start here — before you even apply
+                </div>
+                <div style="margin-bottom:14px;color:rgba(255,255,255,0.65);">
+                    Add a card for every prospect on your radar: companies you're researching, positions you've bookmarked,
+                    past colleagues who could refer you, recruiters who've reached out, anyone you've spoken to who might know of an opening.
+                    <br><br>
+                    <strong style="color:rgba(255,255,255,0.8);">You need 8–10 prospects in Early Stage before there's any real momentum deeper in the funnel.</strong>
+                    PitStop will nudge you on what to do next as each one moves forward.
+                </div>
+                <button onclick="openModal(null,'seeding')" style="
+                    background: rgba(49,242,254,0.12);
+                    border: 0.5px solid rgba(49,242,254,0.35);
+                    color: rgba(49,242,254,0.9);
+                    padding: 9px 18px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 0.9em;
+                    font-weight: 500;
+                    width: 100%;
+                ">+ Add Your First Prospect</button>
+            `;
+            return div;
+        }
+
         function createGetStartedElement() {
             const div = document.createElement('div');
             div.className = 'todo-modal-content';
@@ -2051,7 +2095,7 @@
             div.style.border = '0.5px solid rgba(78,94,214,0.4)';
             div.style.boxShadow = '0 2px 20px rgba(0,0,0,0.35), 0 0 0 0.5px rgba(78,94,214,0.15)';
             div.innerHTML = `
-                <span>👋 Welcome! The best way to use the PitStop board is to create one card for each opportunity you are pursuing, start adding them based on the stage you are in. If you are starting fresh, focus on making your resume stand out!</span>
+                <span>Start adding prospects to Early Stage — companies, positions, referrals, recruiters. Aim for 8–10 before expecting movement deeper in the funnel.</span>
                 <span class="close-todo-modal" onclick="closeTodoAlert('get-started')">&times;</span>
             `;
             return div;
