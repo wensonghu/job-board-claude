@@ -3385,6 +3385,35 @@
         } catch(e) {}
     }
 
+    const TZ_OPTIONS = [
+        ['Pacific/Honolulu',    'Hawaii (HST)'],
+        ['America/Anchorage',   'Alaska (AKST/AKDT)'],
+        ['America/Los_Angeles', 'Pacific (PST/PDT)'],
+        ['America/Denver',      'Mountain (MST/MDT)'],
+        ['America/Phoenix',     'Arizona (MST, no DST)'],
+        ['America/Chicago',     'Central (CST/CDT)'],
+        ['America/New_York',    'Eastern (EST/EDT)'],
+        ['America/Halifax',     'Atlantic (AST/ADT)'],
+        ['America/Sao_Paulo',   'Brazil (BRT/BRST)'],
+        ['Europe/London',       'London (GMT/BST)'],
+        ['Europe/Paris',        'Central Europe (CET/CEST)'],
+        ['Europe/Helsinki',     'Eastern Europe (EET/EEST)'],
+        ['Asia/Dubai',          'Gulf (GST)'],
+        ['Asia/Kolkata',        'India (IST)'],
+        ['Asia/Bangkok',        'Indochina (ICT)'],
+        ['Asia/Shanghai',       'China (CST)'],
+        ['Asia/Tokyo',          'Japan (JST)'],
+        ['Australia/Sydney',    'Sydney (AEST/AEDT)'],
+        ['Pacific/Auckland',    'New Zealand (NZST/NZDT)'],
+        ['UTC',                 'UTC'],
+    ];
+
+    function buildTzOptions(selected) {
+        return TZ_OPTIONS.map(function(p) {
+            return '<option value="' + p[0] + '"' + (p[0] === selected ? ' selected' : '') + '>' + p[1] + '</option>';
+        }).join('');
+    }
+
     function renderChatHoursEditor(schedule, timezone) {
         const container = document.getElementById('chat-hours-editor');
         if (!container) return;
@@ -3416,9 +3445,9 @@
                 <table style="border-collapse:collapse;width:100%;">${rows}</table>
                 <div style="display:flex;align-items:center;gap:8px;margin-top:12px;">
                     <span style="font-size:0.78em;color:rgba(255,255,255,0.35);">Timezone:</span>
-                    <input id="chat-tz-input" value="${escHtml(timezone)}"
-                        style="flex:1;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);border-radius:6px;color:white;padding:5px 8px;font-size:0.78em;outline:none;"
-                        placeholder="e.g. America/New_York"/>
+                    <select id="chat-tz-input" style="flex:1;background:rgba(30,31,45,0.98);border:0.5px solid rgba(255,255,255,0.15);border-radius:6px;color:white;padding:5px 8px;font-size:0.78em;outline:none;cursor:pointer;">
+                        ${buildTzOptions(timezone)}
+                    </select>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
                     <button onclick="saveChatSchedule()" style="background:rgba(49,242,254,0.12);border:0.5px solid rgba(49,242,254,0.3);color:#31f2fe;padding:7px 18px;border-radius:7px;cursor:pointer;font-size:0.82em;">Save Hours</button>
