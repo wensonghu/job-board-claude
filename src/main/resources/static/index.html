@@ -1672,31 +1672,35 @@
         // ── Live Chat (user side) ─────────────────────────────────────────────
         let _chatPoll = null;
         let _chatSessionId = null;
+        let _chatAvailable = true;  // cached result from last availability fetch
+
+        function applyChatAvailabilityUI() {
+            const dot  = document.getElementById('chat-status-dot');
+            const sub  = document.getElementById('chat-status-sub');
+            const btn  = document.getElementById('chat-send-btn');
+            const hint = document.getElementById('chat-start-hint');
+            if (_chatAvailable) {
+                if (dot)  { dot.style.background = '#17cc45'; dot.style.boxShadow = '0 0 6px #17cc45'; }
+                if (sub)  sub.textContent  = 'Human · Not AI';
+                if (btn)  btn.textContent  = 'Send Message';
+                if (hint) hint.textContent = 'Ask anything — getting started, job search strategy, or how to use PitStop.';
+            } else {
+                if (dot)  { dot.style.background = '#FF6B6B'; dot.style.boxShadow = '0 0 6px #FF6B6B'; }
+                if (sub)  sub.textContent  = 'Outside business hours';
+                if (btn)  btn.textContent  = 'Leave a Message';
+                if (hint) hint.textContent = "Leave us a message — we'll get back to you within 24 hours.";
+            }
+        }
 
         async function openChatPanel() {
             document.getElementById('chat-panel').style.display = 'flex';
-            // Check business hours and update indicator
+            // Fetch current availability and update all indicators
             try {
                 const r = await fetch(`${API_BASE_URL}/api/chat/availability`, { credentials: 'include' });
                 if (r.ok) {
                     const d = await r.json();
-                    const dot = document.getElementById('chat-status-dot');
-                    const sub = document.getElementById('chat-status-sub');
-                    const btn = document.getElementById('chat-send-btn');
-                    const hint = document.getElementById('chat-start-hint');
-                    if (d.available) {
-                        dot.style.background = '#17cc45';
-                        dot.style.boxShadow  = '0 0 6px #17cc45';
-                        sub.textContent = 'Human · Not AI';
-                        if (btn)  btn.textContent  = 'Send Message';
-                        if (hint) hint.textContent = 'Ask anything — getting started, job search strategy, or how to use PitStop.';
-                    } else {
-                        dot.style.background = '#FF6B6B';
-                        dot.style.boxShadow  = '0 0 6px #FF6B6B';
-                        sub.textContent = 'Outside business hours';
-                        if (btn)  btn.textContent  = 'Leave a Message';
-                        if (hint) hint.textContent = "Leave us a message — we'll get back to you within 24 hours.";
-                    }
+                    _chatAvailable = d.available;
+                    applyChatAvailabilityUI();
                 }
             } catch(e) {}
             pollChatSession();
@@ -1720,8 +1724,11 @@
                     document.getElementById('chat-start-state').style.display = 'none';
                     document.getElementById('chat-input-area').style.display = 'block';
                 } else {
+                    _chatSessionId = null;
                     document.getElementById('chat-start-state').style.display = 'block';
                     document.getElementById('chat-input-area').style.display = 'none';
+                    // Re-apply availability UI so hint/button always match the current state
+                    applyChatAvailabilityUI();
                 }
             } catch (e) { /* silent */ }
         }
@@ -1763,7 +1770,7 @@
                     document.getElementById('chat-input-area').style.display = 'block';
                 }
             } catch (e) { /* silent */ }
-            finally { btn.disabled = false; btn.textContent = 'Send Message'; }
+            finally { btn.disabled = false; applyChatAvailabilityUI(); }
         }
 
         async function sendChatMsg() {
