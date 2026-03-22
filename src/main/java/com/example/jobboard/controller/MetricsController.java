@@ -52,14 +52,31 @@ public class MetricsController {
 
         Map<String, Object> result = new LinkedHashMap<>();
 
-        // ── Funnel (all-time, excluding admin/test) ───────────────────────────
-        result.put("funnel", Map.of(
-            "pageViews",        count("page_view",          excl),
-            "modalOpens",       count("sign_in_modal_open", excl),
-            "registerAttempts", count("register_submit",    excl),
-            "registerSuccess",  count("register_success",   excl),
-            "signIns",          count("sign_in_success",    excl)
-        ));
+        // ── Daily trend – last 30 days (page views, modal opens, device split) ─
+        List<Map<String, Object>> daily30 = jdbc.queryForList(
+            "SELECT DATE(created_at AT TIME ZONE 'America/Los_Angeles')::text AS day, " +
+            "  SUM(CASE WHEN event_type = 'page_view' THEN 1 ELSE 0 END) AS page_views, " +
+            "  SUM(CASE WHEN event_type = 'sign_in_modal_open' THEN 1 ELSE 0 END) AS modal_opens, " +
+            "  SUM(CASE WHEN event_type = 'page_view' AND " +
+            "           (user_agent ILIKE '%mobile%' OR user_agent ILIKE '%android%' " +
+            "            OR user_agent ILIKE '%iphone%' OR user_agent ILIKE '%ipad%') THEN 1 ELSE 0 END) AS mobile_views, " +
+            "  SUM(CASE WHEN event_type = 'page_view' AND " +
+            "           NOT (user_agent ILIKE '%mobile%' OR user_agent ILIKE '%android%' " +
+            "                OR user_agent ILIKE '%iphone%' OR user_agent ILIKE '%ipad%') THEN 1 ELSE 0 END) AS desktop_views " +
+            "FROM user_action " +
+            "WHERE created_at >= NOW() - INTERVAL '30 days'" + excl +
+            " GROUP BY day ORDER BY day ASC");
+        result.put("daily30", daily30);
+
+        // ── New users per day – last 30 days ──────────────────────────────────
+        List<Map<String, Object>> newUsers30 = jdbc.queryForList(
+            "SELECT DATE(created_at AT TIME ZONE 'America/Los_Angeles')::text AS day, " +
+            "  SUM(CASE WHEN status = 'PENDING'     THEN 1 ELSE 0 END) AS new_pending, " +
+            "  SUM(CASE WHEN status = 'REGISTERED'  THEN 1 ELSE 0 END) AS new_registered " +
+            "FROM app_user " +
+            "WHERE created_at >= NOW() - INTERVAL '30 days' " +
+            "GROUP BY day ORDER BY day ASC");
+        result.put("newUsers30", newUsers30);
 
         // ── Today vs Yesterday (Pacific time) ────────────────────────────────
         result.put("today", Map.of(
@@ -120,25 +137,6 @@ public class MetricsController {
             "desktop", desktopCount == null ? 0 : desktopCount
         ));
 
-        // ── Daily page views (last 14 days) ───────────────────────────────────
-        List<Map<String, Object>> daily = jdbc.queryForList(
-            "SELECT DATE(created_at AT TIME ZONE 'America/Los_Angeles') AS day, " +
-            "       COUNT(*) AS views, " +
-            "       COUNT(DISTINCT session_id) AS sessions " +
-            "FROM user_action " +
-            "WHERE event_type = 'page_view' " +
-            "  AND created_at >= NOW() - INTERVAL '14 days'" + excl +
-            " GROUP BY day ORDER BY day DESC");
-        result.put("dailyViews", daily);
-
-        // ── Top events (last 30 days, excluding admin/test) ───────────────────
-        List<Map<String, Object>> topEvents = jdbc.queryForList(
-            "SELECT event_type, COUNT(*) AS total, " +
-            "       COUNT(DISTINCT session_id) AS unique_sessions " +
-            "FROM user_action " +
-            "WHERE created_at >= NOW() - INTERVAL '30 days'" + excl +
-            " GROUP BY event_type ORDER BY total DESC LIMIT 12");
-        result.put("topEvents", topEvents);
 
         return ResponseEntity.ok(result);
     }

@@ -3496,6 +3496,120 @@
         if (e.target.id === 'monitoring-modal') closeMonitoringModal();
     });
 
+    // ── Chart helpers ────────────────────────────────────────────────────────
+
+    // Fill a sparse [{day:'YYYY-MM-DD', ...}] array into a full 30-day array
+    function fillDays(sparse, zeroKeys) {
+        const byDay = {};
+        sparse.forEach(function(r) { byDay[r.day] = r; });
+        const out = [];
+        for (let i = 29; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dayStr = d.toISOString().substring(0, 10);
+            const zero = {};
+            zeroKeys.forEach(function(k) { zero[k] = 0; });
+            out.push(Object.assign({ day: dayStr }, zero, byDay[dayStr] || {}));
+        }
+        return out;
+    }
+
+    function numVal(v) { return typeof v === 'number' ? v : (Number(v) || 0); }
+
+    // Renders a multi-series trend line as inline SVG (no deps)
+    function buildTrendLineSvg(days, series) {
+        var W = 560, H = 120, padL = 0, padR = 0, padT = 8, padB = 22;
+        var chartW = W - padL - padR, chartH = H - padT - padB;
+        var n = days.length;
+        if (n < 2) return '<p style="color:rgba(255,255,255,0.25);font-size:0.8em;">Not enough data</p>';
+
+        var maxV = 1;
+        series.forEach(function(s) {
+            days.forEach(function(d) { var v = numVal(d[s.key]); if (v > maxV) maxV = v; });
+        });
+
+        function xPos(i) { return padL + (i / (n - 1)) * chartW; }
+        function yPos(v) { return padT + (1 - v / maxV) * chartH; }
+
+        // Faint horizontal guide lines
+        var guides = '';
+        [0.25, 0.5, 0.75, 1].forEach(function(f) {
+            var y = padT + (1 - f) * chartH;
+            guides += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y +
+                      '" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>';
+        });
+        // Max value label
+        guides += '<text x="' + padL + '" y="' + (padT - 2) + '" fill="rgba(255,255,255,0.18)" font-size="8">' + maxV + '</text>';
+
+        // Polylines
+        var lines = '';
+        series.forEach(function(s) {
+            var pts = days.map(function(d, i) { return xPos(i) + ',' + yPos(numVal(d[s.key])); }).join(' ');
+            lines += '<polyline points="' + pts + '" fill="none" stroke="' + s.color +
+                     '" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>';
+            // Dot on last point
+            var last = days[n - 1];
+            lines += '<circle cx="' + xPos(n - 1) + '" cy="' + yPos(numVal(last[s.key])) +
+                     '" r="2.5" fill="' + s.color + '"/>';
+        });
+
+        // X-axis labels (every ~7 days)
+        var xLabels = '';
+        days.forEach(function(d, i) {
+            if (i === 0 || i === n - 1 || i % 7 === 0) {
+                var parts = d.day.split('-');
+                var label = parseInt(parts[1]) + '/' + parseInt(parts[2]);
+                xLabels += '<text x="' + xPos(i) + '" y="' + H + '" fill="rgba(255,255,255,0.2)" ' +
+                           'font-size="9" text-anchor="middle">' + label + '</text>';
+            }
+        });
+
+        return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:' + H + 'px;display:block;" ' +
+               'xmlns="http://www.w3.org/2000/svg">' + guides + lines + xLabels + '</svg>';
+    }
+
+    // Renders a stacked bar chart (mobile / desktop per day) as inline SVG
+    function buildStackedBarSvg(days) {
+        var W = 560, H = 72, padB = 18, chartH = H - padB;
+        var n = days.length;
+        if (n === 0) return '';
+
+        var maxV = 1;
+        days.forEach(function(d) {
+            var t = numVal(d.mobile_views) + numVal(d.desktop_views);
+            if (t > maxV) maxV = t;
+        });
+
+        var slotW = W / n;
+        var barW = Math.max(1, slotW - 1);
+
+        var bars = '';
+        days.forEach(function(d, i) {
+            var mob = numVal(d.mobile_views), des = numVal(d.desktop_views);
+            var totalH = ((mob + des) / maxV) * chartH;
+            var mobH   = (mob / maxV) * chartH;
+            var desH   = totalH - mobH;
+            var x = i * slotW;
+            if (desH > 0)
+                bars += '<rect x="' + x + '" y="' + (chartH - totalH) + '" width="' + barW + '" height="' + desH + '" fill="#31f2fe" opacity="0.7"/>';
+            if (mobH > 0)
+                bars += '<rect x="' + x + '" y="' + (chartH - mobH) + '" width="' + barW + '" height="' + mobH + '" fill="#4e5ed6" opacity="0.8"/>';
+        });
+
+        var xLabels = '';
+        days.forEach(function(d, i) {
+            if (i === 0 || i === n - 1 || i % 7 === 0) {
+                var parts = d.day.split('-');
+                var label = parseInt(parts[1]) + '/' + parseInt(parts[2]);
+                xLabels += '<text x="' + (i * slotW + barW / 2) + '" y="' + H + '" fill="rgba(255,255,255,0.2)" ' +
+                           'font-size="9" text-anchor="middle">' + label + '</text>';
+            }
+        });
+
+        return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:' + H + 'px;display:block;" ' +
+               'xmlns="http://www.w3.org/2000/svg">' + bars + xLabels + '</svg>';
+    }
+
     function pct(num, denom) {
         if (!denom) return '—';
         return Math.round((num / denom) * 100) + '%';
@@ -3526,51 +3640,48 @@
         </div>`;
     }
 
-    function funnelRow(label, count, pctStr, dropColor, eventKey, period) {
-        const drillAttr = eventKey
-            ? `onclick="loadDrillDown('${eventKey}','${period||'alltime'}','${label}')"
-               style="cursor:pointer;"
-               onmouseover="this.querySelector('.funnel-label').style.color='rgba(255,255,255,0.9)'"
-               onmouseout="this.querySelector('.funnel-label').style.color='rgba(255,255,255,0.6)'"` : '';
-        return `
-        <div ${drillAttr} style="display:flex;align-items:center;gap:12px;padding:10px 0;
-                    border-bottom:0.5px solid rgba(255,255,255,0.06);${eventKey?'cursor:pointer;':''}">
-            <div class="funnel-label" style="width:180px;color:rgba(255,255,255,0.6);font-size:0.88em;">
-                ${label}${eventKey ? ' <span style="color:rgba(255,255,255,0.25);font-size:0.85em;">↗</span>' : ''}
-            </div>
-            <div style="font-size:1.2em;font-weight:700;color:#fff;width:70px;">${count.toLocaleString()}</div>
-            <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:4px;height:8px;">
-                <div style="background:${dropColor};height:8px;border-radius:4px;width:${pctStr};transition:width 0.4s;"></div>
-            </div>
-            <div style="width:44px;text-align:right;font-size:0.85em;color:rgba(255,255,255,0.45);">${pctStr}</div>
-        </div>`;
-    }
-
     function renderMetrics(m) {
-        const f = m.funnel;
         const td = m.today;
         const yd = m.yesterday;
-        const dev = m.devices;
-        const totalDevice = (dev.mobile + dev.desktop) || 1;
-        const mobilePct = Math.round((dev.mobile / totalDevice) * 100);
-        const desktopPct = 100 - mobilePct;
+
+        // Build 30-day filled arrays
+        const trend30    = fillDays(m.daily30    || [], ['page_views','modal_opens','mobile_views','desktop_views']);
+        const newUsers30 = fillDays(m.newUsers30 || [], ['new_pending','new_registered']);
+
+        // Merge newUsers data into trend array (same day key)
+        const nuByDay = {};
+        newUsers30.forEach(function(r) { nuByDay[r.day] = r; });
+        const combined = trend30.map(function(r) {
+            return Object.assign({}, r, nuByDay[r.day] || { new_pending: 0, new_registered: 0 });
+        });
+
+        const trendSvg = buildTrendLineSvg(combined, [
+            { key: 'page_views',     label: 'Page Views',       color: '#31f2fe' },
+            { key: 'modal_opens',    label: 'Sign-in Modal',    color: '#4e5ed6' },
+            { key: 'new_pending',    label: 'New Trial Users',  color: '#FF9500' },
+            { key: 'new_registered', label: 'New Registered',   color: '#17cc45' },
+        ]);
+
+        const stackedSvg = buildStackedBarSvg(trend30);
 
         document.getElementById('monitoring-updated').textContent =
             'Updated just now · All times Pacific · Admin/test accounts excluded';
 
         document.getElementById('monitoring-body').innerHTML = `
 
-        <!-- ── Funnel ── -->
-        <div style="margin-bottom:24px;">
+        <!-- ── 30-Day Trend Lines ── -->
+        <div style="margin-bottom:20px;">
             <div style="font-size:0.78em;font-weight:700;letter-spacing:0.8px;
-                        color:rgba(255,255,255,0.35);text-transform:uppercase;margin-bottom:12px;">
-                Acquisition Funnel (All Time)
+                        color:rgba(255,255,255,0.35);text-transform:uppercase;margin-bottom:8px;">
+                30-Day Trend
             </div>
-            ${funnelRow('Page Views',        f.pageViews,        '100%',                                   '#31f2fe', 'page_view',          'alltime')}
-            ${funnelRow('Sign-In Modal',     f.modalOpens,       pct(f.modalOpens, f.pageViews),           '#4e5ed6', 'sign_in_modal_open', 'alltime')}
-            ${funnelRow('Register Submit',   f.registerAttempts, pct(f.registerAttempts, f.pageViews),     '#FF9500', 'register_submit',    'alltime')}
-            ${funnelRow('Register Success',  f.registerSuccess,  pct(f.registerSuccess, f.pageViews),      '#17cc45', 'register_success',   'alltime')}
-            ${funnelRow('Return Sign-Ins',   f.signIns,          pct(f.signIns, f.registerSuccess),        '#7b8ff5', 'sign_in_success',    'alltime')}
+            <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;">
+                <span style="font-size:0.78em;color:rgba(255,255,255,0.5);"><span style="color:#31f2fe;">&#9632;</span> Page Views</span>
+                <span style="font-size:0.78em;color:rgba(255,255,255,0.5);"><span style="color:#4e5ed6;">&#9632;</span> Sign-in Modal</span>
+                <span style="font-size:0.78em;color:rgba(255,255,255,0.5);"><span style="color:#FF9500;">&#9632;</span> New Trial Users</span>
+                <span style="font-size:0.78em;color:rgba(255,255,255,0.5);"><span style="color:#17cc45;">&#9632;</span> New Registered</span>
+            </div>
+            ${trendSvg}
         </div>
 
         <!-- ── Today vs Yesterday ── -->
@@ -3585,7 +3696,7 @@
             ${statBox('Sign-Ins',      td.signIns,     diff(td.signIns,     yd.signIns),      'sign_in_success',  'today')}
         </div>
 
-        <!-- ── Users + Resume Reviews + Devices ── -->
+        <!-- ── Users + Resume Reviews + Sessions ── -->
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
             <div onclick="loadUserBehavior('REGISTERED')"
                  onmouseover="this.style.background='rgba(255,255,255,0.09)'"
@@ -3613,20 +3724,19 @@
                 <div style="font-size:2em;font-weight:800;letter-spacing:-1px;color:#7b8ff5;line-height:1;">${m.resumeReviewCount}</div>
                 <div style="font-size:0.78em;color:rgba(255,255,255,0.42);margin-top:4px;">Resume Reviews ↗</div>
             </div>
-            <div style="background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.08);
-                        border-radius:12px;padding:16px 18px;flex:1;min-width:160px;">
-                <div style="font-size:0.78em;color:rgba(255,255,255,0.42);margin-bottom:10px;">
-                    Device (30d page views)
-                </div>
-                <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
-                    <div style="flex:${mobilePct};background:#4e5ed6;height:10px;border-radius:4px 0 0 4px;"></div>
-                    <div style="flex:${desktopPct};background:#31f2fe;height:10px;border-radius:0 4px 4px 0;"></div>
-                </div>
-                <div style="font-size:0.8em;display:flex;gap:16px;">
-                    <span><span style="color:#7b8ff5">■</span> Mobile ${mobilePct}%</span>
-                    <span><span style="color:#31f2fe">■</span> Desktop ${desktopPct}%</span>
-                </div>
+        </div>
+
+        <!-- ── 30-Day Page Views by Device (stacked bar) ── -->
+        <div style="margin-bottom:24px;">
+            <div style="font-size:0.78em;font-weight:700;letter-spacing:0.8px;
+                        color:rgba(255,255,255,0.35);text-transform:uppercase;margin-bottom:8px;">
+                Page Views by Device — 30 Days
             </div>
+            <div style="display:flex;gap:14px;margin-bottom:8px;">
+                <span style="font-size:0.78em;color:rgba(255,255,255,0.5);"><span style="color:#4e5ed6;">&#9632;</span> Mobile</span>
+                <span style="font-size:0.78em;color:rgba(255,255,255,0.5);"><span style="color:#31f2fe;">&#9632;</span> Desktop</span>
+            </div>
+            ${stackedSvg}
         </div>
 
         <!-- ── Metric Drill-Down Panel ── -->
@@ -3651,25 +3761,6 @@
             </div>
             <div id="resume-review-body" style="color:rgba(255,255,255,0.5);font-size:0.85em;">Loading…</div>
         </div>
-
-        <!-- ── Top Events ── -->
-        <div style="font-size:0.78em;font-weight:700;letter-spacing:0.8px;
-                    color:rgba(255,255,255,0.35);text-transform:uppercase;margin-bottom:10px;">
-            Top Events (Last 30 Days)
-        </div>
-        <table style="width:100%;border-collapse:collapse;font-size:0.85em;">
-            <tr style="color:rgba(255,255,255,0.3);font-size:0.78em;">
-                <th style="text-align:left;padding:6px 0;font-weight:600;">Event</th>
-                <th style="text-align:right;padding:6px 8px;font-weight:600;">Count</th>
-                <th style="text-align:right;padding:6px 0;font-weight:600;">Unique Sessions</th>
-            </tr>
-            ${(m.topEvents || []).map(e => `
-            <tr style="border-top:0.5px solid rgba(255,255,255,0.05);">
-                <td style="padding:7px 0;color:rgba(255,255,255,0.7);">${e.event_type}</td>
-                <td style="padding:7px 8px;text-align:right;color:#fff;font-weight:600;">${Number(e.total).toLocaleString()}</td>
-                <td style="padding:7px 0;text-align:right;color:rgba(255,255,255,0.4);">${Number(e.unique_sessions).toLocaleString()}</td>
-            </tr>`).join('')}
-        </table>
         `;
     }
 
