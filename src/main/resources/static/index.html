@@ -2162,14 +2162,7 @@
         async function loadAlerts() {
             const container = document.getElementById('todo-modal-container');
             if (!currentUser && !isPendingUser) {
-                // Truly unauthenticated: show get-started only if board is empty and modal was dismissed
-                if (cards.length === 0 && signInModalDismissed) {
-                    container.innerHTML = '';
-                    container.appendChild(createGetStartedElement());
-                    container.style.display = 'block';
-                } else {
-                    container.style.display = 'none';
-                }
+                container.style.display = 'none';
                 return;
             }
             // Both REGISTERED and PENDING users can see interview alerts
@@ -2188,9 +2181,6 @@
             if (alerts.length > 0) {
                 alerts.forEach(a => container.appendChild(createAlertElement(a.message, a.alertKey)));
                 container.style.display = 'block';
-            } else if (cards.length === 0) {
-                container.appendChild(createGetStartedElement());
-                container.style.display = 'block';
             } else {
                 container.style.display = 'none';
             }
@@ -2198,10 +2188,6 @@
 
         async function closeTodoAlert(alertKey) {
             track('alert_dismiss', { alertKey });
-            if (alertKey === 'get-started') {
-                document.getElementById('todo-modal-container').style.display = 'none';
-                return;
-            }
             try {
                 await fetch(`${API_BASE_URL}/api/alerts/${alertKey}/dismiss`, {
                     method: 'POST', credentials: 'include'
@@ -2224,14 +2210,11 @@
             `;
             div.innerHTML = `
                 <div style="font-size:0.95em;font-weight:600;color:rgba(49,242,254,0.85);margin-bottom:10px;">
-                    Start here — before you even apply
+                    A referral beats 100 cold applications
                 </div>
                 <div style="margin-bottom:14px;color:rgba(255,255,255,0.65);">
-                    Add a card for every prospect on your radar: companies you're researching, positions you've bookmarked,
-                    past colleagues who could refer you, recruiters who've reached out, anyone you've spoken to who might know of an opening.
-                    <br><br>
-                    <strong style="color:rgba(255,255,255,0.8);">You need 8–10 prospects in Early Stage before there's any real momentum deeper in the funnel.</strong>
-                    PitStop will nudge you on what to do next as each one moves forward.
+                    Your first card should be someone who can put your name in front of a hiring manager.
+                    A warm intro from a past colleague is the single highest-leverage move in your job search — don't skip it.
                 </div>
                 <button onclick="openModal(null,'seeding')" style="
                     background: rgba(49,242,254,0.12);
@@ -2255,19 +2238,6 @@
                     width: 100%;
                     margin-top: 8px;
                 ">💬 Not sure where to start? Chat with us →</button>
-            `;
-            return div;
-        }
-
-        function createGetStartedElement() {
-            const div = document.createElement('div');
-            div.className = 'todo-modal-content';
-            div.style.background = 'rgba(78,94,214,0.15)';
-            div.style.border = '0.5px solid rgba(78,94,214,0.4)';
-            div.style.boxShadow = '0 2px 20px rgba(0,0,0,0.35), 0 0 0 0.5px rgba(78,94,214,0.15)';
-            div.innerHTML = `
-                <span>Start adding prospects to Early Stage — companies, positions, referrals, recruiters. Aim for 8–10 before expecting movement deeper in the funnel.</span>
-                <span class="close-todo-modal" onclick="closeTodoAlert('get-started')">&times;</span>
             `;
             return div;
         }
