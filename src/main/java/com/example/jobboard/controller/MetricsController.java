@@ -138,6 +138,18 @@ public class MetricsController {
         ));
 
 
+        // ── Mean page-view time (last 30 days) ───────────────────────────────
+        Double meanPvTime = jdbc.queryForObject(
+            "SELECT AVG(elapsed) FROM (" +
+            "  SELECT LEAST((event_data::jsonb->>'elapsedSeconds')::numeric, 3600) AS elapsed" +
+            "  FROM user_action" +
+            "  WHERE event_type = 'page_exit'" +
+            "    AND created_at >= NOW() - INTERVAL '30 days'" +
+            "    AND (event_data::jsonb->>'elapsedSeconds')::numeric > 1" + excl +
+            ") t",
+            Double.class);
+        result.put("meanPvSeconds", meanPvTime != null ? Math.round(meanPvTime) : null);
+
         return ResponseEntity.ok(result);
     }
 

@@ -1410,6 +1410,34 @@
             } catch (e) { /* never throw */ }
         }
 
+        // ── Page-exit elapsed time ────────────────────────────────────────────
+        const _pageStartTime = Date.now();
+        let _pageExitSent = false;
+
+        function sendPageExit() {
+            if (_pageExitSent) return;
+            _pageExitSent = true;
+            const elapsed = Math.round((Date.now() - _pageStartTime) / 1000);
+            if (elapsed < 2 || elapsed > 3600) return; // ignore bots / overnight tabs
+            const payload = JSON.stringify({
+                sessionId: getSessionId(),
+                eventType: 'page_exit',
+                eventData: { elapsedSeconds: elapsed },
+                page: window.location.pathname,
+                referrer: document.referrer || null
+            });
+            const url = (typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : '') + '/api/events';
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }));
+            } else {
+                fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload }).catch(() => {});
+            }
+        }
+
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') sendPageExit();
+        });
+        window.addEventListener('pagehide', sendPageExit);
         // ── End Event Tracking ────────────────────────────────────────────────
 
         // --- Global State ---
@@ -3871,6 +3899,13 @@
                 <div style="font-size:0.78em;color:rgba(255,255,255,0.42);margin-top:4px;">Trial Users ↗</div>
             </div>
             ${statBox('Active Sessions (7d)', m.activeSessions7d, null, 'sessions_7d', 'alltime')}
+            <div style="background:rgba(255,255,255,0.05);border:0.5px solid rgba(49,242,254,0.2);
+                        border-radius:12px;padding:16px 18px;min-width:120px;flex:1;">
+                <div style="font-size:2em;font-weight:800;letter-spacing:-1px;color:#31f2fe;line-height:1;">
+                    ${m.meanPvSeconds != null ? (m.meanPvSeconds >= 60 ? Math.floor(m.meanPvSeconds/60)+'m '+((m.meanPvSeconds%60)+'s') : m.meanPvSeconds+'s') : '—'}
+                </div>
+                <div style="font-size:0.78em;color:rgba(255,255,255,0.42);margin-top:4px;">Mean PV Time (30d)</div>
+            </div>
             <div onclick="loadResumeReviews()"
                  style="background:rgba(255,255,255,0.05);border:0.5px solid rgba(78,94,214,0.4);
                         border-radius:12px;padding:16px 18px;min-width:120px;flex:1;cursor:pointer;
