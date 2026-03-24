@@ -1036,6 +1036,89 @@
     </div>
     <!-- ── END MODULE 2.5: LANDING HERO MODAL ───────────────────────────── -->
 
+    <!-- ── MODULE 2.6: SURVEY MODAL ─────────────────────────────────────── -->
+    <div class="modal" id="survey-modal">
+        <div class="modal-content" style="position:relative;max-width:500px;padding:24px 24px 20px;">
+            <span onclick="closeSurveyModal()" style="position:absolute;right:16px;top:14px;font-size:22px;cursor:pointer;color:rgba(255,255,255,0.25);line-height:1;">&times;</span>
+
+            <!-- Thank-you state -->
+            <div id="survey-thankyou" style="display:none;text-align:center;padding:24px 0;">
+                <div style="font-size:2em;margin-bottom:10px;">🙏</div>
+                <div style="font-weight:700;font-size:1.1em;color:rgba(255,255,255,0.85);">Thank you!</div>
+                <div style="color:rgba(255,255,255,0.4);font-size:0.85em;margin-top:6px;">Your feedback helps us improve PitStop.</div>
+            </div>
+
+            <!-- Survey form -->
+            <div id="survey-form">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+                    <span style="font-size:1.4em;">📋</span>
+                    <span style="font-size:0.75em;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,0.3);text-transform:uppercase;">Quick Survey</span>
+                </div>
+                <h2 style="font-size:1.15em;font-weight:800;letter-spacing:-0.3px;margin:0 0 4px;">Help us make PitStop better</h2>
+                <p style="color:rgba(255,255,255,0.4);font-size:0.82em;margin:0 0 18px;">2 minutes · completely optional</p>
+
+                <!-- Q1 -->
+                <div style="margin-bottom:16px;">
+                    <div style="font-size:0.82em;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:8px;">1. How far along are you in your job search?</div>
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85em;color:rgba(255,255,255,0.65);"><input type="radio" name="surveyStage" value="Just starting to explore" style="accent-color:#31f2fe;"> Just starting to explore</label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85em;color:rgba(255,255,255,0.65);"><input type="radio" name="surveyStage" value="Actively applying" style="accent-color:#31f2fe;"> Actively applying</label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85em;color:rgba(255,255,255,0.65);"><input type="radio" name="surveyStage" value="Have interviews scheduled" style="accent-color:#31f2fe;"> Have interviews scheduled</label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85em;color:rgba(255,255,255,0.65);"><input type="radio" name="surveyStage" value="Evaluating offers" style="accent-color:#31f2fe;"> Evaluating offers</label>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div style="margin-bottom:16px;">
+                    <div style="font-size:0.82em;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:8px;">2. How long have you been looking?</div>
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85em;color:rgba(255,255,255,0.65);"><input type="radio" name="surveyDuration" value="Less than a month" style="accent-color:#31f2fe;"> Less than a month</label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85em;color:rgba(255,255,255,0.65);"><input type="radio" name="surveyDuration" value="1–3 months" style="accent-color:#31f2fe;"> 1–3 months</label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85em;color:rgba(255,255,255,0.65);"><input type="radio" name="surveyDuration" value="3–6 months" style="accent-color:#31f2fe;"> 3–6 months</label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85em;color:rgba(255,255,255,0.65);"><input type="radio" name="surveyDuration" value="6+ months" style="accent-color:#31f2fe;"> 6+ months</label>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div style="margin-bottom:16px;">
+                    <div style="font-size:0.82em;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:8px;">3. What kind of support would be most helpful?</div>
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85em;color:rgba(255,255,255,0.65);"><input type="radio" name="surveySupportNeed" value="Getting started" style="accent-color:#31f2fe;"> Getting started</label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85em;color:rgba(255,255,255,0.65);"><input type="radio" name="surveySupportNeed" value="Resume review" style="accent-color:#31f2fe;"> Resume review</label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85em;color:rgba(255,255,255,0.65);"><input type="radio" name="surveySupportNeed" value="Interview prep" style="accent-color:#31f2fe;"> Interview prep</label>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div style="margin-bottom:16px;">
+                    <div style="font-size:0.82em;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:8px;">4. Do you find this tracking method helpful?</div>
+                    <div style="display:flex;gap:14px;">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85em;color:rgba(255,255,255,0.65);"><input type="radio" name="surveyHelpful" value="yes" style="accent-color:#31f2fe;" onchange="document.getElementById('survey-helpful-reason').style.display='block';"> Yes</label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85em;color:rgba(255,255,255,0.65);"><input type="radio" name="surveyHelpful" value="no" style="accent-color:#31f2fe;" onchange="document.getElementById('survey-helpful-reason').style.display='block';"> No</label>
+                    </div>
+                    <div id="survey-helpful-reason" style="display:none;margin-top:8px;">
+                        <textarea id="survey-reason-text" rows="2" placeholder="Why? (optional)"
+                            style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.14);border-radius:8px;color:white;padding:9px 11px;font-size:0.83em;resize:vertical;outline:none;font-family:inherit;"></textarea>
+                    </div>
+                </div>
+
+                <!-- Q5 -->
+                <div style="margin-bottom:20px;">
+                    <div style="font-size:0.82em;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:8px;">5. Your email <span style="font-weight:400;color:rgba(255,255,255,0.3);">(optional — for follow-up)</span></div>
+                    <input id="survey-email" type="email" placeholder="you@example.com"
+                           style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.14);border-radius:8px;color:white;padding:9px 11px;font-size:0.85em;outline:none;"/>
+                </div>
+
+                <!-- Actions -->
+                <div style="display:flex;gap:9px;">
+                    <button onclick="submitSurvey()" style="flex:1;background:#4e5ed6;color:white;border:none;padding:12px 16px;border-radius:10px;font-size:0.9em;font-weight:700;cursor:pointer;">Submit</button>
+                    <button onclick="closeSurveyModal()" style="flex:1;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);border:0.5px solid rgba(255,255,255,0.14);padding:12px 16px;border-radius:10px;font-size:0.9em;cursor:pointer;">No thanks</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ── END MODULE 2.6: SURVEY MODAL ──────────────────────────────────── -->
+
     <!-- ── MODULE 3: BOARD ──────────────────────────────────────────────── -->
     <div class="board">
         <div class="column">
@@ -1958,6 +2041,48 @@
             localStorage.setItem('pitstop_hero_seen', '1');
         }
 
+        // ── Survey Modal ──────────────────────────────────────────────────────────
+
+        function openSurveyModal() {
+            localStorage.setItem('pitstop_survey_seen', '1');
+            document.getElementById('survey-form').style.display = '';
+            document.getElementById('survey-thankyou').style.display = 'none';
+            document.getElementById('survey-modal').classList.add('active');
+        }
+
+        function closeSurveyModal() {
+            document.getElementById('survey-modal').classList.remove('active');
+        }
+
+        async function submitSurvey() {
+            const getRadio = name => {
+                const el = document.querySelector('input[name="' + name + '"]:checked');
+                return el ? el.value : null;
+            };
+            const payload = {
+                jobSearchStage: getRadio('surveyStage'),
+                searchDuration: getRadio('surveyDuration'),
+                supportNeed:    getRadio('surveySupportNeed'),
+                findHelpful:    getRadio('surveyHelpful'),
+                helpfulReason:  document.getElementById('survey-reason-text').value.trim() || null,
+                email:          document.getElementById('survey-email').value.trim() || null
+            };
+            try {
+                await fetch(API_BASE_URL + '/api/survey', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (e) { /* silent */ }
+            document.getElementById('survey-form').style.display = 'none';
+            document.getElementById('survey-thankyou').style.display = '';
+            setTimeout(closeSurveyModal, 2000);
+        }
+
+        document.getElementById('survey-modal').addEventListener('click', function(e) {
+            if (e.target.id === 'survey-modal') closeSurveyModal();
+        });
+
         // ─────────────────────────────────────────────────────────────────────────
 
         function openSignInModal(prompt) {
@@ -2144,6 +2269,9 @@
             if (cards.length === 0) {
                 const seedingContainer = document.querySelector('[data-column="seeding"]');
                 if (seedingContainer) seedingContainer.appendChild(createEmptyBoardCTA());
+                if (!localStorage.getItem('pitstop_survey_seen')) {
+                    setTimeout(openSurveyModal, 3000);
+                }
             }
         }
 
@@ -3188,6 +3316,7 @@
             <div style="display:flex;gap:0;border-bottom:0.5px solid rgba(255,255,255,0.08);margin:4px 0 16px;">
                 <button id="mon-tab-metrics-btn" onclick="showMonTab('metrics')" style="background:none;border:none;border-bottom:2px solid #31f2fe;color:#31f2fe;padding:8px 16px 7px;cursor:pointer;font-size:0.82em;font-weight:600;letter-spacing:0.3px;margin-bottom:-1px;">Metrics</button>
                 <button id="mon-tab-chat-btn" onclick="showMonTab('chat')" style="background:none;border:none;border-bottom:2px solid transparent;color:rgba(255,255,255,0.4);padding:8px 16px 7px;cursor:pointer;font-size:0.82em;letter-spacing:0.3px;margin-bottom:-1px;">💬 Chat <span id="chat-open-badge" style="background:#FF6B6B;color:white;border-radius:10px;padding:1px 6px;font-size:0.78em;display:none;margin-left:3px;"></span></button>
+                <button id="mon-tab-surveys-btn" onclick="showMonTab('surveys')" style="background:none;border:none;border-bottom:2px solid transparent;color:rgba(255,255,255,0.4);padding:8px 16px 7px;cursor:pointer;font-size:0.82em;letter-spacing:0.3px;margin-bottom:-1px;">📋 Surveys</button>
             </div>
             <p style="font-size:0.8em; color:rgba(255,255,255,0.3); margin-bottom:20px;" id="monitoring-updated"></p>
             <div id="monitoring-body" style="color:rgba(255,255,255,0.65); font-size:0.9em;">
@@ -3196,6 +3325,9 @@
             <div id="monitoring-chat-body" style="display:none;color:rgba(255,255,255,0.65);font-size:0.9em;">
                 <div id="admin-chat-sessions"><p style="color:rgba(255,255,255,0.35);">Loading chats…</p></div>
                 <div id="chat-hours-editor"></div>
+            </div>
+            <div id="monitoring-surveys-body" style="display:none;color:rgba(255,255,255,0.65);font-size:0.9em;">
+                <div id="admin-surveys-list"><p style="color:rgba(255,255,255,0.35);">Loading surveys…</p></div>
             </div>
         </div>
     </div>
@@ -3225,19 +3357,27 @@
     }
 
     function showMonTab(tab) {
-        const isMetrics = tab === 'metrics';
-        document.getElementById('monitoring-body').style.display      = isMetrics ? '' : 'none';
-        document.getElementById('monitoring-updated').style.display   = isMetrics ? '' : 'none';
-        document.getElementById('monitoring-chat-body').style.display = isMetrics ? 'none' : '';
+        const isMetrics  = tab === 'metrics';
+        const isChat     = tab === 'chat';
+        const isSurveys  = tab === 'surveys';
+        document.getElementById('monitoring-body').style.display          = isMetrics ? '' : 'none';
+        document.getElementById('monitoring-updated').style.display       = isMetrics ? '' : 'none';
+        document.getElementById('monitoring-chat-body').style.display     = isChat    ? '' : 'none';
+        document.getElementById('monitoring-surveys-body').style.display  = isSurveys ? '' : 'none';
         const mBtn = document.getElementById('mon-tab-metrics-btn');
         const cBtn = document.getElementById('mon-tab-chat-btn');
-        mBtn.style.borderBottomColor = isMetrics ? '#31f2fe' : 'transparent';
-        mBtn.style.color = isMetrics ? '#31f2fe' : 'rgba(255,255,255,0.4)';
-        mBtn.style.fontWeight = isMetrics ? '600' : 'normal';
-        cBtn.style.borderBottomColor = isMetrics ? 'transparent' : '#31f2fe';
-        cBtn.style.color = isMetrics ? 'rgba(255,255,255,0.4)' : '#31f2fe';
-        cBtn.style.fontWeight = isMetrics ? 'normal' : '600';
-        if (!isMetrics) { loadAdminChat(); loadChatHours(); }
+        const sBtn = document.getElementById('mon-tab-surveys-btn');
+        [mBtn, cBtn, sBtn].forEach(b => {
+            b.style.borderBottomColor = 'transparent';
+            b.style.color = 'rgba(255,255,255,0.4)';
+            b.style.fontWeight = 'normal';
+        });
+        const active = isMetrics ? mBtn : isChat ? cBtn : sBtn;
+        active.style.borderBottomColor = '#31f2fe';
+        active.style.color = '#31f2fe';
+        active.style.fontWeight = '600';
+        if (isChat)    { loadAdminChat(); loadChatHours(); }
+        if (isSurveys) { loadAdminSurveys(); }
     }
 
     let _adminChatPoll = null;
@@ -3456,6 +3596,51 @@
             status.textContent = '✗ Network error';
             status.style.color = '#FF6B6B';
         }
+    }
+
+    // ── Survey admin tab ─────────────────────────────────────────────────────
+
+    function loadAdminSurveys() {
+        const body = document.getElementById('admin-surveys-list');
+        body.innerHTML = '<p style="color:rgba(255,255,255,0.35);">Loading…</p>';
+        fetch(API_BASE_URL + '/api/admin/surveys', { credentials: 'include' })
+            .then(r => r.ok ? r.json() : Promise.reject(r.status))
+            .then(renderAdminSurveys)
+            .catch(e => { body.innerHTML = '<p style="color:#FF6B6B;">Failed to load surveys (' + e + ').</p>'; });
+    }
+
+    function renderAdminSurveys(data) {
+        const body = document.getElementById('admin-surveys-list');
+        if (!data.surveys || data.surveys.length === 0) {
+            body.innerHTML = '<p style="color:rgba(255,255,255,0.3);padding:20px 0;">No survey responses yet.</p>';
+            return;
+        }
+        const totalEl = '<p style="font-size:0.78em;color:rgba(255,255,255,0.3);margin-bottom:12px;">' + data.total + ' response' + (data.total !== 1 ? 's' : '') + '</p>';
+        const cards = data.surveys.map(function(s) {
+            const email   = s.email ? '<span style="color:#31f2fe;">' + escHtml(s.email) + '</span>' : '<span style="color:rgba(255,255,255,0.25);">Anonymous</span>';
+            const ts      = s.createdAt ? s.createdAt.substring(0, 16).replace('T', ' ') : '';
+            const helpful = s.findHelpful
+                ? '<span style="color:' + (s.findHelpful === 'yes' ? '#17cc45' : '#FF6B6B') + ';">' + (s.findHelpful === 'yes' ? 'Yes ✓' : 'No ✗') + '</span>'
+                : '—';
+            const rows = [
+                ['Stage',    s.jobSearchStage],
+                ['Duration', s.searchDuration],
+                ['Needs',    s.supportNeed]
+            ].filter(function(r) { return r[1]; }).map(function(r) {
+                return '<div style="display:flex;gap:8px;margin-bottom:3px;"><span style="color:rgba(255,255,255,0.3);font-size:0.78em;min-width:68px;">' + r[0] + '</span><span style="color:rgba(255,255,255,0.65);font-size:0.82em;">' + escHtml(String(r[1])) + '</span></div>';
+            }).join('');
+            return '<div style="border:0.5px solid rgba(255,255,255,0.1);border-radius:12px;margin-bottom:12px;overflow:hidden;">'
+                + '<div style="background:rgba(255,255,255,0.04);padding:8px 14px;display:flex;justify-content:space-between;align-items:center;">'
+                + '<div>' + email + '</div>'
+                + '<div style="font-size:0.72em;color:rgba(255,255,255,0.25);">' + ts + '</div>'
+                + '</div>'
+                + '<div style="padding:10px 14px;">'
+                + rows
+                + '<div style="display:flex;gap:8px;margin-bottom:3px;"><span style="color:rgba(255,255,255,0.3);font-size:0.78em;min-width:68px;">Helpful?</span>' + helpful + '</div>'
+                + (s.helpfulReason ? '<div style="margin-top:6px;font-size:0.8em;color:rgba(255,255,255,0.5);border-top:0.5px solid rgba(255,255,255,0.07);padding-top:6px;white-space:pre-wrap;">' + escHtml(s.helpfulReason) + '</div>' : '')
+                + '</div></div>';
+        }).join('');
+        body.innerHTML = totalEl + cards;
     }
 
     function closeMonitoringModal() {
