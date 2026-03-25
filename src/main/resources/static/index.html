@@ -3902,7 +3902,7 @@
             <div style="background:rgba(255,255,255,0.05);border:0.5px solid rgba(49,242,254,0.2);
                         border-radius:12px;padding:16px 18px;min-width:120px;flex:1;">
                 <div style="font-size:2em;font-weight:800;letter-spacing:-1px;color:#31f2fe;line-height:1;">
-                    ${m.meanPvSeconds != null ? (m.meanPvSeconds >= 60 ? Math.floor(m.meanPvSeconds/60)+'m '+((m.meanPvSeconds%60)+'s') : m.meanPvSeconds+'s') : '—'}
+                    ${m.meanPvSeconds != null ? m.meanPvSeconds + 's' : '—'}
                 </div>
                 <div style="font-size:0.78em;color:rgba(255,255,255,0.42);margin-top:4px;">Mean PV Time (30d)</div>
             </div>
