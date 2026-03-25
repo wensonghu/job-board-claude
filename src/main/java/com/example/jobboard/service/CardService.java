@@ -35,6 +35,7 @@ public class CardService {
     @Transactional
     public Card createCard(Card card, Long userId) {
         card.setUserId(userId);
+        if (card.getDate() == null) card.setDate(LocalDate.now());
         applyInterviewStatusRule(card);
         Card saved = cardRepository.save(card);
         cardHistoryRepository.save(CardHistory.fromCard(saved));
@@ -47,7 +48,7 @@ public class CardService {
                 .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
         existing.setCompany(cardDetails.getCompany());
         existing.setPosition(cardDetails.getPosition());
-        existing.setDate(cardDetails.getDate());
+        existing.setDate(cardDetails.getDate() != null ? cardDetails.getDate() : LocalDate.now());
         existing.setAppliedDate(cardDetails.getAppliedDate());
         existing.setInterviewDate(cardDetails.getInterviewDate());
         existing.setReferredBy(cardDetails.getReferredBy());
@@ -88,6 +89,7 @@ public class CardService {
                 .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
         CardStage newStage = parseStage(stageName);
         existing.setStage(newStage);
+        existing.setDate(LocalDate.now());
         Card saved = cardRepository.save(existing);
         cardHistoryRepository.save(CardHistory.fromCard(saved));
         return saved;
