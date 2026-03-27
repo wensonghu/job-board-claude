@@ -3429,6 +3429,13 @@
         else badge.style.display = 'none';
 
         const body = document.getElementById('admin-chat-sessions');
+
+        // Preserve any draft replies the admin is currently typing
+        const drafts = {};
+        body.querySelectorAll('input[id^="admin-reply-"]').forEach(function(el) {
+            if (el.value) drafts[el.id] = el.value;
+        });
+
         if (!data.sessions || data.sessions.length === 0) {
             body.innerHTML = '<p style="color:rgba(255,255,255,0.3);padding:20px 0;">No open support chats.</p>';
             return;
@@ -3470,6 +3477,12 @@
                 </div>
             </div>`;
         }).join('');
+
+        // Restore any drafts that were in progress before the re-render
+        Object.keys(drafts).forEach(function(id) {
+            const el = document.getElementById(id);
+            if (el) { el.value = drafts[id]; el.focus(); }
+        });
     }
 
     async function adminSendReply(sessionId) {
