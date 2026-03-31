@@ -133,18 +133,22 @@ public class CardService {
      * Entries whose company name starts with "test" (case-insensitive) are excluded.
      */
     public List<Map<String, Object>> getPipelineSummary(Long userId) {
-        List<CardHistory> confirmedRecs = cardHistoryRepository
-                .findByUserIdAndStatusOrderByChangedAtAsc(userId, CardStatus.INTERVIEW_DATE_CONFIRMED);
+        // Earliest of any interview-related activity per company
+        List<CardHistory> interviewRecs = cardHistoryRepository
+                .findByUserIdAndStatusInOrderByChangedAtAsc(userId,
+                        List.of(CardStatus.INTERVIEW_SCHEDULE_PENDING,
+                                CardStatus.INTERVIEW_DATE_CONFIRMED,
+                                CardStatus.INTERVIEW_COMPLETED));
         List<CardHistory> completedRecs = cardHistoryRepository
                 .findByUserIdAndStatusOrderByChangedAtAsc(userId, CardStatus.INTERVIEW_COMPLETED);
 
-        // earliest confirmed per company
-        Map<String, Instant> firstConfirmed = new LinkedHashMap<>();
+        // earliest interview activity per company
+        Map<String, Instant> firstInterview = new LinkedHashMap<>();
         Map<String, String> companyByKey = new LinkedHashMap<>();
-        for (CardHistory h : confirmedRecs) {
+        for (CardHistory h : interviewRecs) {
             String k = pkey(h.getCompany());
             if (isTestCompany(k)) continue;
-            firstConfirmed.putIfAbsent(k, h.getChangedAt());
+            firstInterview.putIfAbsent(k, h.getChangedAt());
             companyByKey.putIfAbsent(k, h.getCompany());
         }
 
@@ -161,13 +165,13 @@ public class CardService {
         for (Map.Entry<String, String> e : companyByKey.entrySet()) {
             String k = e.getKey();
             String company = e.getValue();
-            Instant first = firstConfirmed.get(k);
+            Instant first = firstInterview.get(k);
             Instant last  = lastCompleted.get(k);
 
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("company", company);
             if (first != null) {
-                row.put("firstConfirmedDate", first.toString().substring(0, 10));
+                row.put("firstInterviewDate", first.toString().substring(0, 10));
                 if (last != null) {
                     row.put("lastCompletedDate", last.toString().substring(0, 10));
                     row.put("days", Math.max(0, Duration.between(first, last).toDays()));
@@ -178,7 +182,7 @@ public class CardService {
                     row.put("completed", false);
                 }
             } else {
-                row.put("firstConfirmedDate", null);
+                row.put("firstInterviewDate", null);
                 row.put("lastCompletedDate", last != null ? last.toString().substring(0, 10) : null);
                 row.put("days", null);
                 row.put("completed", last != null);
