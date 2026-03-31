@@ -3250,7 +3250,7 @@
             } catch(e) {}
 
             const STAGE_ORDER = ['seeding', 'applied', 'hm', 'next-rounds', 'final'];
-            const STAGE_NAME  = { seeding: 'Exploring', applied: 'Applied',
+            const STAGE_NAME  = { seeding: 'Exploring', applied: 'Recruiter',
                 hm: 'Hiring Mgr', 'next-rounds': 'Next Rounds', final: 'Final' };
 
             function isTestCo(name) {
@@ -3296,9 +3296,9 @@
                 if (list.some(c => c.status === 'rejected'))
                     return { st: 'rejected', days };
 
-                // Active: not rejected, not in final or early stage
+                // Active: not rejected, stage in recruiter (applied) / HM / next-rounds
                 const activeCards = list.filter(c =>
-                    c.status !== 'rejected' && ['hm', 'next-rounds'].includes(c.stage));
+                    c.status !== 'rejected' && ['applied', 'hm', 'next-rounds'].includes(c.stage));
                 if (activeCards.length) {
                     const stage = activeCards.reduce((best, c) =>
                         STAGE_ORDER.indexOf(c.stage) > STAGE_ORDER.indexOf(best) ? c.stage : best,
