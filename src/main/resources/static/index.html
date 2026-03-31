@@ -3280,9 +3280,10 @@
                     list[0].stage);
             }
 
-            // Status from current board; days from card_history min/max action dates.
-            // Backend strips [Offer] so company keys here match the parent company name.
-            // Status check includes both company and [Offer] variant cards.
+            // Status rules:
+            //   active       — not rejected, stage is HM or NEXT_ROUNDS (label includes stage name)
+            //   final-rejected — rejected at final stage
+            //   rejected     — rejected before final stage
             function resolveStatusAndDays(company, firstAction, lastAction) {
                 const list = [
                     ...(groupCards[company] || []),
@@ -3290,24 +3291,34 @@
                 ];
                 const days = daysBtwn(firstAction, lastAction);
 
-                if (list.some(c => c.status === 'offer-pending'))
-                    return { st: 'offer', days };
-                if (list.some(c => c.status === 'interview-date-confirmed' || c.status === 'interview-schedule-pending'))
-                    return { st: 'active', days };
                 if (list.some(c => c.status === 'rejected' && c.stage === 'final'))
                     return { st: 'final-rejected', days };
                 if (list.some(c => c.status === 'rejected'))
                     return { st: 'rejected', days };
+
+                // Active: not rejected, not in final or early stage
+                const activeCards = list.filter(c =>
+                    c.status !== 'rejected' && ['hm', 'next-rounds'].includes(c.stage));
+                if (activeCards.length) {
+                    const stage = activeCards.reduce((best, c) =>
+                        STAGE_ORDER.indexOf(c.stage) > STAGE_ORDER.indexOf(best) ? c.stage : best,
+                        activeCards[0].stage);
+                    return { st: 'active', stage, days };
+                }
                 return null;
             }
 
-            // Status badge HTML
-            function statusBadge(st) {
+            // Status badge HTML — active badge includes the stage name
+            function statusBadge(st, stage) {
+                if (st === 'active') {
+                    const stageName = STAGE_NAME[stage] || stage || '';
+                    return `<span style="background:rgba(49,242,254,0.1);border:0.5px solid #31f2fe;color:#31f2fe;
+                        padding:3px 9px;border-radius:20px;font-size:0.72em;font-weight:700;white-space:nowrap;">
+                        🔄 Active${stageName ? ' / ' + stageName : ''}</span>`;
+                }
                 const cfg = {
-                    offer:           { bg:'rgba(246,200,76,0.15)',  border:'#f6c84c', color:'#f6c84c',  label:'⏳ Offer Pending' },
-                    active:          { bg:'rgba(49,242,254,0.1)',   border:'#31f2fe', color:'#31f2fe',  label:'🔄 Active' },
-                    'final-rejected':{ bg:'rgba(255,107,107,0.1)', border:'#FF6B6B', color:'#FF6B6B',  label:'🔴 Final Rd – No Offer' },
-                    rejected:        { bg:'rgba(180,100,100,0.12)', border:'#c07880', color:'#c07880',  label:'🚫 Rejected' },
+                    'final-rejected': { bg:'rgba(255,107,107,0.1)', border:'#FF6B6B', color:'#FF6B6B', label:'🔴 Final Rd – No Offer' },
+                    rejected:         { bg:'rgba(180,100,100,0.12)', border:'#c07880', color:'#c07880', label:'🚫 Rejected' },
                 };
                 const c = cfg[st] || cfg.rejected;
                 return `<span style="background:${c.bg};border:0.5px solid ${c.border};color:${c.color};
@@ -3315,8 +3326,8 @@
                     ${c.label}</span>`;
             }
 
-            // Pipeline rows from backend (already filtered to HM+ companies, [Offer] merged)
-            const STATUS_SORT = { active: 0, offer: 1, 'final-rejected': 2, rejected: 3 };
+            // Pipeline rows from backend (HM+ companies, [Offer] merged)
+            const STATUS_SORT = { active: 0, 'final-rejected': 1, rejected: 2 };
             const pipelineRows = pipelines
                 .map(p => {
                     const resolved = resolveStatusAndDays(p.company, p.firstAction, p.lastAction);
@@ -3325,7 +3336,7 @@
                         ...(groupCards[p.company] || []),
                         ...(groupCards[p.company + ' [Offer]'] || [])
                     ]);
-                    return { company: p.company, st: resolved.st, days: resolved.days, adv };
+                    return { company: p.company, st: resolved.st, stage: resolved.stage, days: resolved.days, adv };
                 })
                 .filter(Boolean)
                 .sort((a, b) => {
@@ -3399,7 +3410,7 @@
                     <td style="padding:9px 12px 9px 0;font-size:0.85em;font-weight:600;
                         color:rgba(255,255,255,0.85);">${escHtml(r.company||'—')}</td>
                     <td style="padding:9px 16px;text-align:center;white-space:nowrap;">${daysLabel}${stageLabel}</td>
-                    <td style="padding:9px 0;white-space:nowrap;">${statusBadge(r.st)}</td>
+                    <td style="padding:9px 0;white-space:nowrap;">${statusBadge(r.st, r.stage)}</td>
                 </tr>`;
             }).join('');
 
