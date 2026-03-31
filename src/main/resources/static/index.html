@@ -3257,60 +3257,111 @@
                 return !name || name.trim().toLowerCase().startsWith('test');
             }
 
-            // Build current-status map per COMPANY from cards array (excluding test)
-            const groupStatus = {};
+            // Build card list per COMPANY from cards array (excluding test)
+            const groupCards = {};
             cards.forEach(c => {
                 if (isTestCo(c.company)) return;
                 const k = c.company || '';
-                if (!groupStatus[k]) groupStatus[k] = { stages: [], statuses: [] };
-                groupStatus[k].stages.push(c.stage);
-                groupStatus[k].statuses.push(c.status);
+                if (!groupCards[k]) groupCards[k] = [];
+                groupCards[k].push(c);
             });
-            function resolveStatus(company) {
-                const g = groupStatus[company || ''];
-                if (!g) return 'active';
-                if (g.statuses.includes('offer-pending'))       return 'offer';
-                if (g.statuses.includes('interview-completed') && g.stages.includes('final')) return 'done';
-                if (g.statuses.length && g.statuses.every(s => s === 'rejected')) return 'rejected';
-                return 'active';
+
+            function daysBtwn(d1, d2) {
+                if (!d1 || !d2) return null;
+                const a = new Date(d1), b = new Date(d2);
+                if (isNaN(a) || isNaN(b)) return null;
+                return Math.max(0, Math.round(Math.abs(b - a) / 86400000));
             }
+
             function mostAdvancedStage(company) {
-                const g = groupStatus[company || ''];
-                if (!g || !g.stages.length) return null;
-                return g.stages.reduce((best, s) =>
-                    STAGE_ORDER.indexOf(s) > STAGE_ORDER.indexOf(best) ? s : best, g.stages[0]);
+                const list = groupCards[company || ''] || [];
+                if (!list.length) return null;
+                return list.reduce((best, c) =>
+                    STAGE_ORDER.indexOf(c.stage) > STAGE_ORDER.indexOf(best) ? c.stage : best,
+                    list[0].stage);
+            }
+
+            function latestDate(list) {
+                return list.filter(c => c.date).sort((a, b) => b.date.localeCompare(a.date))[0]?.date || null;
+            }
+
+            /**
+             * Status rules (priority order):
+             * 1. offer-pending → offer
+             * 2. interview-completed at final → done
+             * 3. interview-date-confirmed or interview-schedule-pending → active,  days = today - firstConfirmed
+             * 4. rejected at final → final-rejected,  days = rejectedDate - firstConfirmed
+             * 5. rejected (not final) → rejected,      days = rejectedDate - firstConfirmed
+             * 6. everything else → inactive,            days = lastActionDate - firstConfirmed
+             */
+            function resolveStatusAndDays(company, firstConfirmedDate) {
+                const list = groupCards[company || ''] || [];
+                const today = new Date().toISOString().split('T')[0];
+
+                if (!list.length) return { st: 'inactive', days: null };
+
+                // 1. Offer pending
+                if (list.some(c => c.status === 'offer-pending'))
+                    return { st: 'offer', days: daysBtwn(firstConfirmedDate, today) };
+
+                // 2. Interview completed at final
+                const finalCompleted = list.filter(c => c.status === 'interview-completed' && c.stage === 'final');
+                if (finalCompleted.length)
+                    return { st: 'done', days: daysBtwn(firstConfirmedDate, latestDate(finalCompleted)) };
+
+                // 3. Active — upcoming confirmed or pending interview
+                if (list.some(c => c.status === 'interview-date-confirmed' || c.status === 'interview-schedule-pending'))
+                    return { st: 'active', days: daysBtwn(firstConfirmedDate, today) };
+
+                // 4. Rejected at final
+                const finalRejected = list.filter(c => c.status === 'rejected' && c.stage === 'final');
+                if (finalRejected.length)
+                    return { st: 'final-rejected', days: daysBtwn(firstConfirmedDate, latestDate(finalRejected)) };
+
+                // 5. Rejected (not final)
+                const rejected = list.filter(c => c.status === 'rejected');
+                if (rejected.length)
+                    return { st: 'rejected', days: daysBtwn(firstConfirmedDate, latestDate(rejected)) };
+
+                // 6. Inactive
+                return { st: 'inactive', days: daysBtwn(firstConfirmedDate, latestDate(list)) };
             }
 
             // Status badge HTML
             function statusBadge(st) {
                 const cfg = {
-                    done:     { bg:'rgba(23,204,69,0.15)',  border:'#17cc45', color:'#17cc45',  label:'✅ Done' },
-                    rejected: { bg:'rgba(255,107,107,0.12)',border:'#FF6B6B', color:'#FF6B6B',  label:'🚫 No Offer' },
-                    offer:    { bg:'rgba(246,200,76,0.15)', border:'#f6c84c', color:'#f6c84c',  label:'⏳ Offer Pending' },
-                    active:   { bg:'rgba(255,255,255,0.05)',border:'rgba(255,255,255,0.15)', color:'rgba(255,255,255,0.45)', label:'🔄 Active' },
+                    done:           { bg:'rgba(23,204,69,0.15)',   border:'#17cc45', color:'#17cc45',  label:'✅ Done' },
+                    offer:          { bg:'rgba(246,200,76,0.15)',  border:'#f6c84c', color:'#f6c84c',  label:'⏳ Offer Pending' },
+                    active:         { bg:'rgba(49,242,254,0.1)',   border:'#31f2fe', color:'#31f2fe',  label:'🔄 Active' },
+                    'final-rejected':{ bg:'rgba(255,107,107,0.1)', border:'#FF6B6B', color:'#FF6B6B',  label:'🔴 Final Rd – No Offer' },
+                    rejected:       { bg:'rgba(180,100,100,0.12)', border:'#c07880', color:'#c07880',  label:'🚫 Rejected' },
+                    inactive:       { bg:'rgba(255,255,255,0.04)', border:'rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.3)', label:'💤 Inactive' },
                 };
-                const c = cfg[st] || cfg.active;
+                const c = cfg[st] || cfg.inactive;
                 return `<span style="background:${c.bg};border:0.5px solid ${c.border};color:${c.color};
                     padding:3px 9px;border-radius:20px;font-size:0.72em;font-weight:700;white-space:nowrap;">
                     ${c.label}</span>`;
             }
 
-            // Enrich pipeline rows with current status + sort
+            // Enrich pipeline rows with status+days, sort
+            const STATUS_SORT = { active: 0, offer: 1, done: 2, 'final-rejected': 3, inactive: 4, rejected: 5 };
             const pipelineRows = pipelines
                 .filter(p => p.company && !isTestCo(p.company))
                 .map(p => {
-                    const st  = resolveStatus(p.company);
+                    const { st, days } = resolveStatusAndDays(p.company, p.firstConfirmedDate);
                     const adv = mostAdvancedStage(p.company);
-                    return { ...p, st, adv };
+                    return { company: p.company, firstConfirmedDate: p.firstConfirmedDate, st, days, adv };
                 })
                 .sort((a, b) => {
-                    const order = { done: 0, offer: 1, active: 2, rejected: 3 };
-                    if (order[a.st] !== order[b.st]) return order[a.st] - order[b.st];
-                    if (a.st === 'done') return (Number(b.days)||0) - (Number(a.days)||0);
+                    if (STATUS_SORT[a.st] !== STATUS_SORT[b.st]) return STATUS_SORT[a.st] - STATUS_SORT[b.st];
+                    if (a.st === 'done' || a.st === 'final-rejected')
+                        return (Number(b.days)||0) - (Number(a.days)||0);
                     return STAGE_ORDER.indexOf(b.adv) - STAGE_ORDER.indexOf(a.adv);
                 });
 
-            const completedRows = pipelineRows.filter(r => r.completed && r.days != null);
+            // Avg days: pipelines that have fully played out (done or final-rejected)
+            const completedRows = pipelineRows.filter(r =>
+                (r.st === 'done' || r.st === 'final-rejected') && r.days != null);
             const avgDays = completedRows.length
                 ? Math.round(completedRows.reduce((s, r) => s + Number(r.days), 0) / completedRows.length)
                 : null;
@@ -3356,9 +3407,11 @@
             const funnelHtml = funnelSteps.map(s => funnelBar(s, fAll)).join('');
 
             // ── Table rows ───────────────────────────────────────────────
+            const FINISHED = new Set(['done', 'final-rejected', 'rejected']);
             const pipelineTableRows = pipelineRows.map(r => {
-                const dayColor  = r.completed ? '#f6c84c' : 'rgba(255,255,255,0.55)';
-                const dayWeight = r.completed ? '800' : '500';
+                const isFinished = FINISHED.has(r.st);
+                const dayColor  = isFinished ? '#f6c84c' : 'rgba(255,255,255,0.55)';
+                const dayWeight = isFinished ? '800' : '500';
                 const daysLabel = r.days != null
                     ? `<span style="font-size:1.45em;font-weight:${dayWeight};color:${dayColor};line-height:1;">${r.days}</span><span style="font-size:0.72em;color:rgba(255,255,255,0.35);margin-left:2px;">d</span>`
                     : '<span style="color:rgba(255,255,255,0.2);">—</span>';
