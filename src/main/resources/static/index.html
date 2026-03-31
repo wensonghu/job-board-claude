@@ -3249,8 +3249,8 @@
                 if (pr.ok) { const pd = await pr.json(); pipelines = pd.pipelines || []; }
             } catch(e) {}
 
-            const STAGE_ORDER = ['seeding', 'applied', 'hm', 'next-rounds', 'final'];
-            const STAGE_NAME  = { seeding: 'Exploring', applied: 'Recruiter',
+            const STAGE_ORDER = ['seeding', 'recruiter', 'hm', 'next-rounds', 'final'];
+            const STAGE_NAME  = { seeding: 'Exploring', recruiter: 'Recruiter',
                 hm: 'Hiring Mgr', 'next-rounds': 'Next Rounds', final: 'Final' };
 
             function isTestCo(name) {
@@ -3357,10 +3357,10 @@
             const INTERVIEW_S = new Set(['interview-schedule-pending','interview-date-confirmed','interview-completed']);
             // KPI 1: Interview Conversion — early stage cards that got a recruiter interview confirmed
             const earlyCount = Object.values(kGroups).filter(g =>
-                g.stages.has('seeding') || g.stages.has('applied')).length;
+                g.stages.has('seeding') || g.stages.has('recruiter')).length;
             const gotInterviewCount = Object.values(kGroups).filter(g =>
                 g.stages.has('hm') || g.stages.has('next-rounds') || g.stages.has('final') ||
-                ((g.stages.has('seeding') || g.stages.has('applied')) && [...g.statuses].some(s => INTERVIEW_S.has(s)))
+                ((g.stages.has('seeding') || g.stages.has('recruiter')) && [...g.statuses].some(s => INTERVIEW_S.has(s)))
             ).length;
             // KPI 2: Recruiter → HM — companies that moved to HM stage
             const hmCount = Object.values(kGroups).filter(g =>

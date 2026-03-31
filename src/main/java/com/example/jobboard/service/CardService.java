@@ -153,7 +153,8 @@ public class CardService {
             minDate.merge(key, h.getDate(), (a, b) -> b.isBefore(a) ? b : a);
             maxDate.merge(key, h.getDate(), (a, b) -> b.isAfter(a) ? b : a);
 
-            if (h.getStage() == CardStage.HM
+            if (h.getStage() == CardStage.RECRUITER
+                    || h.getStage() == CardStage.HM
                     || h.getStage() == CardStage.NEXT_ROUNDS
                     || h.getStage() == CardStage.FINAL) {
                 advancedCompanies.add(key);
