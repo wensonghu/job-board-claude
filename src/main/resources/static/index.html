@@ -1264,7 +1264,7 @@
                 </div>
                 <div class="form-group">
                     <label>Stage</label>
-                    <select id="stage" required>
+                    <select id="stage" required onchange="autoPopulateApplied()">
                         <option value="early">🌱 Early Stage</option>
                         <option value="recruiter">📞 Recruiter Screening</option>
                         <option value="hm">👔 Hiring Manager Screening</option>
@@ -2696,6 +2696,8 @@
                 document.getElementById('details').value = card.details || '';
                 document.getElementById('stage').value = card.stage;
                 document.getElementById('status').value = card.status || 'in-progress';
+                // Auto-populate applied if missing and stage is beyond early
+                if (!card.appliedDate) autoPopulateApplied();
                 updateCharCount();
                 editingCardId = cardId;
             } else {
@@ -2707,6 +2709,8 @@
                 document.getElementById('status').value = 'in-progress';
                 // Pre-select stage if opened from a lane's + button
                 if (defaultStage) document.getElementById('stage').value = defaultStage;
+                // Auto-populate applied for non-early stages
+                autoPopulateApplied();
                 // clear new optional fields
                 document.getElementById('interviewDate').value = '';
                 document.getElementById('interviewTime').value = '';
@@ -2824,6 +2828,16 @@
             const show = document.getElementById('appliedChecked').checked;
             document.getElementById('appliedDate').style.display = show ? 'block' : 'none';
             if (!show) document.getElementById('appliedDate').value = '';
+        }
+
+        function autoPopulateApplied() {
+            const stage = document.getElementById('stage').value;
+            const alreadyChecked = document.getElementById('appliedChecked').checked;
+            if (stage !== 'early' && !alreadyChecked) {
+                document.getElementById('appliedChecked').checked = true;
+                document.getElementById('appliedDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('appliedDate').style.display = 'block';
+            }
         }
 
         // Character counter for details field
@@ -3354,10 +3368,28 @@
             cards.forEach(c => {
                 if (!c.company || isTestCo(c.company)) return;
                 const k = c.company;
-                if (!kGroups[k]) kGroups[k] = { stages: new Set(), statuses: new Set() };
+                if (!kGroups[k]) kGroups[k] = { stages: new Set(), statuses: new Set(), appliedDates: [] };
                 kGroups[k].stages.add(c.stage);
                 kGroups[k].statuses.add(c.status);
+                if (c.appliedDate) kGroups[k].appliedDates.push(c.appliedDate);
             });
+
+            // Distinct applications: companies with appliedDate OR any stage beyond early
+            const appliedCompanyCount = Object.values(kGroups).filter(g =>
+                g.appliedDates.length > 0 || [...g.stages].some(s => s !== 'early')
+            ).length;
+
+            // Earliest application date across all cards
+            const allAppliedDates = cards
+                .filter(c => c.appliedDate && !isTestCo(c.company))
+                .map(c => c.appliedDate)
+                .sort();
+            const firstAppliedDate = allAppliedDates.length > 0 ? allAppliedDates[0] : null;
+            function fmtDate(d) {
+                if (!d) return null;
+                const [y, m, day] = d.split('-');
+                return new Date(+y, +m - 1, +day).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            }
             const INTERVIEW_S = new Set(['interview-schedule-pending','interview-date-confirmed','interview-completed']);
             // KPI 1: Interview Conversion — early stage cards that got a recruiter interview confirmed
             const earlyCount = Object.values(kGroups).filter(g =>
@@ -3397,7 +3429,17 @@
                     <div style="font-size:0.62em;color:rgba(255,255,255,0.2);margin-top:3px;">${k.sub}</div>
                 </div>`;
             }
-            const kpiHtml = kpis.map(kpiTile).join('');
+            const appCountTile = `
+                <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:16px 12px;text-align:center;
+                    border:0.5px solid rgba(255,255,255,0.07);">
+                    <div style="font-size:2.1em;font-weight:800;color:rgba(255,255,255,0.85);line-height:1.05;letter-spacing:-1px;">
+                        ${appliedCompanyCount}
+                    </div>
+                    <div style="font-size:0.72em;font-weight:700;color:rgba(255,255,255,0.65);margin:6px 0 4px;
+                        text-transform:uppercase;letter-spacing:0.5px;">Applications</div>
+                    <div style="font-size:0.62em;color:rgba(255,255,255,0.2);margin-top:3px;">Unique companies</div>
+                </div>`;
+            const kpiHtml = appCountTile + kpis.map(kpiTile).join('');
 
             // ── Table rows ───────────────────────────────────────────────
             const FINISHED = new Set(['final-rejected', 'rejected']);
@@ -3455,11 +3497,12 @@
 
                 <div class="insight-card">
                     <div class="insight-card-header">
-                        <span>📈 Conversion Rates</span>
+                        <span>📈 Your Performance</span>
+                        ${firstAppliedDate ? `<span style="font-size:0.8em;color:rgba(255,255,255,0.35);font-weight:500;">since ${fmtDate(firstAppliedDate)}</span>` : ''}
                     </div>
 
-                    <!-- 3 KPI tiles -->
-                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;">
+                    <!-- 4 KPI tiles: applications + 3 conversion rates -->
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
                         ${kpiHtml}
                     </div>
 
