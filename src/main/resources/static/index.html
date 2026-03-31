@@ -3289,21 +3289,21 @@
                     ...(groupCards[company] || []),
                     ...(groupCards[company + ' [Offer]'] || [])
                 ];
-                const days = daysBtwn(firstAction, lastAction);
+                const today = new Date().toISOString().split('T')[0];
 
                 if (list.some(c => c.status === 'rejected' && c.stage === 'final'))
-                    return { st: 'final-rejected', days };
+                    return { st: 'final-rejected', days: daysBtwn(firstAction, lastAction) };
                 if (list.some(c => c.status === 'rejected'))
-                    return { st: 'rejected', days };
+                    return { st: 'rejected', days: daysBtwn(firstAction, lastAction) };
 
-                // Active: not rejected, not in early stage (seeding)
+                // Active: not rejected, not in early stage (seeding); end date = today
                 const activeCards = list.filter(c =>
                     c.status !== 'rejected' && c.stage !== 'seeding');
                 if (activeCards.length) {
                     const stage = activeCards.reduce((best, c) =>
                         STAGE_ORDER.indexOf(c.stage) > STAGE_ORDER.indexOf(best) ? c.stage : best,
                         activeCards[0].stage);
-                    return { st: 'active', stage, days };
+                    return { st: 'active', stage, days: daysBtwn(firstAction, today) };
                 }
                 return null;
             }
