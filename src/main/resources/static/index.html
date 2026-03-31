@@ -3165,7 +3165,7 @@
         }
 
         /** Build and render the Insight view from current cards data. */
-        async function buildInsightView() {
+        function buildInsightView() {
             // ── Week range helpers ──────────────────────────────────────────
             function getWeekRange(weeksAgo) {
                 const now = new Date();
@@ -3242,13 +3242,6 @@
                 progressMsg = 'You\'re building a solid pipeline with good weekly activity. Keep adding opportunities and following up to push into hiring manager and final-stage interviews.';
             }
 
-            // ── Pipeline Speed (backend data) ────────────────────────────
-            let pipelines = [];
-            try {
-                const pr = await fetch(`${API_BASE_URL}/api/cards/pipeline-summary`, { credentials: 'include' });
-                if (pr.ok) { const pd = await pr.json(); pipelines = pd.pipelines || []; }
-            } catch(e) {}
-
             const STAGE_ORDER = ['seeding', 'applied', 'hm', 'next-rounds', 'final'];
             const STAGE_NAME  = { seeding: 'Exploring', applied: 'Applied',
                 hm: 'Hiring Mgr', 'next-rounds': 'Next Rounds', final: 'Final' };
@@ -3257,7 +3250,7 @@
                 return !name || name.trim().toLowerCase().startsWith('test');
             }
 
-            // Build card list per COMPANY from cards array (excluding test)
+            // Build card list per company from cards array (excluding test)
             const groupCards = {};
             cards.forEach(c => {
                 if (isTestCo(c.company)) return;
@@ -3270,77 +3263,51 @@
                 if (!d1 || !d2) return null;
                 const a = new Date(d1), b = new Date(d2);
                 if (isNaN(a) || isNaN(b)) return null;
-                return Math.max(0, Math.round(Math.abs(b - a) / 86400000));
+                return Math.max(0, Math.round((b - a) / 86400000));
             }
 
-            function mostAdvancedStage(company) {
-                const list = groupCards[company || ''] || [];
+            function mostAdvancedStage(list) {
                 if (!list.length) return null;
                 return list.reduce((best, c) =>
                     STAGE_ORDER.indexOf(c.stage) > STAGE_ORDER.indexOf(best) ? c.stage : best,
                     list[0].stage);
             }
 
-            function latestDate(list) {
-                return list.filter(c => c.date).sort((a, b) => b.date.localeCompare(a.date))[0]?.date || null;
-            }
-
-            /**
-             * Status rules (priority order):
-             * 1. offer-pending → offer
-             * 2. interview-date-confirmed or interview-schedule-pending → active,  days = today - firstInterview
-             * 3. rejected at final → final-rejected,  days = rejectedDate - firstInterview
-             * 4. rejected (not final) → rejected,      days = rejectedDate - firstInterview
-             * (interview-completed at final and inactive are skipped — row excluded)
-             */
-            function resolveStatusAndDays(company, firstInterviewDate) {
-                const list = groupCards[company || ''] || [];
-                const today = new Date().toISOString().split('T')[0];
-
+            // Status + days for a company.
+            // Start = earliest card.date in group (incl. parent for [Offer]).
+            // End   = card.date of the most-advanced-stage card in group.
+            // Days  = end - start.
+            function resolveStatusAndDays(company) {
+                const list = groupCards[company] || [];
                 if (!list.length) return null;
 
-                // Start date = earliest date of any card that entered recruiter phase (HM+),
-                // regardless of current status — this is when the screening process truly began.
-                // For [Offer] cards, also pull in the parent company's HM+ cards.
-                const parentCompany = company.endsWith(' [Offer]')
-                    ? company.slice(0, -8) : null;
-                const parentList = parentCompany ? (groupCards[parentCompany] || []) : [];
-                const HM_PLUS = ['hm', 'next-rounds', 'final'];
-                const hmPlusDates = [...list, ...parentList]
-                    .filter(c => HM_PLUS.includes(c.stage) && c.date)
-                    .map(c => c.date).sort();
-                // Primary: earliest HM+ card date. Fallback: backend history date.
-                const startDate = hmPlusDates[0] || firstInterviewDate || null;
+                const parentKey = company.endsWith(' [Offer]') ? company.slice(0, -8) : null;
+                const allCards  = parentKey ? [...list, ...(groupCards[parentKey] || [])] : list;
 
-                // 1. Offer pending
+                const withDate  = allCards.filter(c => c.date);
+                const startDate = withDate.map(c => c.date).sort()[0] || null;
+                const endDate   = withDate.sort((a, b) =>
+                    STAGE_ORDER.indexOf(b.stage) - STAGE_ORDER.indexOf(a.stage))[0]?.date || null;
+                const days = daysBtwn(startDate, endDate);
+
                 if (list.some(c => c.status === 'offer-pending'))
-                    return { st: 'offer', days: daysBtwn(startDate, today) };
-
-                // 2. Active — upcoming confirmed or pending interview
+                    return { st: 'offer', days };
                 if (list.some(c => c.status === 'interview-date-confirmed' || c.status === 'interview-schedule-pending'))
-                    return { st: 'active', days: daysBtwn(startDate, today) };
-
-                // 3. Rejected at final
-                const finalRejected = list.filter(c => c.status === 'rejected' && c.stage === 'final');
-                if (finalRejected.length)
-                    return { st: 'final-rejected', days: daysBtwn(startDate, latestDate(finalRejected)) };
-
-                // 4. Rejected (not final)
-                const rejected = list.filter(c => c.status === 'rejected');
-                if (rejected.length)
-                    return { st: 'rejected', days: daysBtwn(startDate, latestDate(rejected)) };
-
-                // Skip everything else (interview-completed at final, inactive)
+                    return { st: 'active', days };
+                if (list.some(c => c.status === 'rejected' && c.stage === 'final'))
+                    return { st: 'final-rejected', days };
+                if (list.some(c => c.status === 'rejected'))
+                    return { st: 'rejected', days };
                 return null;
             }
 
             // Status badge HTML
             function statusBadge(st) {
                 const cfg = {
-                    offer:          { bg:'rgba(246,200,76,0.15)',  border:'#f6c84c', color:'#f6c84c',  label:'⏳ Offer Pending' },
-                    active:         { bg:'rgba(49,242,254,0.1)',   border:'#31f2fe', color:'#31f2fe',  label:'🔄 Active' },
+                    offer:           { bg:'rgba(246,200,76,0.15)',  border:'#f6c84c', color:'#f6c84c',  label:'⏳ Offer Pending' },
+                    active:          { bg:'rgba(49,242,254,0.1)',   border:'#31f2fe', color:'#31f2fe',  label:'🔄 Active' },
                     'final-rejected':{ bg:'rgba(255,107,107,0.1)', border:'#FF6B6B', color:'#FF6B6B',  label:'🔴 Final Rd – No Offer' },
-                    rejected:       { bg:'rgba(180,100,100,0.12)', border:'#c07880', color:'#c07880',  label:'🚫 Rejected' },
+                    rejected:        { bg:'rgba(180,100,100,0.12)', border:'#c07880', color:'#c07880',  label:'🚫 Rejected' },
                 };
                 const c = cfg[st] || cfg.rejected;
                 return `<span style="background:${c.bg};border:0.5px solid ${c.border};color:${c.color};
@@ -3348,21 +3315,24 @@
                     ${c.label}</span>`;
             }
 
-            // Enrich pipeline rows with status+days, filter nulls, sort
+            // Pipeline rows: all companies with HM+ stage cards, enriched with status+days
             const STATUS_SORT = { active: 0, offer: 1, 'final-rejected': 2, rejected: 3 };
-            const pipelineRows = pipelines
-                .filter(p => p.company && !isTestCo(p.company))
-                .map(p => {
-                    const resolved = resolveStatusAndDays(p.company, p.firstInterviewDate);
+            const pipelineRows = Object.keys(groupCards)
+                .filter(company => {
+                    const parentKey = company.endsWith(' [Offer]') ? company.slice(0, -8) : null;
+                    const allCards  = parentKey ? [...groupCards[company], ...(groupCards[parentKey] || [])] : groupCards[company];
+                    return allCards.some(c => ['hm', 'next-rounds', 'final'].includes(c.stage));
+                })
+                .map(company => {
+                    const resolved = resolveStatusAndDays(company);
                     if (!resolved) return null;
-                    const adv = mostAdvancedStage(p.company);
-                    return { company: p.company, firstInterviewDate: p.firstInterviewDate, st: resolved.st, days: resolved.days, adv };
+                    const adv = mostAdvancedStage(groupCards[company]);
+                    return { company, st: resolved.st, days: resolved.days, adv };
                 })
                 .filter(Boolean)
                 .sort((a, b) => {
                     if (STATUS_SORT[a.st] !== STATUS_SORT[b.st]) return STATUS_SORT[a.st] - STATUS_SORT[b.st];
-                    if (a.st === 'final-rejected')
-                        return (Number(b.days)||0) - (Number(a.days)||0);
+                    if (a.st === 'final-rejected') return (Number(b.days) || 0) - (Number(a.days) || 0);
                     return STAGE_ORDER.indexOf(b.adv) - STAGE_ORDER.indexOf(a.adv);
                 });
 
