@@ -128,8 +128,9 @@ public class CardService {
     }
 
     /**
-     * Per-company+position pipeline: days from first INTERVIEW_DATE_CONFIRMED to last
+     * Per-company pipeline: days from first INTERVIEW_DATE_CONFIRMED to last
      * INTERVIEW_COMPLETED (or elapsed to now if still in progress).
+     * Entries whose company name starts with "test" (case-insensitive) are excluded.
      */
     public List<Map<String, Object>> getPipelineSummary(Long userId) {
         List<CardHistory> confirmedRecs = cardHistoryRepository
@@ -137,34 +138,34 @@ public class CardService {
         List<CardHistory> completedRecs = cardHistoryRepository
                 .findByUserIdAndStatusOrderByChangedAtAsc(userId, CardStatus.INTERVIEW_COMPLETED);
 
-        // earliest confirmed per key
+        // earliest confirmed per company
         Map<String, Instant> firstConfirmed = new LinkedHashMap<>();
-        Map<String, String[]> pairByKey = new LinkedHashMap<>();
+        Map<String, String> companyByKey = new LinkedHashMap<>();
         for (CardHistory h : confirmedRecs) {
-            String k = pkey(h.getCompany(), h.getPosition());
+            String k = pkey(h.getCompany());
+            if (isTestCompany(k)) continue;
             firstConfirmed.putIfAbsent(k, h.getChangedAt());
-            pairByKey.putIfAbsent(k, new String[]{h.getCompany(), h.getPosition()});
+            companyByKey.putIfAbsent(k, h.getCompany());
         }
 
-        // latest completed per key (putAll always overwrites → last wins)
+        // latest completed per company (always overwrite → last wins)
         Map<String, Instant> lastCompleted = new LinkedHashMap<>();
         for (CardHistory h : completedRecs) {
-            String k = pkey(h.getCompany(), h.getPosition());
+            String k = pkey(h.getCompany());
+            if (isTestCompany(k)) continue;
             lastCompleted.put(k, h.getChangedAt());
-            pairByKey.putIfAbsent(k, new String[]{h.getCompany(), h.getPosition()});
+            companyByKey.putIfAbsent(k, h.getCompany());
         }
 
         List<Map<String, Object>> result = new ArrayList<>();
-        for (Map.Entry<String, String[]> e : pairByKey.entrySet()) {
+        for (Map.Entry<String, String> e : companyByKey.entrySet()) {
             String k = e.getKey();
-            String company  = e.getValue()[0];
-            String position = e.getValue()[1];
+            String company = e.getValue();
             Instant first = firstConfirmed.get(k);
             Instant last  = lastCompleted.get(k);
 
             Map<String, Object> row = new LinkedHashMap<>();
-            row.put("company",  company);
-            row.put("position", position);
+            row.put("company", company);
             if (first != null) {
                 row.put("firstConfirmedDate", first.toString().substring(0, 10));
                 if (last != null) {
@@ -187,8 +188,12 @@ public class CardService {
         return result;
     }
 
-    private String pkey(String company, String position) {
-        return (company != null ? company : "") + "||" + (position != null ? position : "");
+    private String pkey(String company) {
+        return company != null ? company : "";
+    }
+
+    private boolean isTestCompany(String companyKey) {
+        return companyKey.toLowerCase().startsWith("test");
     }
 
     /** Returns deduplicated completed interview events from history, for the calendar. */
