@@ -3296,7 +3296,11 @@
                 if (list.some(c => c.status === 'rejected'))
                     return { st: 'rejected', days: daysBtwn(firstAction, lastAction) };
 
-                // Active: not rejected, not in early stage; end date = today
+                // Active: not rejected, not early stage, last action within 2 weeks
+                const twoWeeksAgo = new Date(); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+                const lastActionDate = new Date(lastAction + 'T00:00:00');
+                if (lastActionDate < twoWeeksAgo) return null;
+
                 const activeCards = list.filter(c =>
                     c.status !== 'rejected' && c.stage !== 'early');
                 if (activeCards.length) {
