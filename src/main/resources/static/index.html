@@ -3299,15 +3299,18 @@
 
                 if (!list.length) return null;
 
-                // Safety net: also consider the earliest date on any HM+ card.
-                // Migrated data can have changedAt = import date (wrong), but card.date
-                // (last action date) still reflects the real February processing date.
-                const hmPlusDates = list
-                    .filter(c => ['hm','next-rounds','final'].includes(c.stage) && c.date)
+                // Start date = earliest date of any card that entered recruiter phase (HM+),
+                // regardless of current status — this is when the screening process truly began.
+                // For [Offer] cards, also pull in the parent company's HM+ cards.
+                const parentCompany = company.endsWith(' [Offer]')
+                    ? company.slice(0, -8) : null;
+                const parentList = parentCompany ? (groupCards[parentCompany] || []) : [];
+                const HM_PLUS = ['hm', 'next-rounds', 'final'];
+                const hmPlusDates = [...list, ...parentList]
+                    .filter(c => HM_PLUS.includes(c.stage) && c.date)
                     .map(c => c.date).sort();
-                const earliestCardDate = hmPlusDates[0] || null;
-                const candidates = [firstInterviewDate, earliestCardDate].filter(Boolean);
-                const startDate = candidates.length ? candidates.sort()[0] : firstInterviewDate;
+                // Primary: earliest HM+ card date. Fallback: backend history date.
+                const startDate = hmPlusDates[0] || firstInterviewDate || null;
 
                 // 1. Offer pending
                 if (list.some(c => c.status === 'offer-pending'))
