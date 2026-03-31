@@ -10,4 +10,5 @@ public interface CardHistoryRepository extends JpaRepository<CardHistory, Long> 
     List<CardHistory> findByCardIdOrderByChangedAtAsc(Long cardId);
     List<CardHistory> findByUserIdOrderByChangedAtDesc(Long userId);
     List<CardHistory> findByUserIdAndStatusAndInterviewDateIsNotNull(Long userId, CardStatus status);
+    List<CardHistory> findByUserIdAndStatusOrderByChangedAtAsc(Long userId, CardStatus status);
 }

@@ -3165,7 +3165,7 @@
         }
 
         /** Build and render the Insight view from current cards data. */
-        function buildInsightView() {
+        async function buildInsightView() {
             // ── Week range helpers ──────────────────────────────────────────
             function getWeekRange(weeksAgo) {
                 const now = new Date();
@@ -3242,77 +3242,130 @@
                 progressMsg = 'You\'re building a solid pipeline with good weekly activity. Keep adding opportunities and following up to push into hiring manager and final-stage interviews.';
             }
 
-            // ── Pipeline Speed ───────────────────────────────────────────
+            // ── Pipeline Speed (backend data) ────────────────────────────
+            let pipelines = [];
+            try {
+                const pr = await fetch(`${API_BASE_URL}/api/cards/pipeline-summary`, { credentials: 'include' });
+                if (pr.ok) { const pd = await pr.json(); pipelines = pd.pipelines || []; }
+            } catch(e) {}
+
             const STAGE_ORDER = ['seeding', 'applied', 'hm', 'next-rounds', 'final'];
             const STAGE_NAME  = { seeding: 'Exploring', applied: 'Applied',
                 hm: 'Hiring Mgr', 'next-rounds': 'Next Rounds', final: 'Final' };
 
-            function daysBetween(d1, d2) {
-                const a = new Date(d1), b = new Date(d2);
-                return Math.max(0, Math.round(Math.abs(b - a) / 86400000));
+            // Build current-status map per company+position from cards array
+            const groupStatus = {};
+            cards.forEach(c => {
+                const k = (c.company||'')+'||'+(c.position||'');
+                if (!groupStatus[k]) groupStatus[k] = { stages: [], statuses: [] };
+                groupStatus[k].stages.push(c.stage);
+                groupStatus[k].statuses.push(c.status);
+            });
+            function resolveStatus(company, position) {
+                const g = groupStatus[(company||'')+'||'+(position||'')];
+                if (!g) return 'active';
+                if (g.statuses.includes('offer-pending'))       return 'offer';
+                if (g.statuses.includes('interview-completed') && g.stages.includes('final')) return 'done';
+                if (g.statuses.every(s => s === 'rejected'))    return 'rejected';
+                return 'active';
+            }
+            function mostAdvancedStage(company, position) {
+                const g = groupStatus[(company||'')+'||'+(position||'')];
+                if (!g || !g.stages.length) return null;
+                return g.stages.reduce((best, s) =>
+                    STAGE_ORDER.indexOf(s) > STAGE_ORDER.indexOf(best) ? s : best, g.stages[0]);
             }
 
-            // Group by company + position (case-sensitive, same as backend)
-            const groups = {};
-            cards.forEach(c => {
-                const key = (c.company || '') + '||' + (c.position || '');
-                if (!groups[key]) groups[key] = { company: c.company, position: c.position, cards: [] };
-                groups[key].cards.push(c);
-            });
+            // Status badge HTML
+            function statusBadge(st) {
+                const cfg = {
+                    done:     { bg:'rgba(23,204,69,0.15)',  border:'#17cc45', color:'#17cc45',  label:'✅ Done' },
+                    rejected: { bg:'rgba(255,107,107,0.12)',border:'#FF6B6B', color:'#FF6B6B',  label:'🚫 No Offer' },
+                    offer:    { bg:'rgba(246,200,76,0.15)', border:'#f6c84c', color:'#f6c84c',  label:'⏳ Offer Pending' },
+                    active:   { bg:'rgba(255,255,255,0.05)',border:'rgba(255,255,255,0.15)', color:'rgba(255,255,255,0.45)', label:'🔄 Active' },
+                };
+                const c = cfg[st] || cfg.active;
+                return `<span style="background:${c.bg};border:0.5px solid ${c.border};color:${c.color};
+                    padding:3px 9px;border-radius:20px;font-size:0.72em;font-weight:700;white-space:nowrap;">
+                    ${c.label}</span>`;
+            }
 
-            const today = new Date().toISOString().split('T')[0];
-            const pipelineRows = Object.values(groups)
-                .filter(g => g.company || g.position)
-                .map(g => {
-                    const finalDone = g.cards.find(c =>
-                        c.status === 'interview-completed' && c.stage === 'final');
-                    if (finalDone) {
-                        const days = (finalDone.appliedDate && finalDone.date)
-                            ? daysBetween(finalDone.appliedDate, finalDone.date) : null;
-                        return { company: g.company, position: g.position,
-                            done: true, days, stage: 'final', stageIdx: 4 };
-                    }
-                    const mostAdv = [...g.cards].sort((a, b) =>
-                        STAGE_ORDER.indexOf(b.stage) - STAGE_ORDER.indexOf(a.stage))[0];
-                    const elapsed = mostAdv.appliedDate
-                        ? daysBetween(mostAdv.appliedDate, today) : null;
-                    return { company: g.company, position: g.position,
-                        done: false, days: elapsed, stage: mostAdv.stage,
-                        stageIdx: STAGE_ORDER.indexOf(mostAdv.stage) };
+            // Enrich pipeline rows with current status + sort
+            const pipelineRows = pipelines
+                .filter(p => p.company || p.position)
+                .map(p => {
+                    const st = resolveStatus(p.company, p.position);
+                    const adv = mostAdvancedStage(p.company, p.position);
+                    return { ...p, st, adv };
                 })
                 .sort((a, b) => {
-                    if (a.done !== b.done) return a.done ? -1 : 1;
-                    if (a.done) return (b.days || 0) - (a.days || 0);
-                    return b.stageIdx - a.stageIdx;
+                    const order = { done: 0, offer: 1, active: 2, rejected: 3 };
+                    if (order[a.st] !== order[b.st]) return order[a.st] - order[b.st];
+                    if (a.st === 'done') return (Number(b.days)||0) - (Number(a.days)||0);
+                    return STAGE_ORDER.indexOf(b.adv) - STAGE_ORDER.indexOf(a.adv);
                 });
 
-            const completedRows = pipelineRows.filter(r => r.done && r.days != null);
+            const completedRows = pipelineRows.filter(r => r.completed && r.days != null);
             const avgDays = completedRows.length
-                ? Math.round(completedRows.reduce((s, r) => s + r.days, 0) / completedRows.length)
+                ? Math.round(completedRows.reduce((s, r) => s + Number(r.days), 0) / completedRows.length)
                 : null;
 
-            function stageBadge(stage) {
-                const colors = { seeding: '#6c757d', applied: '#4e5ed6',
-                    hm: '#e67e22', 'next-rounds': '#8e44ad', final: '#f6c84c' };
-                const c = colors[stage] || '#555';
-                return `<span style="background:${c};color:#fff;padding:2px 7px;border-radius:8px;
-                    font-size:0.72em;font-weight:700;white-space:nowrap;">${STAGE_NAME[stage] || stage}</span>`;
-            }
+            // ── Funnel data (from cards array) ───────────────────────────
+            const fGroups = {};
+            cards.forEach(c => {
+                const k = (c.company||'')+'||'+(c.position||'');
+                if (!c.company && !c.position) return;
+                if (!fGroups[k]) fGroups[k] = { stages: new Set(), statuses: new Set() };
+                fGroups[k].stages.add(c.stage);
+                fGroups[k].statuses.add(c.status);
+            });
+            const fAll     = Object.keys(fGroups).length;
+            const INTERVIEW_S = new Set(['interview-schedule-pending','interview-date-confirmed','interview-completed']);
+            const fInterview  = Object.values(fGroups).filter(g => [...g.statuses].some(s => INTERVIEW_S.has(s))).length;
+            const fHMplus     = Object.values(fGroups).filter(g => g.stages.has('hm') || g.stages.has('next-rounds') || g.stages.has('final')).length;
+            const fFinal      = Object.values(fGroups).filter(g => g.stages.has('final')).length;
+            const fOffer      = Object.values(fGroups).filter(g => g.statuses.has('offer-pending')).length;
+            const funnelSteps = [
+                { label: 'Tracked',       count: fAll,       color: '#4e5ed6' },
+                { label: 'Got Interview', count: fInterview,  color: '#e67e22' },
+                { label: 'HM / Next Rnd', count: fHMplus,    color: '#8e44ad' },
+                { label: 'Final Round',   count: fFinal,     color: '#f6c84c' },
+                { label: 'Offer',         count: fOffer,     color: '#17cc45' },
+            ];
 
-            const pipelineTableRows = pipelineRows.map(r => `
-                <tr style="border-bottom:0.5px solid rgba(255,255,255,0.06);">
-                    <td style="padding:7px 8px 7px 0;color:rgba(255,255,255,0.85);font-size:0.82em;">
-                        ${escHtml(r.company || '—')}</td>
-                    <td style="padding:7px 8px;color:rgba(255,255,255,0.6);font-size:0.78em;">
-                        ${escHtml(r.position || '—')}</td>
-                    <td style="padding:7px 8px;white-space:nowrap;">${stageBadge(r.stage)}</td>
-                    <td style="padding:7px 8px;color:${r.done ? '#f6c84c' : 'rgba(255,255,255,0.5)'};
-                        font-size:0.82em;font-weight:${r.done ? '700' : '400'};white-space:nowrap;">
-                        ${r.days != null ? r.days + 'd' : '—'}</td>
-                    <td style="padding:7px 0 7px 8px;font-size:0.8em;white-space:nowrap;">
-                        ${r.done ? '<span style="color:#17cc45;">✅ Done</span>'
-                                 : '<span style="color:rgba(255,255,255,0.35);">🔄 Active</span>'}</td>
-                </tr>`).join('');
+            function funnelBar(step, maxCount) {
+                const pct = maxCount > 0 ? Math.max(4, Math.round((step.count / maxCount) * 100)) : 4;
+                return `
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px;">
+                    <div style="flex:0 0 96px;font-size:0.73em;color:rgba(255,255,255,0.4);
+                        text-align:right;white-space:nowrap;">${escHtml(step.label)}</div>
+                    <div style="flex:1;height:26px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden;">
+                        <div style="height:100%;width:${pct}%;background:${step.color};opacity:0.75;border-radius:3px;
+                            display:flex;align-items:center;padding-left:8px;min-width:28px;
+                            transition:width 0.4s ease;">
+                            <span style="font-size:0.82em;font-weight:700;color:#fff;">${step.count}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            const funnelHtml = funnelSteps.map(s => funnelBar(s, fAll)).join('');
+
+            // ── Table rows ───────────────────────────────────────────────
+            const pipelineTableRows = pipelineRows.map(r => {
+                const dayColor = r.completed ? '#f6c84c' : 'rgba(255,255,255,0.55)';
+                const dayWeight = r.completed ? '800' : '500';
+                const daysLabel = r.days != null ? `<span style="font-size:1.45em;font-weight:${dayWeight};color:${dayColor};line-height:1;">${r.days}</span><span style="font-size:0.72em;color:rgba(255,255,255,0.35);margin-left:2px;">d</span>` : '<span style="color:rgba(255,255,255,0.2);">—</span>';
+                const stageLabel = r.adv ? `<span style="font-size:0.7em;color:rgba(255,255,255,0.3);display:block;margin-top:2px;">${STAGE_NAME[r.adv]||r.adv}</span>` : '';
+                return `
+                <tr style="border-bottom:0.5px solid rgba(255,255,255,0.05);">
+                    <td style="padding:9px 12px 9px 0;">
+                        <div style="font-size:0.83em;font-weight:600;color:rgba(255,255,255,0.85);">${escHtml(r.company||'—')}</div>
+                        <div style="font-size:0.73em;color:rgba(255,255,255,0.4);margin-top:1px;">${escHtml(r.position||'—')}</div>
+                    </td>
+                    <td style="padding:9px 16px;text-align:center;white-space:nowrap;">${daysLabel}${stageLabel}</td>
+                    <td style="padding:9px 0;white-space:nowrap;">${statusBadge(r.st)}</td>
+                </tr>`;
+            }).join('');
 
             // ── Render ──────────────────────────────────────────────────────
             document.getElementById('insight-content').innerHTML = `
@@ -3352,37 +3405,36 @@
                 <div class="insight-card">
                     <div class="insight-card-header">
                         <span>⏱ Pipeline Speed</span>
-                        <span style="font-size:0.78em;color:rgba(255,255,255,0.35);font-weight:500;">
-                            Applied → Final Interview</span>
+                        ${avgDays != null ? `<span style="font-size:0.78em;color:rgba(255,255,255,0.35);font-weight:500;">First Interview → Final Completed</span>` : ''}
                     </div>
+
+                    <!-- Funnel -->
+                    <div style="margin-bottom:20px;">${funnelHtml}</div>
+
+                    <!-- Avg days stat -->
                     ${avgDays != null ? `
-                    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:16px;">
-                        <span style="font-size:2.4em;font-weight:800;color:#f6c84c;letter-spacing:-1px;line-height:1;">
-                            ${avgDays}</span>
-                        <span style="font-size:0.85em;color:rgba(255,255,255,0.5);">
-                            days avg &nbsp;·&nbsp; ${completedRows.length} final round${completedRows.length > 1 ? 's' : ''} completed</span>
+                    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:18px;
+                        padding:12px 14px;background:rgba(246,200,76,0.07);border-radius:10px;
+                        border:0.5px solid rgba(246,200,76,0.2);">
+                        <span style="font-size:2.6em;font-weight:800;color:#f6c84c;letter-spacing:-2px;line-height:1;">${avgDays}</span>
+                        <span style="font-size:0.85em;color:rgba(255,255,255,0.45);">days avg &nbsp;·&nbsp; ${completedRows.length} pipeline${completedRows.length > 1 ? 's' : ''} completed</span>
                     </div>` : `
-                    <p style="font-size:0.85em;color:rgba(255,255,255,0.4);margin:0 0 16px;">
-                        No completed final round interviews yet — data will appear once a card reaches
-                        Final stage with Interview Completed status.</p>`}
+                    <p style="font-size:0.82em;color:rgba(255,255,255,0.35);margin:0 0 18px;">
+                        Days will appear once a card reaches Final stage with Interview Completed status.</p>`}
+
+                    <!-- Per-company table -->
                     ${pipelineRows.length > 0 ? `
                     <div style="overflow-x:auto;">
                     <table style="width:100%;border-collapse:collapse;">
                         <thead>
-                            <tr style="border-bottom:0.5px solid rgba(255,255,255,0.12);">
-                                <th style="text-align:left;padding:0 8px 8px 0;font-size:0.72em;
+                            <tr style="border-bottom:0.5px solid rgba(255,255,255,0.1);">
+                                <th style="text-align:left;padding:0 0 8px;font-size:0.7em;
                                     color:rgba(255,255,255,0.3);font-weight:600;letter-spacing:0.6px;
-                                    text-transform:uppercase;">Company</th>
-                                <th style="text-align:left;padding:0 8px 8px;font-size:0.72em;
-                                    color:rgba(255,255,255,0.3);font-weight:600;letter-spacing:0.6px;
-                                    text-transform:uppercase;">Position</th>
-                                <th style="text-align:left;padding:0 8px 8px;font-size:0.72em;
-                                    color:rgba(255,255,255,0.3);font-weight:600;letter-spacing:0.6px;
-                                    text-transform:uppercase;">Stage</th>
-                                <th style="text-align:left;padding:0 8px 8px;font-size:0.72em;
+                                    text-transform:uppercase;">Company · Position</th>
+                                <th style="text-align:center;padding:0 16px 8px;font-size:0.7em;
                                     color:rgba(255,255,255,0.3);font-weight:600;letter-spacing:0.6px;
                                     text-transform:uppercase;">Days</th>
-                                <th style="text-align:left;padding:0 0 8px 8px;font-size:0.72em;
+                                <th style="text-align:left;padding:0 0 8px;font-size:0.7em;
                                     color:rgba(255,255,255,0.3);font-weight:600;letter-spacing:0.6px;
                                     text-transform:uppercase;">Status</th>
                             </tr>

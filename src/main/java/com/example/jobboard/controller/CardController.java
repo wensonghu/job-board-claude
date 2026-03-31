@@ -102,6 +102,14 @@ public class CardController {
         return ResponseEntity.ok(body);
     }
 
+    @GetMapping("/pipeline-summary")
+    public ResponseEntity<?> getPipelineSummary(Authentication authentication, HttpServletRequest request) {
+        Long userId = resolveUserId(authentication, request);
+        Map<String, Object> body = new HashMap<>();
+        body.put("pipelines", cardService.getPipelineSummary(userId));
+        return ResponseEntity.ok(body);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCard(@PathVariable Long id,
                                            Authentication authentication, HttpServletRequest request) {
