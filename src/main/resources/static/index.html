@@ -1784,6 +1784,8 @@
         let _chatPoll = null;
         let _chatSessionId = null;
         let _chatAvailable = true;  // cached result from last availability fetch
+        let _bgChatPoll = null;     // background poll when panel is closed
+        let _lastSeenAdminCount = -1; // -1 = not yet initialized
 
         function applyChatAvailabilityUI() {
             const dot  = document.getElementById('chat-status-dot');
@@ -1804,6 +1806,11 @@
         }
 
         async function openChatPanel() {
+            // Clear unread badge and stop background poll
+            const badge = document.getElementById('chat-fab-badge');
+            if (badge) badge.style.display = 'none';
+            if (_bgChatPoll) { clearInterval(_bgChatPoll); _bgChatPoll = null; }
+
             document.getElementById('chat-panel').style.display = 'flex';
             // Fetch current availability and update all indicators
             try {
@@ -1822,6 +1829,10 @@
         function closeChatPanel() {
             document.getElementById('chat-panel').style.display = 'none';
             if (_chatPoll) { clearInterval(_chatPoll); _chatPoll = null; }
+            // Start background poll to detect new admin replies while panel is closed
+            if (_chatSessionId && !_bgChatPoll) {
+                _bgChatPoll = setInterval(bgPollChat, 15000);
+            }
         }
 
         async function pollChatSession() {
@@ -1831,17 +1842,38 @@
                 const d = await r.json();
                 if (d.hasSession) {
                     _chatSessionId = d.sessionId;
-                    renderChatMessages(d.messages || []);
+                    const msgs = d.messages || [];
+                    // Panel is open — mark all admin messages as seen
+                    _lastSeenAdminCount = msgs.filter(function(m) { return m.senderType === 'ADMIN'; }).length;
+                    renderChatMessages(msgs);
                     document.getElementById('chat-start-state').style.display = 'none';
                     document.getElementById('chat-input-area').style.display = 'block';
                 } else {
                     _chatSessionId = null;
+                    _lastSeenAdminCount = -1;
                     document.getElementById('chat-start-state').style.display = 'block';
                     document.getElementById('chat-input-area').style.display = 'none';
                     // Re-apply availability UI so hint/button always match the current state
                     applyChatAvailabilityUI();
                 }
             } catch (e) { /* silent */ }
+        }
+
+        async function bgPollChat() {
+            try {
+                const r = await fetch(`${API_BASE_URL}/api/chat/session`, { credentials: 'include' });
+                if (!r.ok) return;
+                const d = await r.json();
+                if (!d.hasSession) { _lastSeenAdminCount = -1; return; }
+                _chatSessionId = d.sessionId;
+                const adminCount = (d.messages || []).filter(function(m) { return m.senderType === 'ADMIN'; }).length;
+                if (_lastSeenAdminCount === -1) {
+                    _lastSeenAdminCount = adminCount; // first check — initialize without showing badge
+                } else if (adminCount > _lastSeenAdminCount) {
+                    const badge = document.getElementById('chat-fab-badge');
+                    if (badge) badge.style.display = '';
+                }
+            } catch(e) {}
         }
 
         function renderChatMessages(messages) {
@@ -2946,15 +2978,20 @@
             } catch (e) { return utcIso; }
         }
 
-        /** Build FullCalendar event objects from current cards array.
+        /** Build FullCalendar event objects from current cards array + historical events.
          *  All times are pre-converted to calendarTimezone as naive strings.
          *  FullCalendar is set to timeZone:'UTC' so it shows them as-is. */
-        function buildCalendarEvents() {
+        function buildCalendarEvents(historyEvents) {
             const events = [];
             const businessDays = getNextBusinessDays(3);
-
             const PAST_STATUSES = new Set(['interview-completed', 'rejected']);
             const now = new Date();
+
+            // Track which (cardId, interviewDate) pairs are already rendered
+            const rendered = new Set();
+
+            const STAGE_LABELS = { seeding: 'Exploring', applied: 'Applied',
+                hm: 'Hiring Mgr', 'next-rounds': 'Next Rounds', final: 'Final' };
 
             cards.forEach(card => {
                 const hasInterviewDate = card.interviewDate && card.interviewDate !== 'TBD';
@@ -2979,6 +3016,7 @@
                             textColor: '#fff',
                             extendedProps: { cardId: card.id }
                         });
+                        rendered.add(`${card.id}|${card.interviewDate}`);
                     }
                 }
 
@@ -2997,11 +3035,37 @@
                 }
             });
 
+            // Add historical completed interviews not already shown
+            (historyEvents || []).forEach(h => {
+                if (rendered.has(`${h.cardId}|${h.interviewDate}`)) return;
+                const utc = parseInterviewToUTC(h.interviewDate);
+                if (!utc) return;
+                const stageLabel = STAGE_LABELS[h.stage] || h.stage || '';
+                const suffix = stageLabel ? ` (${stageLabel})` : '';
+                events.push({
+                    id: `hist-${h.cardId}-${h.interviewDate}`,
+                    title: `${h.company} — ${h.position}${suffix}`,
+                    start: utcToNaiveInTZ(utc.start, calendarTimezone),
+                    end:   utcToNaiveInTZ(utc.end,   calendarTimezone),
+                    backgroundColor: '#6d7a8a',
+                    borderColor: '#556070',
+                    textColor: '#fff',
+                    extendedProps: { cardId: h.cardId }
+                });
+            });
+
             return events;
         }
 
         /** Create or re-create the FullCalendar instance. */
-        function initCalendar() {
+        async function initCalendar() {
+            // Fetch historical completed interview events
+            let historyEvents = [];
+            try {
+                const r = await fetch(`${API_BASE_URL}/api/cards/interview-history`, { credentials: 'include' });
+                if (r.ok) { const d = await r.json(); historyEvents = d.events || []; }
+            } catch(e) {}
+
             const el = document.getElementById('calendar-container');
             if (calendarInstance) {
                 calendarInstance.destroy();
@@ -3021,7 +3085,7 @@
                 slotMaxTime: '21:00:00',
                 allDaySlot: false,
                 height: 700,
-                events: buildCalendarEvents(),
+                events: buildCalendarEvents(historyEvents),
                 eventClick: function(info) {
                     const cardId = info.event.extendedProps.cardId;
                     if (cardId) {
@@ -3178,6 +3242,78 @@
                 progressMsg = 'You\'re building a solid pipeline with good weekly activity. Keep adding opportunities and following up to push into hiring manager and final-stage interviews.';
             }
 
+            // ── Pipeline Speed ───────────────────────────────────────────
+            const STAGE_ORDER = ['seeding', 'applied', 'hm', 'next-rounds', 'final'];
+            const STAGE_NAME  = { seeding: 'Exploring', applied: 'Applied',
+                hm: 'Hiring Mgr', 'next-rounds': 'Next Rounds', final: 'Final' };
+
+            function daysBetween(d1, d2) {
+                const a = new Date(d1), b = new Date(d2);
+                return Math.max(0, Math.round(Math.abs(b - a) / 86400000));
+            }
+
+            // Group by company + position (case-sensitive, same as backend)
+            const groups = {};
+            cards.forEach(c => {
+                const key = (c.company || '') + '||' + (c.position || '');
+                if (!groups[key]) groups[key] = { company: c.company, position: c.position, cards: [] };
+                groups[key].cards.push(c);
+            });
+
+            const today = new Date().toISOString().split('T')[0];
+            const pipelineRows = Object.values(groups)
+                .filter(g => g.company || g.position)
+                .map(g => {
+                    const finalDone = g.cards.find(c =>
+                        c.status === 'interview-completed' && c.stage === 'final');
+                    if (finalDone) {
+                        const days = (finalDone.appliedDate && finalDone.date)
+                            ? daysBetween(finalDone.appliedDate, finalDone.date) : null;
+                        return { company: g.company, position: g.position,
+                            done: true, days, stage: 'final', stageIdx: 4 };
+                    }
+                    const mostAdv = [...g.cards].sort((a, b) =>
+                        STAGE_ORDER.indexOf(b.stage) - STAGE_ORDER.indexOf(a.stage))[0];
+                    const elapsed = mostAdv.appliedDate
+                        ? daysBetween(mostAdv.appliedDate, today) : null;
+                    return { company: g.company, position: g.position,
+                        done: false, days: elapsed, stage: mostAdv.stage,
+                        stageIdx: STAGE_ORDER.indexOf(mostAdv.stage) };
+                })
+                .sort((a, b) => {
+                    if (a.done !== b.done) return a.done ? -1 : 1;
+                    if (a.done) return (b.days || 0) - (a.days || 0);
+                    return b.stageIdx - a.stageIdx;
+                });
+
+            const completedRows = pipelineRows.filter(r => r.done && r.days != null);
+            const avgDays = completedRows.length
+                ? Math.round(completedRows.reduce((s, r) => s + r.days, 0) / completedRows.length)
+                : null;
+
+            function stageBadge(stage) {
+                const colors = { seeding: '#6c757d', applied: '#4e5ed6',
+                    hm: '#e67e22', 'next-rounds': '#8e44ad', final: '#f6c84c' };
+                const c = colors[stage] || '#555';
+                return `<span style="background:${c};color:#fff;padding:2px 7px;border-radius:8px;
+                    font-size:0.72em;font-weight:700;white-space:nowrap;">${STAGE_NAME[stage] || stage}</span>`;
+            }
+
+            const pipelineTableRows = pipelineRows.map(r => `
+                <tr style="border-bottom:0.5px solid rgba(255,255,255,0.06);">
+                    <td style="padding:7px 8px 7px 0;color:rgba(255,255,255,0.85);font-size:0.82em;">
+                        ${escHtml(r.company || '—')}</td>
+                    <td style="padding:7px 8px;color:rgba(255,255,255,0.6);font-size:0.78em;">
+                        ${escHtml(r.position || '—')}</td>
+                    <td style="padding:7px 8px;white-space:nowrap;">${stageBadge(r.stage)}</td>
+                    <td style="padding:7px 8px;color:${r.done ? '#f6c84c' : 'rgba(255,255,255,0.5)'};
+                        font-size:0.82em;font-weight:${r.done ? '700' : '400'};white-space:nowrap;">
+                        ${r.days != null ? r.days + 'd' : '—'}</td>
+                    <td style="padding:7px 0 7px 8px;font-size:0.8em;white-space:nowrap;">
+                        ${r.done ? '<span style="color:#17cc45;">✅ Done</span>'
+                                 : '<span style="color:rgba(255,255,255,0.35);">🔄 Active</span>'}</td>
+                </tr>`).join('');
+
             // ── Render ──────────────────────────────────────────────────────
             document.getElementById('insight-content').innerHTML = `
                 <div class="insight-card">
@@ -3212,6 +3348,49 @@
                     <p class="insight-message">${progressMsg}</p>
                     ${chatBtn}
                 </div>
+
+                <div class="insight-card">
+                    <div class="insight-card-header">
+                        <span>⏱ Pipeline Speed</span>
+                        <span style="font-size:0.78em;color:rgba(255,255,255,0.35);font-weight:500;">
+                            Applied → Final Interview</span>
+                    </div>
+                    ${avgDays != null ? `
+                    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:16px;">
+                        <span style="font-size:2.4em;font-weight:800;color:#f6c84c;letter-spacing:-1px;line-height:1;">
+                            ${avgDays}</span>
+                        <span style="font-size:0.85em;color:rgba(255,255,255,0.5);">
+                            days avg &nbsp;·&nbsp; ${completedRows.length} final round${completedRows.length > 1 ? 's' : ''} completed</span>
+                    </div>` : `
+                    <p style="font-size:0.85em;color:rgba(255,255,255,0.4);margin:0 0 16px;">
+                        No completed final round interviews yet — data will appear once a card reaches
+                        Final stage with Interview Completed status.</p>`}
+                    ${pipelineRows.length > 0 ? `
+                    <div style="overflow-x:auto;">
+                    <table style="width:100%;border-collapse:collapse;">
+                        <thead>
+                            <tr style="border-bottom:0.5px solid rgba(255,255,255,0.12);">
+                                <th style="text-align:left;padding:0 8px 8px 0;font-size:0.72em;
+                                    color:rgba(255,255,255,0.3);font-weight:600;letter-spacing:0.6px;
+                                    text-transform:uppercase;">Company</th>
+                                <th style="text-align:left;padding:0 8px 8px;font-size:0.72em;
+                                    color:rgba(255,255,255,0.3);font-weight:600;letter-spacing:0.6px;
+                                    text-transform:uppercase;">Position</th>
+                                <th style="text-align:left;padding:0 8px 8px;font-size:0.72em;
+                                    color:rgba(255,255,255,0.3);font-weight:600;letter-spacing:0.6px;
+                                    text-transform:uppercase;">Stage</th>
+                                <th style="text-align:left;padding:0 8px 8px;font-size:0.72em;
+                                    color:rgba(255,255,255,0.3);font-weight:600;letter-spacing:0.6px;
+                                    text-transform:uppercase;">Days</th>
+                                <th style="text-align:left;padding:0 0 8px 8px;font-size:0.72em;
+                                    color:rgba(255,255,255,0.3);font-weight:600;letter-spacing:0.6px;
+                                    text-transform:uppercase;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>${pipelineTableRows}</tbody>
+                    </table>
+                    </div>` : ''}
+                </div>
             `;
         }
 
@@ -3235,7 +3414,7 @@
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
 
     <button class="privacy-fab" onclick="openPrivacyModal()" title="Privacy"><i class="fas fa-shield-alt"></i></button>
-    <button class="feedback-fab" onclick="openChatPanel()" title="Live Support — Human, not AI">💬</button>
+    <button class="feedback-fab" onclick="openChatPanel()" title="Live Support — Human, not AI">💬<span id="chat-fab-badge" style="display:none;position:absolute;top:3px;right:3px;width:11px;height:11px;background:#ff4040;border-radius:50%;border:2px solid #1a1a2e;"></span></button>
 
     <div class="modal" id="privacy-modal">
         <div class="modal-content" style="max-width:520px; position:relative;">

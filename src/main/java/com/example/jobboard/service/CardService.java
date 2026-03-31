@@ -14,7 +14,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class CardService {
@@ -59,6 +64,23 @@ public class CardService {
         Card saved = cardRepository.save(existing);
         cardHistoryRepository.save(CardHistory.fromCard(saved));
 
+        // Cascade rejection: reject all sibling cards with same company + position
+        if (saved.getStatus() == CardStatus.REJECTED
+                && saved.getCompany() != null && saved.getPosition() != null) {
+            List<Card> siblings = cardRepository.findByUserIdAndCompanyAndPosition(
+                    userId, saved.getCompany(), saved.getPosition());
+            for (Card sibling : siblings) {
+                if (!sibling.getId().equals(saved.getId())
+                        && sibling.getStatus() != CardStatus.REJECTED) {
+                    sibling.setStatus(CardStatus.REJECTED);
+                    Card rejectedSibling = cardRepository.save(sibling);
+                    cardHistoryRepository.save(CardHistory.fromCard(rejectedSibling));
+                    logger.info("Cascade-rejected card {} (company={} position={}) for userId={}",
+                            sibling.getId(), saved.getCompany(), saved.getPosition(), userId);
+                }
+            }
+        }
+
         // Auto-create offer card when interview is completed at the Final stage
         if (saved.getStatus() == CardStatus.INTERVIEW_COMPLETED
                 && saved.getStage() == CardStage.FINAL) {
@@ -101,6 +123,30 @@ public class CardService {
                 .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
         cardHistoryRepository.save(CardHistory.deletionOf(card));
         cardRepository.delete(card);
+    }
+
+    /** Returns deduplicated completed interview events from history, for the calendar. */
+    public List<Map<String, Object>> getInterviewHistory(Long userId) {
+        List<com.example.jobboard.model.CardHistory> raw =
+                cardHistoryRepository.findByUserIdAndStatusAndInterviewDateIsNotNull(
+                        userId, CardStatus.INTERVIEW_COMPLETED);
+        Set<String> seen = new HashSet<>();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (com.example.jobboard.model.CardHistory h : raw) {
+            String idate = h.getInterviewDate();
+            if (idate == null || idate.isBlank() || "TBD".equalsIgnoreCase(idate)) continue;
+            String key = h.getCardId() + "|" + idate;
+            if (seen.add(key)) {
+                Map<String, Object> entry = new LinkedHashMap<>();
+                entry.put("cardId",        h.getCardId());
+                entry.put("company",       h.getCompany());
+                entry.put("position",      h.getPosition());
+                entry.put("interviewDate", idate);
+                entry.put("stage", h.getStage() != null ? h.getStage().name().toLowerCase().replace('_', '-') : null);
+                result.add(entry);
+            }
+        }
+        return result;
     }
 
     private CardStage parseStage(String s) {

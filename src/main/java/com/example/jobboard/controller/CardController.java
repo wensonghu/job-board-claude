@@ -18,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/cards")
@@ -91,6 +92,14 @@ public class CardController {
         String stage = body.get("stage");
         Card updated = cardService.updateStage(id, stage, userId);
         return ResponseEntity.ok(updated);
+    }
+
+    @GetMapping("/interview-history")
+    public ResponseEntity<?> getInterviewHistory(Authentication authentication, HttpServletRequest request) {
+        Long userId = resolveUserId(authentication, request);
+        Map<String, Object> body = new HashMap<>();
+        body.put("events", cardService.getInterviewHistory(userId));
+        return ResponseEntity.ok(body);
     }
 
     @DeleteMapping("/{id}")
