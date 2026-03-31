@@ -3296,9 +3296,9 @@
                 if (list.some(c => c.status === 'rejected'))
                     return { st: 'rejected', days };
 
-                // Active: not rejected, stage in recruiter (applied) / HM / next-rounds
+                // Active: not rejected, not in early stage (seeding)
                 const activeCards = list.filter(c =>
-                    c.status !== 'rejected' && ['applied', 'hm', 'next-rounds'].includes(c.stage));
+                    c.status !== 'rejected' && c.stage !== 'seeding');
                 if (activeCards.length) {
                     const stage = activeCards.reduce((best, c) =>
                         STAGE_ORDER.indexOf(c.stage) > STAGE_ORDER.indexOf(best) ? c.stage : best,
