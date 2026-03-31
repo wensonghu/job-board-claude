@@ -3,14 +3,14 @@ package com.example.jobboard.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public enum CardStage {
-    @JsonProperty("seeding")
-    SEEDING,
+    @JsonProperty("early")
+    EARLY,
     @JsonProperty("recruiter")
     RECRUITER,
     @JsonProperty("hm")
     HM,
-    @JsonProperty("next-rounds")
-    NEXT_ROUNDS,
+    @JsonProperty("other")
+    OTHER,
     @JsonProperty("final")
     FINAL
 }

@@ -135,7 +135,7 @@ public class CardService {
     /**
      * Returns per-company min/max action date from card_history.
      * "[Offer]" suffix is stripped so offer cards merge with their parent company.
-     * Only companies with at least one HM/NEXT_ROUNDS/FINAL stage record are included.
+     * Only companies with at least one RECRUITER/HM/OTHER/FINAL stage record are included.
      */
     public List<Map<String, Object>> getPipelineSummary(Long userId) {
         List<CardHistory> history = cardHistoryRepository.findByUserIdOrderByChangedAtDesc(userId);
@@ -155,7 +155,7 @@ public class CardService {
 
             if (h.getStage() == CardStage.RECRUITER
                     || h.getStage() == CardStage.HM
-                    || h.getStage() == CardStage.NEXT_ROUNDS
+                    || h.getStage() == CardStage.OTHER
                     || h.getStage() == CardStage.FINAL) {
                 advancedCompanies.add(key);
             }
