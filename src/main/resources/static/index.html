@@ -3299,23 +3299,33 @@
 
                 if (!list.length) return null;
 
+                // Safety net: also consider the earliest date on any HM+ card.
+                // Migrated data can have changedAt = import date (wrong), but card.date
+                // (last action date) still reflects the real February processing date.
+                const hmPlusDates = list
+                    .filter(c => ['hm','next-rounds','final'].includes(c.stage) && c.date)
+                    .map(c => c.date).sort();
+                const earliestCardDate = hmPlusDates[0] || null;
+                const candidates = [firstInterviewDate, earliestCardDate].filter(Boolean);
+                const startDate = candidates.length ? candidates.sort()[0] : firstInterviewDate;
+
                 // 1. Offer pending
                 if (list.some(c => c.status === 'offer-pending'))
-                    return { st: 'offer', days: daysBtwn(firstInterviewDate, today) };
+                    return { st: 'offer', days: daysBtwn(startDate, today) };
 
                 // 2. Active — upcoming confirmed or pending interview
                 if (list.some(c => c.status === 'interview-date-confirmed' || c.status === 'interview-schedule-pending'))
-                    return { st: 'active', days: daysBtwn(firstInterviewDate, today) };
+                    return { st: 'active', days: daysBtwn(startDate, today) };
 
                 // 3. Rejected at final
                 const finalRejected = list.filter(c => c.status === 'rejected' && c.stage === 'final');
                 if (finalRejected.length)
-                    return { st: 'final-rejected', days: daysBtwn(firstInterviewDate, latestDate(finalRejected)) };
+                    return { st: 'final-rejected', days: daysBtwn(startDate, latestDate(finalRejected)) };
 
                 // 4. Rejected (not final)
                 const rejected = list.filter(c => c.status === 'rejected');
                 if (rejected.length)
-                    return { st: 'rejected', days: daysBtwn(firstInterviewDate, latestDate(rejected)) };
+                    return { st: 'rejected', days: daysBtwn(startDate, latestDate(rejected)) };
 
                 // Skip everything else (interview-completed at final, inactive)
                 return null;

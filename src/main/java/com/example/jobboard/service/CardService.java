@@ -133,31 +133,25 @@ public class CardService {
      * Entries whose company name starts with "test" (case-insensitive) are excluded.
      */
     public List<Map<String, Object>> getPipelineSummary(Long userId) {
-        // Earliest of any interview-related activity per company
+        // Use h.getDate() (the card's last-action date) instead of h.getChangedAt()
+        // because changedAt is Instant.now() at DB-write time — for migrated data that
+        // is the import date, not when the interview actually happened.
         List<CardHistory> interviewRecs = cardHistoryRepository
                 .findByUserIdAndStatusInOrderByChangedAtAsc(userId,
                         List.of(CardStatus.INTERVIEW_SCHEDULE_PENDING,
                                 CardStatus.INTERVIEW_DATE_CONFIRMED,
                                 CardStatus.INTERVIEW_COMPLETED));
-        List<CardHistory> completedRecs = cardHistoryRepository
-                .findByUserIdAndStatusOrderByChangedAtAsc(userId, CardStatus.INTERVIEW_COMPLETED);
 
-        // earliest interview activity per company
-        Map<String, Instant> firstInterview = new LinkedHashMap<>();
+        // Minimum card.date per company across all interview-related history rows.
+        Map<String, LocalDate> firstInterview = new LinkedHashMap<>();
         Map<String, String> companyByKey = new LinkedHashMap<>();
         for (CardHistory h : interviewRecs) {
             String k = pkey(h.getCompany());
             if (isTestCompany(k)) continue;
-            firstInterview.putIfAbsent(k, h.getChangedAt());
-            companyByKey.putIfAbsent(k, h.getCompany());
-        }
-
-        // latest completed per company (always overwrite → last wins)
-        Map<String, Instant> lastCompleted = new LinkedHashMap<>();
-        for (CardHistory h : completedRecs) {
-            String k = pkey(h.getCompany());
-            if (isTestCompany(k)) continue;
-            lastCompleted.put(k, h.getChangedAt());
+            // prefer card.date; fall back to changedAt converted to date
+            LocalDate d = h.getDate() != null ? h.getDate()
+                    : h.getChangedAt().atZone(java.time.ZoneOffset.UTC).toLocalDate();
+            firstInterview.merge(k, d, (a, b) -> b.isBefore(a) ? b : a);
             companyByKey.putIfAbsent(k, h.getCompany());
         }
 
@@ -165,28 +159,10 @@ public class CardService {
         for (Map.Entry<String, String> e : companyByKey.entrySet()) {
             String k = e.getKey();
             String company = e.getValue();
-            Instant first = firstInterview.get(k);
-            Instant last  = lastCompleted.get(k);
-
+            LocalDate first = firstInterview.get(k);
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("company", company);
-            if (first != null) {
-                row.put("firstInterviewDate", first.toString().substring(0, 10));
-                if (last != null) {
-                    row.put("lastCompletedDate", last.toString().substring(0, 10));
-                    row.put("days", Math.max(0, Duration.between(first, last).toDays()));
-                    row.put("completed", true);
-                } else {
-                    row.put("lastCompletedDate", null);
-                    row.put("days", Math.max(0, Duration.between(first, Instant.now()).toDays()));
-                    row.put("completed", false);
-                }
-            } else {
-                row.put("firstInterviewDate", null);
-                row.put("lastCompletedDate", last != null ? last.toString().substring(0, 10) : null);
-                row.put("days", null);
-                row.put("completed", last != null);
-            }
+            row.put("firstInterviewDate", first != null ? first.toString() : null);
             result.add(row);
         }
         return result;
