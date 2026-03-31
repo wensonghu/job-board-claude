@@ -3165,7 +3165,7 @@
         }
 
         /** Build and render the Insight view from current cards data. */
-        function buildInsightView() {
+        async function buildInsightView() {
             // ── Week range helpers ──────────────────────────────────────────
             function getWeekRange(weeksAgo) {
                 const now = new Date();
@@ -3242,6 +3242,13 @@
                 progressMsg = 'You\'re building a solid pipeline with good weekly activity. Keep adding opportunities and following up to push into hiring manager and final-stage interviews.';
             }
 
+            // Fetch pipeline summary from backend (card_history, [Offer] merged, HM+ only)
+            let pipelines = [];
+            try {
+                const pr = await fetch(`${API_BASE_URL}/api/cards/pipeline-summary`, { credentials: 'include' });
+                if (pr.ok) { const pd = await pr.json(); pipelines = pd.pipelines || []; }
+            } catch(e) {}
+
             const STAGE_ORDER = ['seeding', 'applied', 'hm', 'next-rounds', 'final'];
             const STAGE_NAME  = { seeding: 'Exploring', applied: 'Applied',
                 hm: 'Hiring Mgr', 'next-rounds': 'Next Rounds', final: 'Final' };
@@ -3250,7 +3257,7 @@
                 return !name || name.trim().toLowerCase().startsWith('test');
             }
 
-            // Build card list per company from cards array (excluding test)
+            // Build card list per company from current board (excluding test)
             const groupCards = {};
             cards.forEach(c => {
                 if (isTestCo(c.company)) return;
@@ -3273,22 +3280,15 @@
                     list[0].stage);
             }
 
-            // Status + days for a company.
-            // Start = earliest card.date in group (incl. parent for [Offer]).
-            // End   = card.date of the most-advanced-stage card in group.
-            // Days  = end - start.
-            function resolveStatusAndDays(company) {
-                const list = groupCards[company] || [];
-                if (!list.length) return null;
-
-                const parentKey = company.endsWith(' [Offer]') ? company.slice(0, -8) : null;
-                const allCards  = parentKey ? [...list, ...(groupCards[parentKey] || [])] : list;
-
-                const withDate  = allCards.filter(c => c.date);
-                const startDate = withDate.map(c => c.date).sort()[0] || null;
-                const endDate   = withDate.sort((a, b) =>
-                    STAGE_ORDER.indexOf(b.stage) - STAGE_ORDER.indexOf(a.stage))[0]?.date || null;
-                const days = daysBtwn(startDate, endDate);
+            // Status from current board; days from card_history min/max action dates.
+            // Backend strips [Offer] so company keys here match the parent company name.
+            // Status check includes both company and [Offer] variant cards.
+            function resolveStatusAndDays(company, firstAction, lastAction) {
+                const list = [
+                    ...(groupCards[company] || []),
+                    ...(groupCards[company + ' [Offer]'] || [])
+                ];
+                const days = daysBtwn(firstAction, lastAction);
 
                 if (list.some(c => c.status === 'offer-pending'))
                     return { st: 'offer', days };
@@ -3315,19 +3315,17 @@
                     ${c.label}</span>`;
             }
 
-            // Pipeline rows: all companies with HM+ stage cards, enriched with status+days
+            // Pipeline rows from backend (already filtered to HM+ companies, [Offer] merged)
             const STATUS_SORT = { active: 0, offer: 1, 'final-rejected': 2, rejected: 3 };
-            const pipelineRows = Object.keys(groupCards)
-                .filter(company => {
-                    const parentKey = company.endsWith(' [Offer]') ? company.slice(0, -8) : null;
-                    const allCards  = parentKey ? [...groupCards[company], ...(groupCards[parentKey] || [])] : groupCards[company];
-                    return allCards.some(c => ['hm', 'next-rounds', 'final'].includes(c.stage));
-                })
-                .map(company => {
-                    const resolved = resolveStatusAndDays(company);
+            const pipelineRows = pipelines
+                .map(p => {
+                    const resolved = resolveStatusAndDays(p.company, p.firstAction, p.lastAction);
                     if (!resolved) return null;
-                    const adv = mostAdvancedStage(groupCards[company]);
-                    return { company, st: resolved.st, days: resolved.days, adv };
+                    const adv = mostAdvancedStage([
+                        ...(groupCards[p.company] || []),
+                        ...(groupCards[p.company + ' [Offer]'] || [])
+                    ]);
+                    return { company: p.company, st: resolved.st, days: resolved.days, adv };
                 })
                 .filter(Boolean)
                 .sort((a, b) => {

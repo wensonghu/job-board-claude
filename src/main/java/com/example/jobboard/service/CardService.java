@@ -132,37 +132,41 @@ public class CardService {
      * INTERVIEW_COMPLETED (or elapsed to now if still in progress).
      * Entries whose company name starts with "test" (case-insensitive) are excluded.
      */
+    /**
+     * Returns per-company min/max action date from card_history.
+     * "[Offer]" suffix is stripped so offer cards merge with their parent company.
+     * Only companies with at least one HM/NEXT_ROUNDS/FINAL stage record are included.
+     */
     public List<Map<String, Object>> getPipelineSummary(Long userId) {
-        // Use h.getDate() (the card's last-action date) instead of h.getChangedAt()
-        // because changedAt is Instant.now() at DB-write time — for migrated data that
-        // is the import date, not when the interview actually happened.
-        List<CardHistory> interviewRecs = cardHistoryRepository
-                .findByUserIdAndStatusInOrderByChangedAtAsc(userId,
-                        List.of(CardStatus.INTERVIEW_SCHEDULE_PENDING,
-                                CardStatus.INTERVIEW_DATE_CONFIRMED,
-                                CardStatus.INTERVIEW_COMPLETED));
+        List<CardHistory> history = cardHistoryRepository.findByUserIdOrderByChangedAtDesc(userId);
 
-        // Minimum card.date per company across all interview-related history rows.
-        Map<String, LocalDate> firstInterview = new LinkedHashMap<>();
-        Map<String, String> companyByKey = new LinkedHashMap<>();
-        for (CardHistory h : interviewRecs) {
-            String k = pkey(h.getCompany());
-            if (isTestCompany(k)) continue;
-            // prefer card.date; fall back to changedAt converted to date
-            LocalDate d = h.getDate() != null ? h.getDate()
-                    : h.getChangedAt().atZone(java.time.ZoneOffset.UTC).toLocalDate();
-            firstInterview.merge(k, d, (a, b) -> b.isBefore(a) ? b : a);
-            companyByKey.putIfAbsent(k, h.getCompany());
+        Map<String, LocalDate> minDate = new LinkedHashMap<>();
+        Map<String, LocalDate> maxDate = new LinkedHashMap<>();
+        Set<String> advancedCompanies = new HashSet<>();
+
+        for (CardHistory h : history) {
+            if (h.isDeleted() || h.getDate() == null || h.getCompany() == null) continue;
+            String raw = h.getCompany();
+            String key = raw.endsWith(" [Offer]") ? raw.substring(0, raw.length() - 8).trim() : raw;
+            if (isTestCompany(key)) continue;
+
+            minDate.merge(key, h.getDate(), (a, b) -> b.isBefore(a) ? b : a);
+            maxDate.merge(key, h.getDate(), (a, b) -> b.isAfter(a) ? b : a);
+
+            if (h.getStage() == CardStage.HM
+                    || h.getStage() == CardStage.NEXT_ROUNDS
+                    || h.getStage() == CardStage.FINAL) {
+                advancedCompanies.add(key);
+            }
         }
 
         List<Map<String, Object>> result = new ArrayList<>();
-        for (Map.Entry<String, String> e : companyByKey.entrySet()) {
-            String k = e.getKey();
-            String company = e.getValue();
-            LocalDate first = firstInterview.get(k);
+        for (String company : minDate.keySet()) {
+            if (!advancedCompanies.contains(company)) continue;
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("company", company);
-            row.put("firstInterviewDate", first != null ? first.toString() : null);
+            row.put("firstAction", minDate.get(company).toString());
+            row.put("lastAction",  maxDate.get(company).toString());
             result.add(row);
         }
         return result;
