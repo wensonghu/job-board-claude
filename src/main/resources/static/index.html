@@ -2757,16 +2757,26 @@
             const modal = document.getElementById('modal');
             document.getElementById('modal-title').textContent = 'New Opportunity (Duplicated)';
             document.getElementById('card-form').reset();
-            document.getElementById('company').value = card.company;
-            document.getElementById('position').value = card.position;
-            document.getElementById('stage').value = card.stage;
+            document.getElementById('company').value = card.company || '';
+            document.getElementById('position').value = card.position || '';
+            document.getElementById('stage').value = card.stage || 'early';
+            document.getElementById('status').value = card.status || 'in-progress';
+            document.getElementById('date').value = card.date || new Date().toISOString().split('T')[0];
             document.getElementById('referredBy').value = card.referredBy || '';
-            document.getElementById('date').value = new Date().toISOString().split('T')[0];
-            document.getElementById('status').value = 'in-progress';
-            document.getElementById('interviewDate').value = '';
-            document.getElementById('interviewTime').value = '';
-            document.getElementById('interviewTimezone').value = '';
-            document.getElementById('interviewDateTBD').checked = false;
+            document.getElementById('details').value = card.details || '';
+
+            const hasApplied = !!card.appliedDate;
+            document.getElementById('appliedChecked').checked = hasApplied;
+            document.getElementById('appliedDate').value = card.appliedDate || '';
+            document.getElementById('appliedDate').style.display = hasApplied ? 'block' : 'none';
+
+            const parts = (card.interviewDate || '').split('|');
+            const isTBD = parts[0] === 'TBD';
+            document.getElementById('interviewDate').value = (parts[0] && !isTBD) ? parts[0] : '';
+            document.getElementById('interviewTime').value = parts[1] || '';
+            document.getElementById('interviewTimezone').value = parts[2] || '';
+            document.getElementById('interviewDateTBD').checked = isTBD;
+
             updateCharCount();
             editingCardId = null;
             modal.classList.add('active');
