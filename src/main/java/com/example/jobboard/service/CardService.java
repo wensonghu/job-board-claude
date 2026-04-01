@@ -183,17 +183,19 @@ public class CardService {
 
     /** Returns deduplicated completed interview events from history, for the calendar. */
     public List<Map<String, Object>> getInterviewHistory(Long userId) {
+        // Only include confirmed or completed interviews (not future-scheduled or in-progress)
         List<com.example.jobboard.model.CardHistory> raw =
-                cardHistoryRepository.findByUserIdAndInterviewDateIsNotNull(userId);
+                cardHistoryRepository.findByUserIdAndStatusInOrderByChangedAtAsc(userId,
+                        List.of(CardStatus.INTERVIEW_DATE_CONFIRMED, CardStatus.INTERVIEW_COMPLETED));
         Set<String> seen = new HashSet<>();
         List<Map<String, Object>> result = new ArrayList<>();
         LocalDate today = LocalDate.now();
         for (com.example.jobboard.model.CardHistory h : raw) {
             String idate = h.getInterviewDate();
             if (idate == null || idate.isBlank() || "TBD".equalsIgnoreCase(idate)) continue;
-            // Only count interviews whose date has passed (date is first segment before |)
             String datePart = idate.split("\\|")[0];
             try {
+                // Exclude interviews scheduled in the future
                 if (LocalDate.parse(datePart).isAfter(today)) continue;
             } catch (Exception e) { continue; }
             String key = h.getCardId() + "|" + datePart;
