@@ -2102,6 +2102,16 @@
             localStorage.setItem('pitstop_hero_seen', '1');
         }
 
+        function toggleAppDrillDown() {
+            const p = document.getElementById('app-drill-panel');
+            if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleInterviewDrillDown() {
+            const p = document.getElementById('interview-drill-panel');
+            if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+        }
+
         // ── Survey Modal ──────────────────────────────────────────────────────────
 
         function openSurveyModal() {
@@ -3445,19 +3455,87 @@
             const interviewsCompletedCount = interviewHistoryEvents.filter(e =>
                 !isTestCo(e.company)).length;
 
-            function countTile(value, label) {
+            // ── Interviews distribution by week ───────────────────────────
+            const interviewWeekBuckets = {};
+            interviewHistoryEvents.filter(e => !isTestCo(e.company)).forEach(e => {
+                const datePart = (e.interviewDate || '').split('|')[0];
+                if (!datePart) return;
+                const dt = new Date(datePart + 'T00:00:00');
+                const monday = new Date(dt);
+                monday.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
+                const wk = monday.toISOString().split('T')[0];
+                interviewWeekBuckets[wk] = (interviewWeekBuckets[wk] || 0) + 1;
+            });
+
+            // ── Applications distribution by week ─────────────────────────
+            // Collect distinct companies per week using appliedDate (or date for non-early)
+            const weekBuckets = {};
+            const seenCoPerWeek = {};
+            cards.filter(c => !isTestCo(c.company)).forEach(c => {
+                const raw = c.company;
+                const co = raw.endsWith(' [Offer]') ? raw.slice(0, -8).trim() : raw;
+                const d = c.appliedDate || (c.stage !== 'early' ? c.date : null);
+                if (!d) return;
+                // ISO week key: Monday of that week
+                const dt = new Date(d + 'T00:00:00');
+                const day = dt.getDay(); // 0=Sun
+                const monday = new Date(dt);
+                monday.setDate(dt.getDate() - ((day + 6) % 7));
+                const wk = monday.toISOString().split('T')[0];
+                if (!seenCoPerWeek[wk]) seenCoPerWeek[wk] = new Set();
+                seenCoPerWeek[wk].add(co);
+            });
+            Object.entries(seenCoPerWeek).sort().forEach(([wk, cos]) => {
+                weekBuckets[wk] = cos.size;
+            });
+
+            function buildAppDistSvg(buckets) {
+                const entries = Object.entries(buckets).sort();
+                if (entries.length < 2) return '<p style="color:rgba(255,255,255,0.3);font-size:0.8em;padding:8px 0;">Not enough data yet.</p>';
+                const W = 320, H = 110, padL = 22, padR = 4, padT = 8, padB = 28;
+                const chartW = W - padL - padR, chartH = H - padT - padB;
+                const maxV = Math.max(...entries.map(e => e[1]), 1);
+                const barW = Math.max(4, Math.floor(chartW / entries.length) - 2);
+                let bars = '', xLabels = '', yLabels = '';
+                // Y axis ticks
+                for (let v of [maxV, Math.round(maxV / 2)]) {
+                    if (v <= 0) continue;
+                    const y = padT + (1 - v / maxV) * chartH;
+                    yLabels += `<text x="${padL - 4}" y="${y + 4}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.25)">${v}</text>`;
+                    yLabels += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>`;
+                }
+                entries.forEach(([wk, cnt], i) => {
+                    const x = padL + (i / entries.length) * chartW + (chartW / entries.length - barW) / 2;
+                    const barH = Math.max(2, (cnt / maxV) * chartH);
+                    const y = padT + chartH - barH;
+                    bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" rx="2" fill="rgba(78,94,214,0.7)"/>`;
+                    // Show label every ~4 weeks
+                    if (i % Math.max(1, Math.round(entries.length / 6)) === 0) {
+                        const [, mo, dy] = wk.split('-');
+                        xLabels += `<text x="${(x + barW / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)">${mo}/${dy}</text>`;
+                    }
+                });
+                return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;display:block;" xmlns="http://www.w3.org/2000/svg">${yLabels}${bars}${xLabels}</svg>`;
+            }
+
+            function countTile(value, label, onclick) {
+                const cursor = onclick ? 'cursor:pointer;' : '';
+                const hover  = onclick ? 'onmouseenter="this.style.borderColor=\'rgba(78,94,214,0.5)\'" onmouseleave="this.style.borderColor=\'rgba(255,255,255,0.07)\'"' : '';
                 return `
                 <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:16px 12px;text-align:center;
-                    border:0.5px solid rgba(255,255,255,0.07);">
+                    border:0.5px solid rgba(255,255,255,0.07);${cursor}" ${onclick ? `onclick="${onclick}"` : ''} ${hover}>
                     <div style="font-size:2.1em;font-weight:800;color:rgba(255,255,255,0.85);line-height:1.05;letter-spacing:-1px;">
                         ${value}
                     </div>
                     <div style="font-size:0.72em;font-weight:700;color:rgba(255,255,255,0.65);margin:6px 0 4px;
-                        text-transform:uppercase;letter-spacing:0.5px;">${label}</div>
+                        text-transform:uppercase;letter-spacing:0.5px;">${label}${onclick ? ' <span style="opacity:0.4;font-size:0.85em;">↓</span>' : ''}</div>
                 </div>`;
             }
-            const kpiHtml = countTile(appliedCompanyCount, 'Applications')
-                + countTile(interviewsCompletedCount, 'Interviews Completed')
+
+            const appDistSvg = buildAppDistSvg(weekBuckets);
+            const interviewDistSvg = buildAppDistSvg(interviewWeekBuckets);
+            const kpiHtml = countTile(appliedCompanyCount, 'Applications', 'toggleAppDrillDown()')
+                + countTile(interviewsCompletedCount, 'Interviews Completed', 'toggleInterviewDrillDown()')
                 + kpis.map(kpiTile).join('');
 
             // ── Table rows ───────────────────────────────────────────────
@@ -3521,8 +3599,29 @@
                     </div>
 
                     <!-- 4 KPI tiles: applications + 3 conversion rates -->
-                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;">
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;">
                         ${kpiHtml}
+                    </div>
+
+                    <!-- Applications drill-down: weekly distribution -->
+                    <div id="app-drill-panel" style="display:none;margin-bottom:12px;
+                        background:rgba(255,255,255,0.03);border:0.5px solid rgba(78,94,214,0.3);
+                        border-radius:10px;padding:14px 14px 10px;">
+                        <div style="font-size:0.7em;font-weight:700;color:rgba(255,255,255,0.35);
+                            text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">
+                            Applications per week
+                        </div>
+                        ${appDistSvg}
+                    </div>
+
+                    <div id="interview-drill-panel" style="display:none;margin-bottom:16px;
+                        background:rgba(255,255,255,0.03);border:0.5px solid rgba(49,242,254,0.25);
+                        border-radius:10px;padding:14px 14px 10px;">
+                        <div style="font-size:0.7em;font-weight:700;color:rgba(255,255,255,0.35);
+                            text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">
+                            Interviews per week
+                        </div>
+                        ${interviewDistSvg}
                     </div>
 
                     <!-- Per-company pipeline table -->
