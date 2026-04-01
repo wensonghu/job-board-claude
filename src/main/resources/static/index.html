@@ -3550,22 +3550,43 @@
                 + countTile(interviewsCompletedCount, 'Interviews Completed', 'toggleInterviewDrillDown()')
                 + kpis.map(kpiTile).join('');
 
+            // ── Per-company interview count from history ──────────────────
+            const interviewCountByCompany = {};
+            interviewHistoryEvents.filter(e => !isTestCo(e.company)).forEach(e => {
+                const co = (e.company || '').endsWith(' [Offer]')
+                    ? e.company.slice(0, -8).trim() : e.company;
+                interviewCountByCompany[co] = (interviewCountByCompany[co] || 0) + 1;
+            });
+
             // ── Table rows ───────────────────────────────────────────────
             const FINISHED = new Set(['final-rejected', 'rejected']);
             const pipelineTableRows = pipelineRows.map(r => {
                 const isFinished = FINISHED.has(r.st);
+                const isActive   = r.st === 'active';
+                const isFinal    = r.adv === 'final' || r.st === 'final-rejected';
+
+                // Row background emphasis
+                let rowBg = '';
+                if (isActive)        rowBg = 'background:rgba(78,94,214,0.08);';
+                else if (isFinal)     rowBg = 'background:rgba(23,204,69,0.07);';
+
                 const dayColor  = isFinished ? '#f6c84c' : 'rgba(255,255,255,0.55)';
                 const dayWeight = isFinished ? '800' : '500';
                 const daysLabel = r.days != null
                     ? `<span style="font-size:1.45em;font-weight:${dayWeight};color:${dayColor};line-height:1;">${r.days}</span><span style="font-size:0.72em;color:rgba(255,255,255,0.35);margin-left:2px;">d</span>`
                     : '<span style="color:rgba(255,255,255,0.2);">—</span>';
                 const stageLabel = r.adv ? `<span style="font-size:0.7em;color:rgba(255,255,255,0.3);display:block;margin-top:2px;">${STAGE_NAME[r.adv]||r.adv}</span>` : '';
+                const intCount = interviewCountByCompany[r.company] || 0;
+                const intLabel = intCount > 0
+                    ? `<span style="font-size:1.1em;font-weight:700;color:rgba(49,242,254,0.8);">${intCount}</span>`
+                    : '<span style="color:rgba(255,255,255,0.2);">—</span>';
                 return `
-                <tr style="border-bottom:0.5px solid rgba(255,255,255,0.05);">
-                    <td style="padding:9px 12px 9px 0;font-size:0.85em;font-weight:600;
+                <tr style="border-bottom:0.5px solid rgba(255,255,255,0.05);${rowBg}">
+                    <td style="padding:9px 12px 9px 6px;font-size:0.85em;font-weight:600;
                         color:rgba(255,255,255,0.85);">${escHtml(r.company||'—')}</td>
                     <td style="padding:9px 16px;text-align:center;white-space:nowrap;">${daysLabel}${stageLabel}</td>
                     <td style="padding:9px 0;white-space:nowrap;">${statusBadge(r.st, r.stage)}</td>
+                    <td style="padding:9px 0 9px 16px;text-align:center;">${intLabel}</td>
                 </tr>`;
             }).join('');
 
@@ -3651,6 +3672,9 @@
                                 <th style="text-align:left;padding:0 0 8px;font-size:0.7em;
                                     color:rgba(255,255,255,0.3);font-weight:600;letter-spacing:0.6px;
                                     text-transform:uppercase;">Status</th>
+                                <th style="text-align:center;padding:0 0 8px 16px;font-size:0.7em;
+                                    color:rgba(255,255,255,0.3);font-weight:600;letter-spacing:0.6px;
+                                    text-transform:uppercase;">Interviews</th>
                             </tr>
                         </thead>
                         <tbody>${pipelineTableRows}</tbody>
