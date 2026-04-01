@@ -3434,7 +3434,7 @@
             // KPI 4: Offer Rate — offer received / distinct companies in final stage
             const finalCount = Object.values(kGroups).filter(g => g.stages.has('final')).length;
             const offerCount = Object.values(kGroups).filter(g =>
-                g.statuses.has('offer-received') || g.statuses.has('offer-pending')).length;
+                g.statuses.has('offer-received')).length;
 
             function kpiPct(n, d) { return d > 0 ? Math.round((n / d) * 100) : null; }
             const kpis = [
