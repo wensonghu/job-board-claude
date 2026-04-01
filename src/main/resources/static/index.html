@@ -3408,7 +3408,7 @@
             function kpiPct(n, d) { return d > 0 ? Math.round((n / d) * 100) : null; }
             const kpis = [
                 { pct: kpiPct(gotInterviewCount, earlyCount), n: gotInterviewCount, d: earlyCount,
-                  label: 'Interview Conversion', sub: 'Applied → Interview Confirmed' },
+                  label: 'Interview Conversion', sub: '' },
                 { pct: kpiPct(hmCount, gotInterviewCount), n: hmCount, d: gotInterviewCount,
                   label: 'Recruiter → HM', sub: 'Recruiter Screen → HM Interview' },
                 { pct: kpiPct(advancedCount, hmCount), n: advancedCount, d: hmCount,
@@ -3437,7 +3437,7 @@
                     </div>
                     <div style="font-size:0.72em;font-weight:700;color:rgba(255,255,255,0.65);margin:6px 0 4px;
                         text-transform:uppercase;letter-spacing:0.5px;">Applications</div>
-                    <div style="font-size:0.62em;color:rgba(255,255,255,0.2);margin-top:3px;">Unique companies</div>
+                    <div style="font-size:0.62em;color:rgba(255,255,255,0.2);margin-top:3px;"></div>
                 </div>`;
             const kpiHtml = appCountTile + kpis.map(kpiTile).join('');
 
