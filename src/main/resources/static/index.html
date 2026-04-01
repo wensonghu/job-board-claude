@@ -3562,13 +3562,13 @@
             const FINISHED = new Set(['final-rejected', 'rejected']);
             const pipelineTableRows = pipelineRows.map(r => {
                 const isFinished = FINISHED.has(r.st);
-                const isActive   = r.st === 'active';
-                const isFinal    = r.adv === 'final' || r.st === 'final-rejected';
+                const isActive        = r.st === 'active';
+                const isActiveFinal   = isActive && r.adv === 'final';
 
-                // Row background emphasis
+                // Row background: green for active-final, blue for other active, nothing for rejected
                 let rowBg = '';
-                if (isActive)        rowBg = 'background:rgba(78,94,214,0.08);';
-                else if (isFinal)     rowBg = 'background:rgba(23,204,69,0.07);';
+                if (isActiveFinal)   rowBg = 'background:rgba(23,204,69,0.09);';
+                else if (isActive)   rowBg = 'background:rgba(78,94,214,0.08);';
 
                 const dayColor  = isFinished ? '#f6c84c' : 'rgba(255,255,255,0.55)';
                 const dayWeight = isFinished ? '800' : '500';
