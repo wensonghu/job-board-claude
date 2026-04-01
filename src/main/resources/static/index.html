@@ -3030,6 +3030,7 @@
                 hm: 'Hiring Mgr', other: 'Other', final: 'Final' };
 
             cards.forEach(card => {
+                if (!card.company || card.company.trim().toLowerCase().startsWith('test')) return;
                 const hasInterviewDate = card.interviewDate && card.interviewDate !== 'TBD';
                 const isInterviewStatus = card.status === 'interview-date-confirmed' || PAST_STATUSES.has(card.status);
 
@@ -3073,6 +3074,7 @@
 
             // Add historical completed interviews not already shown
             (historyEvents || []).forEach(h => {
+                if (!h.company || h.company.trim().toLowerCase().startsWith('test')) return;
                 if (rendered.has(`${h.cardId}|${h.interviewDate}`)) return;
                 const utc = parseInterviewToUTC(h.interviewDate);
                 if (!utc) return;
