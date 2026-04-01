@@ -3258,11 +3258,15 @@
                 progressMsg = 'You\'re building a solid pipeline with good weekly activity. Keep adding opportunities and following up to push into hiring manager and final-stage interviews.';
             }
 
-            // Fetch pipeline summary from backend (card_history, [Offer] merged, HM+ only)
-            let pipelines = [];
+            // Fetch pipeline summary and interview history in parallel
+            let pipelines = [], interviewHistoryEvents = [];
             try {
-                const pr = await fetch(`${API_BASE_URL}/api/cards/pipeline-summary`, { credentials: 'include' });
+                const [pr, ir] = await Promise.all([
+                    fetch(`${API_BASE_URL}/api/cards/pipeline-summary`, { credentials: 'include' }),
+                    fetch(`${API_BASE_URL}/api/cards/interview-history`, { credentials: 'include' })
+                ]);
                 if (pr.ok) { const pd = await pr.json(); pipelines = pd.pipelines || []; }
+                if (ir.ok) { const id = await ir.json(); interviewHistoryEvents = id.events || []; }
             } catch(e) {}
 
             const STAGE_ORDER = ['early', 'recruiter', 'hm', 'other', 'final'];
@@ -3438,8 +3442,8 @@
                     <div style="font-size:0.62em;color:rgba(255,255,255,0.2);margin-top:3px;">${k.sub}</div>
                 </div>`;
             }
-            const interviewsCompletedCount = cards.filter(c =>
-                !isTestCo(c.company) && c.status === 'interview-completed').length;
+            const interviewsCompletedCount = interviewHistoryEvents.filter(e =>
+                !isTestCo(e.company)).length;
 
             function countTile(value, label) {
                 return `
