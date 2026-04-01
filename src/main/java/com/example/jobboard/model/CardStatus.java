@@ -13,6 +13,8 @@ public enum CardStatus {
     INTERVIEW_COMPLETED,
     @JsonProperty("offer-pending")
     OFFER_PENDING,
+    @JsonProperty("offer-received")
+    OFFER_RECEIVED,
     @JsonProperty("rejected")
     REJECTED
 }

@@ -1281,6 +1281,7 @@
                         <option value="interview-date-confirmed">✅ Interview Date Confirmed</option>
                         <option value="interview-completed">🎉 Interview Completed</option>
                         <option value="offer-pending">🏆 Offer Pending</option>
+                        <option value="offer-received">🎊 Offer Received</option>
                         <option value="rejected">❌ Rejected</option>
                     </select>
                 </div>
@@ -2311,7 +2312,7 @@
                 
                 // All stages: offer-pending first, rejected last, otherwise sort by date DESC
                 const sortedCards = grouped[stage].sort((a, b) => {
-                    const order = s => s === 'offer-pending' ? 0 : s === 'rejected' ? 2 : 1;
+                    const order = s => (s === 'offer-pending' || s === 'offer-received') ? 0 : s === 'rejected' ? 2 : 1;
                     const orderDiff = order(a.status) - order(b.status);
                     if (orderDiff !== 0) return orderDiff;
                     const dateA = a.date || '0000-01-01';
@@ -2489,7 +2490,8 @@
                 'interview-schedule-pending': { emoji: '⏳', label: 'Interview Pending',     color: 'rgba(255,149,0,0.18)', text: '#FF9500' },
                 'interview-date-confirmed':   { emoji: '✅', label: 'Interview Confirmed',   color: 'rgba(23,204,69,0.15)', text: '#17cc45' },
                 'interview-completed':        { emoji: '🎉', label: 'Interview Completed',   color: 'rgba(49,242,254,0.14)','text': '#31f2fe' },
-                'offer-pending':              { emoji: '🏆', label: 'Offer Pending',         color: 'rgba(255,149,0,0.2)',  text: '#FF9500' }
+                'offer-pending':              { emoji: '🏆', label: 'Offer Pending',         color: 'rgba(255,149,0,0.2)',  text: '#FF9500' },
+                'offer-received':             { emoji: '🎊', label: 'Offer Received',        color: 'rgba(23,204,69,0.2)',  text: '#17cc45' }
             };
             const statusInfo = statusConfig[card.status] || statusConfig['in-progress'];
             const statusHtml = card.status ? `<div class="card-status" style="display: inline-block; background: ${statusInfo.color}; color: ${statusInfo.text || 'white'}; padding: 3px 10px; border-radius: 20px; font-size: 0.72em; font-weight: 700; letter-spacing: 0.2px; margin-top: 8px;">${statusInfo.emoji} ${statusInfo.label}</div>` : '';
@@ -3404,15 +3406,21 @@
             // KPI 3: HM Advancement — companies that advanced to next/final rounds
             const advancedCount = Object.values(kGroups).filter(g =>
                 g.stages.has('other') || g.stages.has('final')).length;
+            // KPI 4: Offer Rate — offer received / distinct companies in final stage
+            const finalCount = Object.values(kGroups).filter(g => g.stages.has('final')).length;
+            const offerCount = Object.values(kGroups).filter(g =>
+                g.statuses.has('offer-received') || g.statuses.has('offer-pending')).length;
 
             function kpiPct(n, d) { return d > 0 ? Math.round((n / d) * 100) : null; }
             const kpis = [
                 { pct: kpiPct(gotInterviewCount, earlyCount), n: gotInterviewCount, d: earlyCount,
                   label: 'Interview Conversion', sub: '' },
                 { pct: kpiPct(hmCount, gotInterviewCount), n: hmCount, d: gotInterviewCount,
-                  label: 'Recruiter → HM', sub: 'Recruiter Screen → HM Interview' },
+                  label: 'Recruiter → HM', sub: '' },
                 { pct: kpiPct(advancedCount, hmCount), n: advancedCount, d: hmCount,
-                  label: 'HM Advancement', sub: 'HM Interview → Next / Final Round' },
+                  label: 'HM Advancement', sub: '' },
+                { pct: kpiPct(offerCount, finalCount), n: offerCount, d: finalCount,
+                  label: 'Offer Rate', sub: '' },
             ];
             function kpiTile(k) {
                 const pctColor = k.pct == null ? 'rgba(255,255,255,0.2)' :

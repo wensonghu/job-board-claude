@@ -71,8 +71,8 @@ public class Card {
 
     @Transient
     public String getColor() {
-        // 0. Gold: Offer pending — always highlighted
-        if (CardStatus.OFFER_PENDING.equals(this.status)) {
+        // 0. Gold: Offer pending or received — always highlighted
+        if (CardStatus.OFFER_PENDING.equals(this.status) || CardStatus.OFFER_RECEIVED.equals(this.status)) {
             return "gold";
         }
 
