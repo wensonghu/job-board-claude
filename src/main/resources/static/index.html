@@ -3369,7 +3369,8 @@
             const kGroups = {};
             cards.forEach(c => {
                 if (!c.company || isTestCo(c.company)) return;
-                const k = c.company;
+                const raw = c.company;
+                const k = raw.endsWith(' [Offer]') ? raw.slice(0, -8).trim() : raw;
                 if (!kGroups[k]) kGroups[k] = { stages: new Set(), statuses: new Set(), appliedDates: [] };
                 kGroups[k].stages.add(c.stage);
                 kGroups[k].statuses.add(c.status);
