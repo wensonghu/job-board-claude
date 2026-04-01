@@ -3437,17 +3437,23 @@
                     <div style="font-size:0.62em;color:rgba(255,255,255,0.2);margin-top:3px;">${k.sub}</div>
                 </div>`;
             }
-            const appCountTile = `
+            const interviewsCompletedCount = cards.filter(c =>
+                !isTestCo(c.company) && c.status === 'interview-completed').length;
+
+            function countTile(value, label) {
+                return `
                 <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:16px 12px;text-align:center;
                     border:0.5px solid rgba(255,255,255,0.07);">
                     <div style="font-size:2.1em;font-weight:800;color:rgba(255,255,255,0.85);line-height:1.05;letter-spacing:-1px;">
-                        ${appliedCompanyCount}
+                        ${value}
                     </div>
                     <div style="font-size:0.72em;font-weight:700;color:rgba(255,255,255,0.65);margin:6px 0 4px;
-                        text-transform:uppercase;letter-spacing:0.5px;">Applications</div>
-                    <div style="font-size:0.62em;color:rgba(255,255,255,0.2);margin-top:3px;"></div>
+                        text-transform:uppercase;letter-spacing:0.5px;">${label}</div>
                 </div>`;
-            const kpiHtml = appCountTile + kpis.map(kpiTile).join('');
+            }
+            const kpiHtml = countTile(appliedCompanyCount, 'Applications')
+                + countTile(interviewsCompletedCount, 'Interviews Completed')
+                + kpis.map(kpiTile).join('');
 
             // ── Table rows ───────────────────────────────────────────────
             const FINISHED = new Set(['final-rejected', 'rejected']);
