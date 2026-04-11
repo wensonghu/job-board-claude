@@ -71,13 +71,15 @@ public class Card {
 
     @Transient
     public String getColor() {
-        // 0. Gold: Offer pending or received — always highlighted
-        if (CardStatus.OFFER_PENDING.equals(this.status) || CardStatus.OFFER_RECEIVED.equals(this.status)) {
+        // 0. Gold: Offer pending, received, or accepted — always highlighted
+        if (CardStatus.OFFER_PENDING.equals(this.status)
+                || CardStatus.OFFER_RECEIVED.equals(this.status)
+                || CardStatus.OFFER_ACCEPTED.equals(this.status)) {
             return "gold";
         }
 
-        // 1. Grey: Rejected OR 2 weeks since last action
-        if (CardStatus.REJECTED.equals(this.status)) {
+        // 1. Grey: Rejected or declined OR 2 weeks since last action
+        if (CardStatus.REJECTED.equals(this.status) || CardStatus.DECLINED.equals(this.status)) {
             return "grey";
         }
         if (this.date != null && this.date.isBefore(LocalDate.now().minusWeeks(2))) {

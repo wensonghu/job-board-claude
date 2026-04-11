@@ -15,6 +15,10 @@ public enum CardStatus {
     OFFER_PENDING,
     @JsonProperty("offer-received")
     OFFER_RECEIVED,
+    @JsonProperty("offer-accepted")
+    OFFER_ACCEPTED,
+    @JsonProperty("declined")
+    DECLINED,
     @JsonProperty("rejected")
     REJECTED
 }

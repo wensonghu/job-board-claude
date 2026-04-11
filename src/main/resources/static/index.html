@@ -1282,6 +1282,8 @@
                         <option value="interview-completed">🎉 Interview Completed</option>
                         <option value="offer-pending">🏆 Offer Pending</option>
                         <option value="offer-received">🎊 Offer Received</option>
+                        <option value="offer-accepted">✅ Offer Accepted</option>
+                        <option value="declined">🚫 Declined</option>
                         <option value="rejected">❌ Rejected</option>
                     </select>
                 </div>
@@ -2322,7 +2324,7 @@
                 
                 // All stages: offer-pending first, rejected last, otherwise sort by date DESC
                 const sortedCards = grouped[stage].sort((a, b) => {
-                    const order = s => (s === 'offer-pending' || s === 'offer-received') ? 0 : s === 'rejected' ? 2 : 1;
+                    const order = s => ['offer-pending','offer-received','offer-accepted'].includes(s) ? 0 : ['rejected','declined'].includes(s) ? 2 : 1;
                     const orderDiff = order(a.status) - order(b.status);
                     if (orderDiff !== 0) return orderDiff;
                     const dateA = a.date || '0000-01-01';
@@ -2501,7 +2503,9 @@
                 'interview-date-confirmed':   { emoji: '✅', label: 'Interview Confirmed',   color: 'rgba(23,204,69,0.15)', text: '#17cc45' },
                 'interview-completed':        { emoji: '🎉', label: 'Interview Completed',   color: 'rgba(49,242,254,0.14)','text': '#31f2fe' },
                 'offer-pending':              { emoji: '🏆', label: 'Offer Pending',         color: 'rgba(255,149,0,0.2)',  text: '#FF9500' },
-                'offer-received':             { emoji: '🎊', label: 'Offer Received',        color: 'rgba(23,204,69,0.2)',  text: '#17cc45' }
+                'offer-received':             { emoji: '🎊', label: 'Offer Received',        color: 'rgba(23,204,69,0.2)',  text: '#17cc45' },
+                'offer-accepted':             { emoji: '🎉', label: 'Offer Accepted',        color: 'rgba(23,204,69,0.25)', text: '#17cc45' },
+                'declined':                   { emoji: '🚫', label: 'Declined',              color: 'rgba(255,255,255,0.1)', text: 'rgba(255,255,255,0.38)' }
             };
             const statusInfo = statusConfig[card.status] || statusConfig['in-progress'];
             const statusHtml = card.status ? `<div class="card-status" style="display: inline-block; background: ${statusInfo.color}; color: ${statusInfo.text || 'white'}; padding: 3px 10px; border-radius: 20px; font-size: 0.72em; font-weight: 700; letter-spacing: 0.2px; margin-top: 8px;">${statusInfo.emoji} ${statusInfo.label}</div>` : '';
@@ -3249,6 +3253,8 @@
             const totalConfirmed = cards.filter(c => c.status === 'interview-date-confirmed').length;
 
             // Overall progress
+            const hasOfferPending = cards.some(c =>
+                ['offer-pending', 'offer-received'].includes(c.status) && !isTestCo(c.company));
             const hasAdvanced = cards.some(c =>
                 ['hm', 'other', 'final'].includes(c.stage) &&
                 c.status === 'interview-date-confirmed'
@@ -3267,7 +3273,10 @@
 
             // ── Progress badge + message ────────────────────────────────────
             let badgeClass, badgeLabel, progressMsg, chatBtn = '';
-            if (isHealthy) {
+            if (hasOfferPending) {
+                badgeClass = 'status-healthy'; badgeLabel = '🏆 Offer Stage';
+                progressMsg = 'Congratulations — you have an active offer! Now is the time to focus on reference check preparation, evaluating the offer details, and any remaining negotiations. You\'ve put in the hard work to get here.';
+            } else if (isHealthy) {
                 badgeClass = 'status-healthy'; badgeLabel = '✅ Healthy';
                 progressMsg = 'You have active interviews at hiring manager or later stages — strong momentum. Dedicate the majority of your time to interview preparation and stay engaged with your pipeline.';
                 chatBtn = `<button class="insight-chat-btn" onclick="openFeedbackWithCategory('Interview Preparation')">💬 Get free interview prep support</button>`;
@@ -3333,18 +3342,25 @@
                 ];
                 const today = new Date().toISOString().split('T')[0];
 
+                // Offer accepted — final happy state, use card's date as process end
+                const acceptedCard = list.find(c => c.status === 'offer-accepted');
+                if (acceptedCard) {
+                    const endDate = acceptedCard.date || lastAction;
+                    return { st: 'offer-accepted', days: daysBtwn(firstAction, endDate) };
+                }
+
                 if (list.some(c => c.status === 'rejected' && c.stage === 'final'))
                     return { st: 'final-rejected', days: daysBtwn(firstAction, lastAction) };
-                if (list.some(c => c.status === 'rejected'))
+                if (list.some(c => ['rejected', 'declined'].includes(c.status)))
                     return { st: 'rejected', days: daysBtwn(firstAction, lastAction) };
 
-                // Active: not rejected, not early stage, last action within 2 weeks
+                // Active: not rejected/declined, not early stage, last action within 2 weeks
                 const twoWeeksAgo = new Date(); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
                 const lastActionDate = new Date(lastAction + 'T00:00:00');
                 if (lastActionDate < twoWeeksAgo) return null;
 
                 const activeCards = list.filter(c =>
-                    c.status !== 'rejected' && c.stage !== 'early');
+                    !['rejected', 'declined'].includes(c.status) && c.stage !== 'early');
                 if (activeCards.length) {
                     const stage = activeCards.reduce((best, c) =>
                         STAGE_ORDER.indexOf(c.stage) > STAGE_ORDER.indexOf(best) ? c.stage : best,
@@ -3363,6 +3379,7 @@
                         🔄 Active${stageName ? ' / ' + stageName : ''}</span>`;
                 }
                 const cfg = {
+                    'offer-accepted': { bg:'rgba(23,204,69,0.15)', border:'#17cc45', color:'#17cc45', label:'🎉 Offer Accepted' },
                     'final-rejected': { bg:'rgba(255,107,107,0.1)', border:'#FF6B6B', color:'#FF6B6B', label:'🔴 Final Rd – No Offer' },
                     rejected:         { bg:'rgba(180,100,100,0.12)', border:'#c07880', color:'#c07880', label:'🚫 Rejected' },
                 };
@@ -3373,7 +3390,7 @@
             }
 
             // Pipeline rows from backend (HM+ companies, [Offer] merged)
-            const STATUS_SORT = { active: 0, 'final-rejected': 1, rejected: 2 };
+            const STATUS_SORT = { 'offer-accepted': 0, active: 1, 'final-rejected': 2, rejected: 3 };
             const pipelineRows = pipelines
                 .map(p => {
                     const resolved = resolveStatusAndDays(p.company, p.firstAction, p.lastAction);
@@ -3559,15 +3576,17 @@
             });
 
             // ── Table rows ───────────────────────────────────────────────
-            const FINISHED = new Set(['final-rejected', 'rejected']);
+            const FINISHED = new Set(['final-rejected', 'rejected', 'offer-accepted']);
             const pipelineTableRows = pipelineRows.map(r => {
-                const isFinished = FINISHED.has(r.st);
+                const isFinished      = FINISHED.has(r.st);
                 const isActive        = r.st === 'active';
                 const isActiveFinal   = isActive && r.adv === 'final';
+                const isOfferAccepted = r.st === 'offer-accepted';
 
-                // Row background: green for active-final, blue for other active, nothing for rejected
+                // Row background emphasis
                 let rowBg = '';
-                if (isActiveFinal)   rowBg = 'background:rgba(23,204,69,0.09);';
+                if (isOfferAccepted) rowBg = 'background:rgba(23,204,69,0.12);';
+                else if (isActiveFinal) rowBg = 'background:rgba(23,204,69,0.09);';
                 else if (isActive)   rowBg = 'background:rgba(78,94,214,0.08);';
 
                 const dayColor  = isFinished ? '#f6c84c' : 'rgba(255,255,255,0.55)';
