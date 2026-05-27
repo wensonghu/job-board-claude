@@ -3253,7 +3253,9 @@
             const totalConfirmed = cards.filter(c => c.status === 'interview-date-confirmed').length;
 
             // Overall progress
-            const hasOfferPending = cards.some(c =>
+            const hasOfferAccepted = cards.some(c =>
+                c.status === 'offer-accepted' && !isTestCo(c.company));
+            const hasOfferPending = !hasOfferAccepted && cards.some(c =>
                 ['offer-pending', 'offer-received'].includes(c.status) && !isTestCo(c.company));
             const hasAdvanced = cards.some(c =>
                 ['hm', 'other', 'final'].includes(c.stage) &&
@@ -3273,7 +3275,10 @@
 
             // ── Progress badge + message ────────────────────────────────────
             let badgeClass, badgeLabel, progressMsg, chatBtn = '';
-            if (hasOfferPending) {
+            if (hasOfferAccepted) {
+                badgeClass = 'status-healthy'; badgeLabel = '🎉 Offer Accepted';
+                progressMsg = 'You\'ve accepted an offer — congratulations! Keeping your options open? You can continue tracking any remaining conversations, but there\'s no pressure to keep the pipeline active.';
+            } else if (hasOfferPending) {
                 badgeClass = 'status-healthy'; badgeLabel = '🏆 Offer Stage';
                 progressMsg = 'Congratulations — you have an active offer! Now is the time to focus on reference check preparation, evaluating the offer details, and any remaining negotiations. You\'ve put in the hard work to get here.';
             } else if (isHealthy) {
@@ -3453,7 +3458,7 @@
             // KPI 4: Offer Rate — offer received / distinct companies in final stage
             const finalCount = Object.values(kGroups).filter(g => g.stages.has('final')).length;
             const offerCount = Object.values(kGroups).filter(g =>
-                g.statuses.has('offer-received')).length;
+                g.statuses.has('offer-received') || g.statuses.has('offer-accepted')).length;
 
             function kpiPct(n, d) { return d > 0 ? Math.round((n / d) * 100) : null; }
             const kpis = [
