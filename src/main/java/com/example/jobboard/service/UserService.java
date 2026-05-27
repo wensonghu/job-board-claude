@@ -121,6 +121,7 @@ public class UserService {
                 user.setStatus("REGISTERED");
                 AppUser saved = appUserRepository.save(user);
                 logger.info("Created new GOOGLE user: {}", email);
+                emailService.sendNewUserNotification(email, displayName);
                 return saved;
             })
         );
