@@ -61,11 +61,11 @@ public class GoogleCalendarSyncJob {
 
         GoogleCalendarClient.EventsPage page;
         try {
-            page = calendarClient.listEventsSince(accessToken, token.getSyncToken());
-        } catch (GoogleCalendarClient.SyncTokenExpiredException e) {
-            logger.info("Sync token expired for userId={} — falling back to bounded resync", token.getUserId());
-            token.setSyncToken(null);
-            page = calendarClient.listEventsSince(accessToken, null);
+            page = fetchEvents(token, accessToken);
+        } catch (GoogleCalendarClient.GoogleAuthException e) {
+            logger.info("Access token rejected for userId={} despite not being due for expiry — forcing refresh and retrying once", token.getUserId());
+            accessToken = googleOAuthService.forceRefreshAccessToken(token);
+            page = fetchEvents(token, accessToken);
         }
 
         Map<String, Card> byEventId = cardRepository.findByUserIdAndGoogleEventIdIsNotNull(token.getUserId())
@@ -95,5 +95,15 @@ public class GoogleCalendarSyncJob {
         token.setSyncToken(page.nextSyncToken());
         token.setLastSyncedAt(Instant.now());
         tokenRepository.save(token);
+    }
+
+    private GoogleCalendarClient.EventsPage fetchEvents(GoogleCalendarToken token, String accessToken) throws Exception {
+        try {
+            return calendarClient.listEventsSince(accessToken, token.getSyncToken());
+        } catch (GoogleCalendarClient.SyncTokenExpiredException e) {
+            logger.info("Sync token expired for userId={} — falling back to bounded resync", token.getUserId());
+            token.setSyncToken(null);
+            return calendarClient.listEventsSince(accessToken, null);
+        }
     }
 }

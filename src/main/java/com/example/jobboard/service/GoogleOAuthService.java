@@ -115,14 +115,24 @@ public class GoogleOAuthService {
     /** Refreshes the token if it's within 60s of expiry, persisting the update. Returns a usable access token. */
     public String getValidAccessToken(GoogleCalendarToken token) throws IOException, InterruptedException {
         if (Instant.now().plusSeconds(60).isAfter(token.getTokenExpiry())) {
-            TokenResponse refreshed = refresh(token);
-            token.setAccessToken(refreshed.accessToken());
-            if (refreshed.refreshToken() != null) {
-                token.setRefreshToken(refreshed.refreshToken());
-            }
-            token.setTokenExpiry(Instant.now().plusSeconds(refreshed.expiresInSeconds()));
-            tokenRepository.save(token);
+            return forceRefreshAccessToken(token);
         }
+        return token.getAccessToken();
+    }
+
+    /**
+     * Unconditionally refreshes and persists a new access token, bypassing the expiry check.
+     * Used as a fallback when the Calendar API itself rejects a token that our stored expiry
+     * still considered valid (clock drift, early revocation, etc.) — see GoogleAuthException callers.
+     */
+    public String forceRefreshAccessToken(GoogleCalendarToken token) throws IOException, InterruptedException {
+        TokenResponse refreshed = refresh(token);
+        token.setAccessToken(refreshed.accessToken());
+        if (refreshed.refreshToken() != null) {
+            token.setRefreshToken(refreshed.refreshToken());
+        }
+        token.setTokenExpiry(Instant.now().plusSeconds(refreshed.expiresInSeconds()));
+        tokenRepository.save(token);
         return token.getAccessToken();
     }
 

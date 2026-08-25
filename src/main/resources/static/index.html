@@ -1744,7 +1744,12 @@
         function handleSignoutClick() {
             track('sign_out');
             fetch(`${API_BASE_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' })
-                .then(() => window.location.reload());
+                .then(() => {
+                    // Otherwise the next page load's session/init silently re-authenticates via the
+                    // same persistent token, making Sign Out look like it did nothing.
+                    localStorage.removeItem('ps_sid');
+                    window.location.reload();
+                });
         }
 
         function connectGoogleCalendar() {
@@ -1755,8 +1760,17 @@
         async function disconnectGoogleCalendar() {
             closeMenu();
             try {
-                await fetch(`${API_BASE_URL}/api/calendar/disconnect`, { method: 'POST', credentials: 'include' });
-            } catch (e) { /* ignore — reload will reflect current server state either way */ }
+                const res = await fetch(`${API_BASE_URL}/api/calendar/disconnect`, { method: 'POST', credentials: 'include' });
+                if (!res.ok) {
+                    console.error('Calendar disconnect failed:', res.status);
+                    showBanner('Could not disconnect Google Calendar (status ' + res.status + '). Please try again.', 'error');
+                    return;
+                }
+            } catch (e) {
+                console.error('Calendar disconnect failed:', e);
+                showBanner('Could not disconnect Google Calendar. Please try again.', 'error');
+                return;
+            }
             window.location.reload();
         }
 

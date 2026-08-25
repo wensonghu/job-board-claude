@@ -28,6 +28,11 @@ public class GoogleCalendarClient {
 
     public static class SyncTokenExpiredException extends RuntimeException {}
 
+    /** The access token was rejected — distinct from other failures so callers can refresh and retry once. */
+    public static class GoogleAuthException extends RuntimeException {
+        public GoogleAuthException(String message) { super(message); }
+    }
+
     public record RawEvent(String id, String status, String startDate, String startDateTime, String startTimeZone) {}
 
     public record EventsPage(List<RawEvent> events, String nextSyncToken) {}
@@ -39,6 +44,9 @@ public class GoogleCalendarClient {
                 .header("Content-Type", "application/json")
                 .build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() == 401) {
+            throw new GoogleAuthException("Calendar createEvent: " + response.body());
+        }
         if (response.statusCode() >= 300) {
             throw new IOException("Calendar createEvent failed: " + response.statusCode() + " " + response.body());
         }
@@ -52,6 +60,9 @@ public class GoogleCalendarClient {
                 .header("Content-Type", "application/json")
                 .build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() == 401) {
+            throw new GoogleAuthException("Calendar updateEvent: " + response.body());
+        }
         if (response.statusCode() == 404 || response.statusCode() == 410) {
             logger.info("Calendar event {} already gone on update — ignoring", eventId);
             return;
@@ -66,6 +77,9 @@ public class GoogleCalendarClient {
                 .DELETE()
                 .build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() == 401) {
+            throw new GoogleAuthException("Calendar deleteEvent: " + response.body());
+        }
         if (response.statusCode() == 404 || response.statusCode() == 410) {
             return; // already gone — not an error
         }
@@ -86,6 +100,9 @@ public class GoogleCalendarClient {
         HttpRequest request = authedRequest(accessToken, url).GET().build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
+        if (response.statusCode() == 401) {
+            throw new GoogleAuthException("Calendar listEvents: " + response.body());
+        }
         if (response.statusCode() == 410) {
             throw new SyncTokenExpiredException();
         }
