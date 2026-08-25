@@ -1584,6 +1584,7 @@
 
         // --- Global State ---
         let isGoogleConnected = false;
+        let isCalendarConnected = false;
 
         let cards = [];
         let draggedCard = null;
@@ -1660,6 +1661,15 @@
                     trialExpired = false;
                 }
                 isGoogleConnected = data.isSignedIn;
+
+                if (data.isSignedIn) {
+                    try {
+                        const calRes = await fetch(`${API_BASE_URL}/api/calendar/status`, { credentials: 'include' });
+                        const calData = await calRes.json();
+                        isCalendarConnected = !!calData.connected;
+                    } catch (e) { /* silent — menu just shows "Connect" */ }
+                }
+
                 updateAuthUI(data);
                 await checkBroadcast();
                 // Show verified/error banners from URL params
@@ -1667,6 +1677,8 @@
                 if (params.get('verified') === 'true') showBanner('Email verified! You can now sign in.', 'success');
                 if (params.get('verify_error') === 'true') showBanner('Verification link is invalid or expired. Please register again.', 'error');
                 if (params.get('auth_error') === 'true') showBanner('Sign-in failed. Please try again.', 'error');
+                if (params.get('calendar_connected') === 'true') showBanner('Google Calendar connected!', 'success');
+                if (params.get('calendar_error') === 'true') showBanner('Could not connect Google Calendar. Please try again.', 'error');
                 if (params.toString()) history.replaceState({}, '', '/');
             } catch (error) {
                 console.error('Error checking auth status:', error);
@@ -1813,6 +1825,19 @@
                 .then(() => window.location.reload());
         }
 
+        function connectGoogleCalendar() {
+            closeMenu();
+            window.location.href = `${API_BASE_URL}/api/calendar/connect`;
+        }
+
+        async function disconnectGoogleCalendar() {
+            closeMenu();
+            try {
+                await fetch(`${API_BASE_URL}/api/calendar/disconnect`, { method: 'POST', credentials: 'include' });
+            } catch (e) { /* ignore — reload will reflect current server state either way */ }
+            window.location.reload();
+        }
+
         function updateAuthUI(authData) {
             currentUser = authData.isSignedIn ? authData : null;
 
@@ -1828,9 +1853,13 @@
                     ? `<div class="menu-item" onclick="openAdminModal(); closeMenu()">Admin</div>
                        <div class="menu-item" onclick="openMonitoringModal(); closeMenu()">Monitoring</div>`
                     : '';
+                const calendarItem = isCalendarConnected
+                    ? `<div class="menu-item" onclick="disconnectGoogleCalendar()">Disconnect Google Calendar</div>`
+                    : `<div class="menu-item" onclick="connectGoogleCalendar()">Connect Google Calendar</div>`;
                 dropdown.innerHTML = `
                     <div class="menu-item menu-greeting">Hi, ${firstName}</div>
                     ${adminItem}
+                    ${calendarItem}
                     <div class="menu-item" onclick="handleSignoutClick()">Sign Out</div>
                 `;
                 document.getElementById('broadcast-btn').style.display = 'inline-block';
