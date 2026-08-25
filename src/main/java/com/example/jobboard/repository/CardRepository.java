@@ -15,4 +15,5 @@ public interface CardRepository extends JpaRepository<Card, Long> {
     boolean existsByIdAndUserId(Long id, Long userId);
     void deleteByIdAndUserId(Long id, Long userId);
     boolean existsByUserIdAndCompanyAndStatus(Long userId, String company, CardStatus status);
+    List<Card> findByUserIdAndCompanyAndPosition(Long userId, String company, String position);
 }

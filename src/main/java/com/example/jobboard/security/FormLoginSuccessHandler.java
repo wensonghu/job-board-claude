@@ -48,6 +48,12 @@ public class FormLoginSuccessHandler implements AuthenticationSuccessHandler {
             // Always point the session at the REGISTERED user
             session.setAttribute("appUserId", registered.getId());
             session.setAttribute("appUserEmail", registered.getEmail());
+
+            // Bind the browser's persistent ps_sid to this account for 90-day auto-login
+            String guestToken = (String) session.getAttribute("guestSessionToken");
+            if (guestToken != null && !guestToken.isEmpty()) {
+                userService.renewSessionToken(registered, guestToken);
+            }
         }
 
         response.setStatus(HttpStatus.OK.value());
