@@ -111,7 +111,8 @@ public class SecurityConfig {
                     "/api/chat/start",
                     "/api/chat/availability",
                     "/api/auth/complete-setup",
-                    "/api/survey"
+                    "/api/survey",
+                    "/api/calendar/oauth2/callback"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

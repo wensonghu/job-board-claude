@@ -35,6 +35,10 @@ public class Card {
     @Column(length = 255) // Increased length from default
     private String details;
 
+    /** Google Calendar event id backing this card's interview, if calendar sync is connected. Server-managed only. */
+    @Column(name = "google_event_id")
+    private String googleEventId;
+
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -68,6 +72,9 @@ public class Card {
 
     public String getDetails() { return details; }
     public void setDetails(String details) { this.details = details; }
+
+    public String getGoogleEventId() { return googleEventId; }
+    public void setGoogleEventId(String googleEventId) { this.googleEventId = googleEventId; }
 
     @Transient
     public String getColor() {

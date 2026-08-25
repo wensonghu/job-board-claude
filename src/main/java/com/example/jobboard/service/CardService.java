@@ -34,6 +34,9 @@ public class CardService {
     @Autowired
     private CardHistoryRepository cardHistoryRepository;
 
+    @Autowired
+    private CalendarSyncService calendarSyncService;
+
     public List<Card> getAllCards(Long userId) {
         logger.info("Fetching cards for userId={}", userId);
         return cardRepository.findByUserId(userId);
@@ -46,6 +49,7 @@ public class CardService {
         applyInterviewStatusRule(card);
         Card saved = cardRepository.save(card);
         cardHistoryRepository.save(CardHistory.fromCard(saved));
+        calendarSyncService.syncCardToCalendar(saved);
         return saved;
     }
 
@@ -65,6 +69,7 @@ public class CardService {
         applyInterviewStatusRule(existing);
         Card saved = cardRepository.save(existing);
         cardHistoryRepository.save(CardHistory.fromCard(saved));
+        calendarSyncService.syncCardToCalendar(saved);
 
         // Cascade rejection: reject all sibling cards with same company + position
         if (saved.getStatus() == CardStatus.REJECTED
@@ -124,6 +129,7 @@ public class CardService {
         Card card = cardRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
         cardHistoryRepository.save(CardHistory.deletionOf(card));
+        calendarSyncService.deleteCardEvent(card);
         cardRepository.delete(card);
     }
 
