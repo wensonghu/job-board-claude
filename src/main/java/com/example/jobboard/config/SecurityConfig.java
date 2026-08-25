@@ -1,9 +1,12 @@
 package com.example.jobboard.config;
 
+import com.example.jobboard.model.AppUser;
 import com.example.jobboard.security.AppUserDetailsService;
 import com.example.jobboard.security.FormLoginSuccessHandler;
 import com.example.jobboard.security.OAuth2LoginSuccessHandler;
 import com.example.jobboard.security.PendingUserAuthFilter;
+import com.example.jobboard.service.UserService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -50,6 +53,9 @@ public class SecurityConfig {
 
     @Autowired
     private FormLoginSuccessHandler formLoginSuccessHandler;
+
+    @Autowired
+    private UserService userService;
 
     @Value("${app.remember-me.key}")
     private String rememberMeKey;
@@ -145,6 +151,21 @@ public class SecurityConfig {
             )
             .logout(logout -> logout
                 .logoutUrl("/api/auth/logout")
+                // Clears the browser's 90-day persistent session token server-side, in addition to the
+                // Spring Security session/remember-me cookies below — otherwise SessionController.init()
+                // (called on every page load via the client's localStorage ps_sid) silently re-authenticates
+                // the user right back in on the very next request, making "Sign Out" appear to do nothing.
+                .addLogoutHandler((request, response, authentication) -> {
+                    HttpSession session = request.getSession(false);
+                    if (session == null || session.getAttribute("appUserId") == null) return;
+                    try {
+                        Long userId = (Long) session.getAttribute("appUserId");
+                        AppUser user = userService.findById(userId);
+                        userService.clearSessionToken(user);
+                    } catch (Exception ignored) {
+                        // Best-effort — logout should still succeed even if this lookup fails.
+                    }
+                })
                 .deleteCookies("JOBBOARD_REMEMBER_ME", "JSESSIONID")
                 .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))
             )
