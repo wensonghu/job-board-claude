@@ -2985,7 +2985,7 @@
                 listEl.innerHTML = events.map((e, i) => `
                     <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:0.5px solid rgba(255,255,255,0.1);">
                         <div style="min-width:0;">
-                            <div style="font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(e.summary || '(untitled event)')}</div>
+                            <div style="font-weight:600; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(e.summary || '(untitled event)')}</div>
                             <div style="font-size:0.82em; color:rgba(255,255,255,0.5);">${escapeHtml(e.interviewDate || '')}</div>
                             <div style="font-size:0.82em; color:rgba(255,255,255,0.4);">${e.organizerEmail ? 'Invited by: ' + escapeHtml(e.organizerEmail) : ''}</div>
                         </div>
