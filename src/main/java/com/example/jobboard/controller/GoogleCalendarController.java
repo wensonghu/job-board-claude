@@ -126,12 +126,18 @@ public class GoogleCalendarController {
     }
 
     @PostMapping("/disconnect")
-    public ResponseEntity<Void> disconnect(Authentication authentication, HttpServletRequest request) {
+    public ResponseEntity<?> disconnect(Authentication authentication, HttpServletRequest request) {
         Long userId = resolveUserId(authentication, request);
-        tokenRepository.findByUserId(userId).ifPresent(token -> {
-            googleOAuthService.revoke(token.getAccessToken());
-            tokenRepository.deleteByUserId(userId);
-        });
-        return ResponseEntity.noContent().build();
+        try {
+            tokenRepository.findByUserId(userId).ifPresent(token -> {
+                googleOAuthService.revoke(token.getAccessToken());
+                tokenRepository.delete(token);
+            });
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            logger.error("Calendar disconnect failed for userId={}", userId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "disconnect_failed", "detail", String.valueOf(e.getMessage())));
+        }
     }
 }
