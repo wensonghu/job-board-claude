@@ -3638,15 +3638,22 @@
                 // Active: not rejected/declined, not early stage, last action within 2 weeks
                 const twoWeeksAgo = new Date(); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
                 const lastActionDate = new Date(lastAction + 'T00:00:00');
-                if (lastActionDate < twoWeeksAgo) return null;
-
                 const activeCards = list.filter(c =>
                     !['rejected', 'declined'].includes(c.status) && c.stage !== 'early');
-                if (activeCards.length) {
+                if (lastActionDate >= twoWeeksAgo && activeCards.length) {
                     const stage = activeCards.reduce((best, c) =>
                         STAGE_ORDER.indexOf(c.stage) > STAGE_ORDER.indexOf(best) ? c.stage : best,
                         activeCards[0].stage);
                     return { st: 'active', stage, days: daysBtwn(firstAction, today) };
+                }
+
+                // Neither rejected nor recently active — went quiet without a resolution.
+                // Surfaced separately rather than silently dropped, so nothing just disappears.
+                if (list.length) {
+                    const stage = list.reduce((best, c) =>
+                        STAGE_ORDER.indexOf(c.stage) > STAGE_ORDER.indexOf(best) ? c.stage : best,
+                        list[0].stage);
+                    return { st: 'stale', stage, days: daysBtwn(firstAction, lastAction) };
                 }
                 return null;
             }
@@ -3663,6 +3670,7 @@
                     'offer-accepted': { bg:'rgba(23,204,69,0.15)', border:'#17cc45', color:'#17cc45', label:'🎉 Offer Accepted' },
                     'final-rejected': { bg:'rgba(255,107,107,0.1)', border:'#FF6B6B', color:'#FF6B6B', label:'🔴 Final Rd – No Offer' },
                     rejected:         { bg:'rgba(180,100,100,0.12)', border:'#c07880', color:'#c07880', label:'🚫 Rejected' },
+                    stale:            { bg:'rgba(255,255,255,0.05)', border:'rgba(255,255,255,0.25)', color:'rgba(255,255,255,0.45)', label:'💤 No Response' },
                 };
                 const c = cfg[st] || cfg.rejected;
                 return `<span style="background:${c.bg};border:0.5px solid ${c.border};color:${c.color};
@@ -3671,7 +3679,7 @@
             }
 
             // Pipeline rows from backend (HM+ companies, [Offer] merged)
-            const STATUS_SORT = { 'offer-accepted': 0, active: 1, 'final-rejected': 2, rejected: 3 };
+            const STATUS_SORT = { 'offer-accepted': 0, active: 1, 'final-rejected': 2, rejected: 3, stale: 4 };
             const pipelineRows = pipelines
                 .map(p => {
                     const resolved = resolveStatusAndDays(p.company, p.firstAction, p.lastAction);
