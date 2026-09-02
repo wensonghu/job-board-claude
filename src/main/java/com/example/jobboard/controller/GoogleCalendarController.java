@@ -1,10 +1,17 @@
 package com.example.jobboard.controller;
 
+import com.example.jobboard.dto.ImportCalendarEventRequest;
+import com.example.jobboard.dto.UnmatchedCalendarEvent;
 import com.example.jobboard.model.AppUser;
+import com.example.jobboard.model.Card;
 import com.example.jobboard.model.GoogleCalendarToken;
+import com.example.jobboard.repository.CardRepository;
 import com.example.jobboard.repository.GoogleCalendarTokenRepository;
+import com.example.jobboard.service.CardService;
+import com.example.jobboard.service.GoogleCalendarClient;
 import com.example.jobboard.service.GoogleOAuthService;
 import com.example.jobboard.service.UserService;
+import com.example.jobboard.util.InterviewDateMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -20,8 +27,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/calendar")
@@ -38,6 +49,15 @@ public class GoogleCalendarController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private GoogleCalendarClient calendarClient;
+
+    @Autowired
+    private CardRepository cardRepository;
+
+    @Autowired
+    private CardService cardService;
 
     private Long resolveUserId(Authentication authentication, HttpServletRequest request) {
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -123,6 +143,77 @@ public class GoogleCalendarController {
             logger.error("Google Calendar OAuth exchange failed for userId={}: {}", userId, e.getMessage());
             response.sendRedirect("/?calendar_error=true");
         }
+    }
+
+    /** Confirmed Calendar events (last 14 days -> next 60 days) not yet linked to any PitStop card. */
+    @GetMapping("/unmatched-events")
+    public ResponseEntity<?> unmatchedEvents(Authentication authentication, HttpServletRequest request) {
+        Long userId = resolveUserId(authentication, request);
+        GoogleCalendarToken token = tokenRepository.findByUserId(userId).orElse(null);
+        if (token == null) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        try {
+            String accessToken = googleOAuthService.getValidAccessToken(token);
+            List<GoogleCalendarClient.EventDetail> events = fetchRecentAndUpcoming(accessToken, token);
+
+            Set<String> alreadyLinked = cardRepository.findByUserIdAndGoogleEventIdIsNotNull(userId)
+                    .stream().map(Card::getGoogleEventId).collect(Collectors.toSet());
+
+            List<UnmatchedCalendarEvent> result = events.stream()
+                    .filter(e -> e.id() != null && !alreadyLinked.contains(e.id()))
+                    .map(e -> new UnmatchedCalendarEvent(
+                            e.id(), e.summary(), e.description(),
+                            InterviewDateMapper.fromCalendarEvent(
+                                    new GoogleCalendarClient.RawEvent(e.id(), "confirmed", e.startDate(), e.startDateTime(), e.startTimeZone()))
+                    ))
+                    .toList();
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("Failed to list unmatched Calendar events for userId={}: {}", userId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", "calendar_list_failed"));
+        }
+    }
+
+    private List<GoogleCalendarClient.EventDetail> fetchRecentAndUpcoming(String accessToken, GoogleCalendarToken token)
+            throws Exception {
+        try {
+            return calendarClient.listRecentAndUpcoming(accessToken);
+        } catch (GoogleCalendarClient.GoogleAuthException e) {
+            String refreshed = googleOAuthService.forceRefreshAccessToken(token);
+            return calendarClient.listRecentAndUpcoming(refreshed);
+        }
+    }
+
+    /** Creates a card from a user-reviewed Calendar event and links it — the card's own future edits then sync back normally. */
+    @PostMapping("/import-event")
+    public ResponseEntity<?> importEvent(@RequestBody ImportCalendarEventRequest req,
+                                          Authentication authentication, HttpServletRequest request) {
+        Long userId = resolveUserId(authentication, request);
+
+        boolean alreadyImported = cardRepository.findByUserIdAndGoogleEventIdIsNotNull(userId).stream()
+                .anyMatch(c -> req.googleEventId().equals(c.getGoogleEventId()));
+        if (alreadyImported) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "already_imported"));
+        }
+
+        Card card = new Card();
+        // Set BEFORE createCard() so the push-sync hook updates the existing event instead of creating a duplicate.
+        card.setGoogleEventId(req.googleEventId());
+        card.setCompany(req.company());
+        card.setPosition(req.position());
+        card.setStage(req.stage());
+        card.setStatus(req.status());
+        card.setInterviewDate(req.interviewDate());
+        card.setReferredBy(req.referredBy());
+        card.setDetails(req.details());
+        if (req.appliedDate() != null && !req.appliedDate().isBlank()) {
+            card.setAppliedDate(LocalDate.parse(req.appliedDate()));
+        }
+
+        Card saved = cardService.createCard(card, userId);
+        return ResponseEntity.ok(saved);
     }
 
     @PostMapping("/disconnect")
