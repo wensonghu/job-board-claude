@@ -37,6 +37,10 @@ public class GoogleCalendarClient {
 
     public record EventsPage(List<RawEvent> events, String nextSyncToken) {}
 
+    /** Fuller event detail (title/description included) for surfacing events to the user for review — see listRecentAndUpcoming. */
+    public record EventDetail(String id, String summary, String description,
+                               String startDate, String startDateTime, String startTimeZone) {}
+
     public String createEvent(String accessToken, CalendarEventDraft draft) throws IOException, InterruptedException {
         String body = toJson(draft);
         HttpRequest request = authedRequest(accessToken, EVENTS_BASE)
@@ -124,6 +128,38 @@ public class GoogleCalendarClient {
         }
         String nextSyncToken = json.hasNonNull("nextSyncToken") ? json.get("nextSyncToken").asText() : null;
         return new EventsPage(events, nextSyncToken);
+    }
+
+    /** Confirmed events from 14 days ago through 60 days ahead, with title/description, for the "import from Calendar" review UI. */
+    public List<EventDetail> listRecentAndUpcoming(String accessToken) throws IOException, InterruptedException {
+        String url = EVENTS_BASE + "?singleEvents=true&orderBy=startTime"
+                + "&timeMin=" + java.time.Instant.now().minus(java.time.Duration.ofDays(14))
+                + "&timeMax=" + java.time.Instant.now().plus(java.time.Duration.ofDays(60));
+        HttpRequest request = authedRequest(accessToken, url).GET().build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 401) {
+            throw new GoogleAuthException("Calendar listRecentAndUpcoming: " + response.body());
+        }
+        if (response.statusCode() >= 300) {
+            throw new IOException("Calendar listRecentAndUpcoming failed: " + response.statusCode() + " " + response.body());
+        }
+
+        JsonNode json = objectMapper.readTree(response.body());
+        List<EventDetail> events = new ArrayList<>();
+        for (JsonNode item : json.path("items")) {
+            if (!"confirmed".equals(item.path("status").asText(null))) continue;
+            JsonNode start = item.path("start");
+            events.add(new EventDetail(
+                    item.path("id").asText(null),
+                    item.path("summary").asText(null),
+                    item.path("description").asText(null),
+                    start.hasNonNull("date") ? start.get("date").asText() : null,
+                    start.hasNonNull("dateTime") ? start.get("dateTime").asText() : null,
+                    start.hasNonNull("timeZone") ? start.get("timeZone").asText() : null
+            ));
+        }
+        return events;
     }
 
     private HttpRequest.Builder authedRequest(String accessToken, String url) {

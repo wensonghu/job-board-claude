@@ -1361,6 +1361,22 @@
         </div>
     </div>
 
+    <div class="modal" id="import-calendar-modal">
+        <div class="modal-content" style="max-width:520px;">
+            <h2>Import from Google Calendar</h2>
+            <p style="color:rgba(255,255,255,0.65); font-size:0.9em; margin-top:-8px;">
+                Events on your calendar that aren't linked to a PitStop card yet. Pick one to
+                review and save as a card — nothing is imported automatically.
+            </p>
+            <div id="import-calendar-list" style="max-height:400px; overflow-y:auto; margin-top:12px;">
+                <div style="color:rgba(255,255,255,0.5); text-align:center; padding:20px;">Loading…</div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeImportCalendarModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="signin-modal">
         <div class="modal-content" style="position: relative; max-width: 420px; margin: auto;">
             <span onclick="closeSignInModal()" style="position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: rgba(255,255,255,0.4);">&times;</span>
@@ -1790,7 +1806,8 @@
                        <div class="menu-item" onclick="openMonitoringModal(); closeMenu()">Monitoring</div>`
                     : '';
                 const calendarItem = isCalendarConnected
-                    ? `<div class="menu-item" onclick="disconnectGoogleCalendar()">Disconnect Google Calendar</div>`
+                    ? `<div class="menu-item" onclick="openImportCalendarModal()">Import from Google Calendar</div>
+                       <div class="menu-item" onclick="disconnectGoogleCalendar()">Disconnect Google Calendar</div>`
                     : `<div class="menu-item" onclick="connectGoogleCalendar()">Connect Google Calendar</div>`;
                 dropdown.innerHTML = `
                     <div class="menu-item menu-greeting">Hi, ${firstName}</div>
@@ -2352,8 +2369,8 @@
 
             console.log('Form values:', { position, company, stage, date, status, details });
 
-            const action = editingCardId ? 'update' : 'create';
-            track(action === 'create' ? 'card_add' : 'card_edit', { stage, status });
+            const action = editingCardId ? 'update' : (importingGoogleEventId ? 'import' : 'create');
+            track(action === 'update' ? 'card_edit' : (action === 'import' ? 'card_import' : 'card_add'), { stage, status });
             let cardToSave;
             if (action === 'update') {
                 // Update existing card
@@ -2367,12 +2384,12 @@
                 card.referredBy = referredBy;
                 card.status = status;
                 card.details = details;
-                
+
                 cardToSave = card;
                 editingCardId = null;
                 console.log('Updated card:', card);
             } else {
-                // Add new card
+                // Add new card (or import from Calendar)
                 const card = {
                     position,
                     company,
@@ -2384,12 +2401,16 @@
                     status,
                     details
                 };
+                if (action === 'import') {
+                    card.googleEventId = importingGoogleEventId;
+                }
                 cards.push(card);
                 cardToSave = card;
                 console.log('Added new card:', card);
                 console.log('Total cards:', cards.length);
             }
 
+            importingGoogleEventId = null;
             closeModal();
             await persistAndReload(cardToSave, action);
         }
@@ -2761,6 +2782,10 @@
             if (action === 'create') {
                 options.method = 'POST';
                 options.body = JSON.stringify(card);
+            } else if (action === 'import') {
+                url = `${API_BASE_URL}/api/calendar/import-event`;
+                options.method = 'POST';
+                options.body = JSON.stringify(card);
             } else if (action === 'update') {
                 url += `/${card.id}`;
                 options.method = 'PUT';
@@ -2862,6 +2887,82 @@
             document.getElementById('modal-title').textContent = 'Review AI-extracted opportunity';
         }
 
+        // Import from Google Calendar — events not yet linked to any card, reviewed before saving
+        let importingGoogleEventId = null;
+
+        async function openImportCalendarModal() {
+            closeMenu();
+            document.getElementById('import-calendar-modal').classList.add('active');
+            const listEl = document.getElementById('import-calendar-list');
+            listEl.innerHTML = '<div style="color:rgba(255,255,255,0.5); text-align:center; padding:20px;">Loading…</div>';
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/calendar/unmatched-events`, { credentials: 'include' });
+                if (!res.ok) throw new Error('status ' + res.status);
+                const events = await res.json();
+                window._unmatchedCalendarEvents = events;
+                if (!events.length) {
+                    listEl.innerHTML = '<div style="color:rgba(255,255,255,0.5); text-align:center; padding:20px;">No unlinked events found in the last 14 days / next 60 days.</div>';
+                    return;
+                }
+                listEl.innerHTML = events.map((e, i) => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:0.5px solid rgba(255,255,255,0.1);">
+                        <div style="min-width:0;">
+                            <div style="font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(e.summary || '(untitled event)')}</div>
+                            <div style="font-size:0.82em; color:rgba(255,255,255,0.5);">${escapeHtml(e.interviewDate || '')}</div>
+                        </div>
+                        <button type="button" class="btn btn-primary" style="flex-shrink:0;" onclick="importCalendarEvent(${i})">Import</button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                listEl.innerHTML = '<div style="color:#FF6B6B; text-align:center; padding:20px;">Could not load calendar events.</div>';
+            }
+        }
+
+        function closeImportCalendarModal() {
+            document.getElementById('import-calendar-modal').classList.remove('active');
+        }
+
+        async function importCalendarEvent(index) {
+            const event = (window._unmatchedCalendarEvents || [])[index];
+            if (!event) return;
+            closeImportCalendarModal();
+
+            const text = [event.summary, event.description].filter(Boolean).join('\n\n');
+            let draft = {};
+            if (text.trim()) {
+                try {
+                    const res = await fetch(`${API_BASE_URL}/api/ai/extract-card`, {
+                        method: 'POST', credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ pastedText: text })
+                    });
+                    if (res.ok) draft = await res.json();
+                } catch (e) { /* fall through — the real Calendar date still gets prefilled below */ }
+            }
+
+            openModal(null);
+            prefillModalFromAiDraft(draft);
+            prefillInterviewDateFromComposite(event.interviewDate); // the actual Calendar date/time wins over any AI guess from the text
+            importingGoogleEventId = event.googleEventId;
+            document.getElementById('modal-title').textContent = 'Review calendar import';
+        }
+
+        function prefillInterviewDateFromComposite(composite) {
+            if (!composite) return;
+            const parts = composite.split('|');
+            const isTBD = parts[0] === 'TBD';
+            document.getElementById('interviewDate').value = isTBD ? '' : (parts[0] || '');
+            document.getElementById('interviewDateTBD').checked = isTBD;
+            document.getElementById('interviewTime').value = parts[1] || '';
+            document.getElementById('interviewTimezone').value = parts[2] || '';
+        }
+
+        function escapeHtml(s) {
+            const div = document.createElement('div');
+            div.textContent = s == null ? '' : s;
+            return div.innerHTML;
+        }
+
         // Modal functions
         function openModal(cardId = null, defaultStage = null) {
             const modal = document.getElementById('modal');
@@ -2928,6 +3029,7 @@
             document.getElementById('modal').classList.remove('active');
             document.getElementById('card-form').reset();
             editingCardId = null;
+            importingGoogleEventId = null;
             loadAlerts();
         }
 
