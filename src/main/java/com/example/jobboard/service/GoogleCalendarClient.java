@@ -37,8 +37,8 @@ public class GoogleCalendarClient {
 
     public record EventsPage(List<RawEvent> events, String nextSyncToken) {}
 
-    /** Fuller event detail (title/description included) for surfacing events to the user for review — see listRecentAndUpcoming. */
-    public record EventDetail(String id, String summary, String description,
+    /** Fuller event detail (title/description/organizer included) for surfacing events to the user for review — see listRecentAndUpcoming. */
+    public record EventDetail(String id, String summary, String description, String organizerEmail,
                                String startDate, String startDateTime, String startTimeZone) {}
 
     public String createEvent(String accessToken, CalendarEventDraft draft) throws IOException, InterruptedException {
@@ -154,6 +154,7 @@ public class GoogleCalendarClient {
                     item.path("id").asText(null),
                     item.path("summary").asText(null),
                     item.path("description").asText(null),
+                    item.path("organizer").path("email").asText(null),
                     start.hasNonNull("date") ? start.get("date").asText() : null,
                     start.hasNonNull("dateTime") ? start.get("dateTime").asText() : null,
                     start.hasNonNull("timeZone") ? start.get("timeZone").asText() : null
