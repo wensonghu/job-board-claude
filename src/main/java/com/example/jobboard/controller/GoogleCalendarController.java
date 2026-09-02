@@ -165,7 +165,6 @@ public class GoogleCalendarController {
                     .filter(e -> e.id() != null && !alreadyLinked.contains(e.id()))
                     .map(e -> new UnmatchedCalendarEvent(
                             e.id(), e.summary(), e.description(), e.organizerEmail(),
-                            guessCompanyFromEmail(e.organizerEmail()),
                             InterviewDateMapper.fromCalendarEvent(
                                     new GoogleCalendarClient.RawEvent(e.id(), "confirmed", e.startDate(), e.startDateTime(), e.startTimeZone()))
                     ))
@@ -175,24 +174,6 @@ public class GoogleCalendarController {
             logger.error("Failed to list unmatched Calendar events for userId={}: {}", userId, e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", "calendar_list_failed"));
         }
-    }
-
-    // Common non-company senders — don't guess "Greenhouse" or "Gmail" as the hiring company.
-    private static final Set<String> NON_COMPANY_EMAIL_DOMAINS = Set.of(
-            "gmail.com", "googlemail.com", "outlook.com", "hotmail.com", "yahoo.com", "icloud.com",
-            "calendar.google.com", "resource.calendar.google.com",
-            "calendly.com", "greenhouse.io", "lever.co", "myworkday.com", "icims.com",
-            "smartrecruiters.com", "ashbyhq.com", "zoom.us"
-    );
-
-    /** Best-effort company guess from the invite organizer's email domain — the user can always correct it before saving. */
-    private String guessCompanyFromEmail(String email) {
-        if (email == null || !email.contains("@")) return null;
-        String domain = email.substring(email.indexOf('@') + 1).toLowerCase();
-        if (NON_COMPANY_EMAIL_DOMAINS.contains(domain)) return null;
-        String name = domain.split("\\.")[0];
-        if (name.isBlank()) return null;
-        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
 
     private List<GoogleCalendarClient.EventDetail> fetchRecentAndUpcoming(String accessToken, GoogleCalendarToken token)

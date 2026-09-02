@@ -2929,9 +2929,11 @@
             closeImportCalendarModal();
 
             openModal(null);
-            if (event.companyGuess) document.getElementById('company').value = event.companyGuess;
             document.getElementById('status').value = 'interview-date-confirmed';
-            if (event.organizerEmail) document.getElementById('details').value = 'Invited by: ' + event.organizerEmail;
+            const noteLines = [];
+            if (event.summary) noteLines.push('Title: ' + event.summary);
+            if (event.organizerEmail) noteLines.push('Invited by: ' + event.organizerEmail);
+            if (noteLines.length) document.getElementById('details').value = noteLines.join('\n');
             prefillInterviewDateFromComposite(event.interviewDate);
             updateCharCount();
 
