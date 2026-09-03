@@ -3760,8 +3760,11 @@
 
                 if (list.some(c => c.status === 'rejected' && c.stage === 'final'))
                     return { st: 'final-rejected', days: daysBtwn(firstAction, lastAction) };
-                if (list.some(c => ['rejected', 'declined'].includes(c.status)))
+                if (list.some(c => c.status === 'rejected'))
                     return { st: 'rejected', days: daysBtwn(firstAction, lastAction) };
+                // Declined = the user voluntarily withdrew — a different outcome from being rejected.
+                if (list.some(c => c.status === 'declined'))
+                    return { st: 'declined', days: daysBtwn(firstAction, lastAction) };
 
                 // Active: not rejected/declined, not early stage, last action within 2 weeks
                 const twoWeeksAgo = new Date(); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
@@ -3798,6 +3801,7 @@
                     'offer-accepted': { bg:'rgba(23,204,69,0.15)', border:'#17cc45', color:'#17cc45', label:'🎉 Offer Accepted' },
                     'final-rejected': { bg:'rgba(255,107,107,0.1)', border:'#FF6B6B', color:'#FF6B6B', label:'🔴 Final Rd – No Offer' },
                     rejected:         { bg:'rgba(180,100,100,0.12)', border:'#c07880', color:'#c07880', label:'🚫 Rejected' },
+                    declined:         { bg:'rgba(78,94,214,0.1)', border:'#7b8ff5', color:'#7b8ff5', label:'🚪 Withdrew' },
                     stale:            { bg:'rgba(255,255,255,0.05)', border:'rgba(255,255,255,0.25)', color:'rgba(255,255,255,0.45)', label:'💤 No Response' },
                 };
                 const c = cfg[st] || cfg.rejected;
@@ -3807,7 +3811,7 @@
             }
 
             // Pipeline rows from backend (HM+ companies, [Offer] merged)
-            const STATUS_SORT = { 'offer-accepted': 0, active: 1, 'final-rejected': 2, rejected: 3, stale: 4 };
+            const STATUS_SORT = { 'offer-accepted': 0, active: 1, declined: 2, 'final-rejected': 3, rejected: 4, stale: 5 };
             const pipelineRows = pipelines
                 .map(p => {
                     const resolved = resolveStatusAndDays(p.company, p.firstAction, p.lastAction);
@@ -3993,7 +3997,7 @@
             });
 
             // ── Table rows ───────────────────────────────────────────────
-            const FINISHED = new Set(['final-rejected', 'rejected', 'offer-accepted']);
+            const FINISHED = new Set(['final-rejected', 'rejected', 'declined', 'offer-accepted']);
             const pipelineTableRows = pipelineRows.map(r => {
                 const isFinished      = FINISHED.has(r.st);
                 const isActive        = r.st === 'active';
